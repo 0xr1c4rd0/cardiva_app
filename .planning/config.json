@@ -3,6 +3,11 @@
   "depth": "comprehensive",
   "parallelization": true,
   "commit_docs": true,
+  "model_profile": "quality",
+  "model_overrides": {
+    "gsd-verifier": "opus",
+    "gsd-integration-checker": "opus"
+  },
   "workflow": {
     "research": true,
     "plan_check": true,
