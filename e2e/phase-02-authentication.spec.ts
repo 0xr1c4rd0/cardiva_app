@@ -18,9 +18,9 @@ test.describe('Phase 2: Authentication', () => {
       await page.goto('/register')
       await page.waitForLoadState('networkidle')
 
-      // Check page title or heading
-      const heading = page.locator('h1, h2').first()
-      await expect(heading).toContainText(/register|sign up|create account/i)
+      // Check page title - CardTitle renders as div with data-slot="card-title"
+      const heading = page.locator('[data-slot="card-title"]').first()
+      await expect(heading).toContainText(/register|sign up|create|account/i)
     })
 
     test('should have email input field', async ({ page }) => {
@@ -78,8 +78,9 @@ test.describe('Phase 2: Authentication', () => {
       await page.goto('/login')
       await page.waitForLoadState('networkidle')
 
-      const heading = page.locator('h1, h2').first()
-      await expect(heading).toContainText(/login|sign in|welcome/i)
+      // CardTitle renders as div with data-slot="card-title"
+      const heading = page.locator('[data-slot="card-title"]').first()
+      await expect(heading).toContainText(/log\s*in|sign in|welcome/i)
     })
 
     test('should have email input field', async ({ page }) => {
@@ -137,7 +138,8 @@ test.describe('Phase 2: Authentication', () => {
       await page.goto('/login')
       await page.waitForLoadState('networkidle')
 
-      const forgotLink = page.locator('a[href*="forgot"], a[href*="reset"]')
+      // The link goes to /reset-password
+      const forgotLink = page.locator('a[href*="reset-password"]')
       await expect(forgotLink).toBeVisible()
     })
   })
@@ -167,16 +169,18 @@ test.describe('Phase 2: Authentication', () => {
   })
 
   test.describe('SC-05: Password Reset', () => {
-    test('should display forgot password page', async ({ page }) => {
-      await page.goto('/forgot-password')
+    test('should display reset password page', async ({ page }) => {
+      // The actual URL is /reset-password
+      await page.goto('/reset-password')
       await page.waitForLoadState('networkidle')
 
-      const heading = page.locator('h1, h2').first()
-      await expect(heading).toContainText(/forgot|reset|password/i)
+      // CardTitle renders as div with data-slot="card-title"
+      const heading = page.locator('[data-slot="card-title"]').first()
+      await expect(heading).toContainText(/reset|password/i)
     })
 
     test('should have email input for password reset', async ({ page }) => {
-      await page.goto('/forgot-password')
+      await page.goto('/reset-password')
       await page.waitForLoadState('networkidle')
 
       const emailInput = page.locator('input[type="email"], input[name="email"]')
@@ -184,7 +188,7 @@ test.describe('Phase 2: Authentication', () => {
     })
 
     test('should have submit button for reset request', async ({ page }) => {
-      await page.goto('/forgot-password')
+      await page.goto('/reset-password')
       await page.waitForLoadState('networkidle')
 
       const submitButton = page.locator('button[type="submit"]')
@@ -192,7 +196,7 @@ test.describe('Phase 2: Authentication', () => {
     })
 
     test('should have link back to login', async ({ page }) => {
-      await page.goto('/forgot-password')
+      await page.goto('/reset-password')
       await page.waitForLoadState('networkidle')
 
       const loginLink = page.locator('a[href*="login"]')

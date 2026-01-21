@@ -43,3 +43,6 @@ next-env.d.ts
 
 # GSD intel directory (regenerated, changes frequently)
 .planning/intel/
+# Test artifacts
+playwright-report/
+test-results/
