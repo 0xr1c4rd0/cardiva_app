@@ -10,29 +10,29 @@ See: .planning/PROJECT.md (updated 2025-01-21)
 ## Current Position
 
 Phase: 2 of 10 (Authentication)
-Plan: 1 of 3 in current phase
+Plan: 2 of 3 in current phase
 Status: In progress
-Last activity: 2026-01-21 - Completed 02-01-PLAN.md
+Last activity: 2026-01-21 - Completed 02-02-PLAN.md
 
-Progress: [====------] 13%
+Progress: [=====-----] 17%
 
 ## Performance Metrics
 
 **Velocity:**
-- Total plans completed: 4
-- Average duration: 12.5 min
-- Total execution time: 0.8 hours
+- Total plans completed: 5
+- Average duration: 11.6 min
+- Total execution time: 1.0 hours
 
 **By Phase:**
 
 | Phase | Plans | Total | Avg/Plan |
 |-------|-------|-------|----------|
 | 01-foundation | 3 | 42min | 14min |
-| 02-authentication | 1 | 8min | 8min |
+| 02-authentication | 2 | 16min | 8min |
 
 **Recent Trend:**
-- Last 5 plans: 01-01 (12min), 01-02 (15min), 01-03 (15min), 02-01 (8min)
-- Trend: Improving (faster execution)
+- Last 5 plans: 01-02 (15min), 01-03 (15min), 02-01 (8min), 02-02 (8min)
+- Trend: Stable (consistent 8min for auth plans)
 
 *Updated after each plan completion*
 
@@ -61,6 +61,10 @@ Recent decisions affecting current work:
 - [02-01]: Manual SQL execution via Dashboard for v1 simplicity
 - [02-01]: Disable email confirmation for simpler approval flow
 - [02-01]: Custom Access Token Hook injects role into JWT for RBAC
+- [02-02]: Banned user detection via error.message string check
+- [02-02]: Defense in depth - getUser() validation in both middleware and layout
+- [02-02]: User initials from email for avatar fallback display
+- [02-02]: Server component UserMenu accesses auth state directly
 
 ### Pending Todos
 
@@ -77,7 +81,7 @@ None yet.
 ## Session Continuity
 
 Last session: 2026-01-21
-Stopped at: Completed 02-01-PLAN.md (Phase 2 in progress)
+Stopped at: Completed 02-02-PLAN.md (Phase 2 in progress)
 Resume file: None
 
 ## Phase 1 Plans
@@ -99,10 +103,12 @@ Resume file: None
 | Plan | Wave | Objective | Status |
 |------|------|-----------|--------|
 | 02-01 | 1 | Registration with auto-ban approval workflow | Complete |
-| 02-02 | 1 | Login flow with approval check | Pending |
-| 02-03 | 1 | Admin approval page | Pending |
+| 02-02 | 2 | Login flow with approval check | Complete |
+| 02-03 | 3 | Password reset + admin user management | Pending |
 
 **Wave execution:**
-- Wave 1: 02-01, 02-02, 02-03 (can run sequentially) - IN PROGRESS
+- Wave 1: 02-01 - COMPLETE
+- Wave 2: 02-02 - COMPLETE
+- Wave 3: 02-03 - PENDING
 
-**Phase 2 in progress.** 1 of 3 plans complete.
+**Phase 2 in progress.** 2 of 3 plans complete.
