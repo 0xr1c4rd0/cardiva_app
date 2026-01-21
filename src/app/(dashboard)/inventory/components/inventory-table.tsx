@@ -5,8 +5,9 @@ import {
   useReactTable,
   getCoreRowModel,
   flexRender,
+  SortingState,
 } from '@tanstack/react-table'
-import { useQueryStates, parseAsInteger } from 'nuqs'
+import { useQueryStates, parseAsInteger, parseAsString } from 'nuqs'
 import {
   Table,
   TableBody,
@@ -19,36 +20,51 @@ import { Skeleton } from '@/components/ui/skeleton'
 import { PackageOpen } from 'lucide-react'
 import { columns } from './inventory-columns'
 import { DataTablePagination } from './data-table-pagination'
+import { TableToolbar } from './table-toolbar'
 import { Artigo } from '@/lib/supabase/types'
 
 interface InventoryTableProps {
   data: Artigo[]
   totalCount: number
+  categories: string[]
   initialState: {
     page: number
     pageSize: number
+    search: string
+    sortBy: string
+    sortOrder: string
+    category: string | null
   }
 }
 
 export function InventoryTable({
   data,
   totalCount,
+  categories,
   initialState,
 }: InventoryTableProps) {
   const [isPending, startTransition] = useTransition()
 
-  const [{ page, pageSize }, setParams] = useQueryStates(
-    {
-      page: parseAsInteger.withDefault(initialState.page),
-      pageSize: parseAsInteger.withDefault(initialState.pageSize),
-    },
-    { shallow: false }
-  )
+  const [{ page, pageSize, search, sortBy, sortOrder, category }, setParams] =
+    useQueryStates(
+      {
+        page: parseAsInteger.withDefault(initialState.page),
+        pageSize: parseAsInteger.withDefault(initialState.pageSize),
+        search: parseAsString.withDefault(initialState.search),
+        sortBy: parseAsString.withDefault(initialState.sortBy),
+        sortOrder: parseAsString.withDefault(initialState.sortOrder),
+        category: parseAsString,
+      },
+      { shallow: false }
+    )
+
+  const sorting: SortingState = [{ id: sortBy, desc: sortOrder === 'desc' }]
 
   const table = useReactTable({
     data,
     columns,
     manualPagination: true,
+    manualSorting: true,
     rowCount: totalCount,
     pageCount: Math.ceil(totalCount / pageSize),
     state: {
@@ -56,6 +72,7 @@ export function InventoryTable({
         pageIndex: page - 1,
         pageSize,
       },
+      sorting,
     },
     onPaginationChange: (updater) => {
       startTransition(() => {
@@ -68,11 +85,45 @@ export function InventoryTable({
         })
       })
     },
+    onSortingChange: (updater) => {
+      startTransition(() => {
+        const current: SortingState = [{ id: sortBy, desc: sortOrder === 'desc' }]
+        const newState =
+          typeof updater === 'function' ? updater(current) : updater
+        if (newState[0]) {
+          setParams({
+            sortBy: newState[0].id,
+            sortOrder: newState[0].desc ? 'desc' : 'asc',
+            page: 1,
+          })
+        }
+      })
+    },
     getCoreRowModel: getCoreRowModel(),
   })
 
+  const handleSearchChange = (value: string) => {
+    startTransition(() => {
+      setParams({ search: value || null, page: 1 })
+    })
+  }
+
+  const handleCategoryChange = (value: string | null) => {
+    startTransition(() => {
+      setParams({ category: value, page: 1 })
+    })
+  }
+
   return (
     <div className="space-y-4">
+      <TableToolbar
+        search={search}
+        onSearchChange={handleSearchChange}
+        category={category}
+        onCategoryChange={handleCategoryChange}
+        categories={categories}
+        isPending={isPending}
+      />
       <div className="rounded-md border">
         <Table>
           <TableHeader>
