@@ -21,6 +21,17 @@ export default async function DashboardLayout({
     redirect('/login')
   }
 
+  // Check if user is approved
+  const { data: profile } = await supabase
+    .from('profiles')
+    .select('approved_at')
+    .eq('id', user.id)
+    .single()
+
+  if (!profile?.approved_at) {
+    redirect('/pending-approval')
+  }
+
   const cookieStore = await cookies()
   const defaultOpen = cookieStore.get('sidebar_state')?.value !== 'false'
 

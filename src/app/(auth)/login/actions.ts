@@ -27,17 +27,11 @@ export async function login(prevState: unknown, formData: FormData) {
   })
 
   if (error) {
-    // Check if user is banned (pending approval)
-    if (error.message.toLowerCase().includes('banned')) {
-      return {
-        error:
-          'Your account is pending admin approval. Please contact an administrator.',
-      }
-    }
     return { error: error.message }
   }
 
   // Revalidate and redirect to dashboard
+  // Dashboard layout will check approval status and redirect to pending-approval if needed
   revalidatePath('/', 'layout')
   redirect('/')
 }
