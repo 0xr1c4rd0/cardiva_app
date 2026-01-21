@@ -10,28 +10,28 @@ See: .planning/PROJECT.md (updated 2025-01-21)
 ## Current Position
 
 Phase: 1 of 10 (Foundation)
-Plan: 1 of 3 in current phase
+Plan: 2 of 3 in current phase
 Status: In progress
-Last activity: 2025-01-21 - Completed 01-01-PLAN.md
+Last activity: 2025-01-21 - Completed 01-02-PLAN.md
 
-Progress: [=---------] 3.3%
+Progress: [==--------] 6.7%
 
 ## Performance Metrics
 
 **Velocity:**
-- Total plans completed: 1
-- Average duration: 12 min
-- Total execution time: 0.2 hours
+- Total plans completed: 2
+- Average duration: 13.5 min
+- Total execution time: 0.45 hours
 
 **By Phase:**
 
 | Phase | Plans | Total | Avg/Plan |
 |-------|-------|-------|----------|
-| 01-foundation | 1 | 12min | 12min |
+| 01-foundation | 2 | 27min | 13.5min |
 
 **Recent Trend:**
-- Last 5 plans: 01-01 (12min)
-- Trend: N/A (first plan)
+- Last 5 plans: 01-01 (12min), 01-02 (15min)
+- Trend: Stable
 
 *Updated after each plan completion*
 
@@ -50,6 +50,8 @@ Recent decisions affecting current work:
 - [Phase 1]: OKLCH color format for shadcn/ui compatibility
 - [01-01]: Kept Geist font configuration from Next.js defaults
 - [01-01]: cn() utility pattern established for Tailwind class merging
+- [01-02]: Dark sidebar by default (--sidebar variables use gray-900)
+- [01-02]: New York shadcn/ui style selected for cleaner aesthetics
 
 ### Pending Todos
 
@@ -62,7 +64,7 @@ None yet.
 ## Session Continuity
 
 Last session: 2025-01-21
-Stopped at: Completed 01-01-PLAN.md
+Stopped at: Completed 01-02-PLAN.md
 Resume file: None
 
 ## Phase 1 Plans
@@ -70,9 +72,9 @@ Resume file: None
 | Plan | Wave | Objective | Status |
 |------|------|-----------|--------|
 | 01-01 | 1 | Project scaffold (Next.js 16, dependencies, folders) | Complete |
-| 01-02 | 2 | Design system (Tailwind v4 tokens, shadcn/ui) | Ready |
+| 01-02 | 2 | Design system (Tailwind v4 tokens, shadcn/ui) | Complete |
 | 01-03 | 2 | Supabase client + dashboard layout with sidebar | Ready |
 
 **Wave execution:**
 - Wave 1: 01-01 (independent, no dependencies) - COMPLETE
-- Wave 2: 01-02, 01-03 (depend on 01-01, can run in parallel) - READY
+- Wave 2: 01-02, 01-03 (depend on 01-01, can run in parallel) - 01-02 COMPLETE, 01-03 READY
