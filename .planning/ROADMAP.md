@@ -13,7 +13,7 @@ This roadmap transforms the Cardiva RFP Matching App from concept to functional 
 Decimal phases appear between their surrounding integers in numeric order.
 
 - [x] **Phase 1: Foundation** - Project scaffold, Supabase setup, design system
-- [ ] **Phase 2: Authentication** - User registration, login, session management, RBAC
+- [x] **Phase 2: Authentication** - User registration, login, session management, RBAC
 - [ ] **Phase 3: Inventory View** - Product listing with pagination, sorting, search, filter
 - [ ] **Phase 4: Inventory Management** - CSV upload, validation, export, permissions
 - [ ] **Phase 5: RFP Upload** - PDF upload, webhook trigger, file storage
@@ -53,12 +53,12 @@ Plans:
   4. User can log out from any page in the application
   5. User can reset password via email link
   6. Admin users can access admin-only features; regular users cannot
-**Plans**: TBD
+**Plans**: 3 plans in 3 waves
 
 Plans:
-- [ ] 02-01: Supabase Auth setup and registration flow
-- [ ] 02-02: Login, session persistence, and logout
-- [ ] 02-03: Password reset and RBAC implementation
+- [x] 02-01-PLAN.md — Supabase Auth setup, profiles table, registration with auto-ban
+- [x] 02-02-PLAN.md — Login, session persistence, route protection, logout
+- [x] 02-03-PLAN.md — Password reset flow, RBAC utilities, admin user management
 
 ### Phase 3: Inventory View
 **Goal**: Users can browse and search the 20k+ product inventory efficiently
@@ -204,7 +204,7 @@ Phases execute in numeric order: 1 -> 2 -> 3 -> ... -> 10
 | Phase | Plans Complete | Status | Completed |
 |-------|----------------|--------|-----------|
 | 1. Foundation | 3/3 | Complete | 2025-01-21 |
-| 2. Authentication | 0/3 | Not started | - |
+| 2. Authentication | 3/3 | Complete | 2026-01-21 |
 | 3. Inventory View | 0/2 | Not started | - |
 | 4. Inventory Management | 0/3 | Not started | - |
 | 5. RFP Upload | 0/3 | Not started | - |
@@ -216,4 +216,4 @@ Phases execute in numeric order: 1 -> 2 -> 3 -> ... -> 10
 
 ---
 *Created: 2025-01-21*
-*Last updated: 2025-01-21*
+*Last updated: 2026-01-21*
