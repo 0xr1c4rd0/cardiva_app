@@ -31,7 +31,44 @@ export async function middleware(request: NextRequest) {
 
   // IMPORTANT: Do not remove this line
   // It refreshes the auth token and must be called for every request
-  await supabase.auth.getUser()
+  const {
+    data: { user },
+  } = await supabase.auth.getUser()
+
+  // Define protected and public routes
+  const protectedRoutes = [
+    '/',
+    '/rfps',
+    '/inventory',
+    '/history',
+    '/settings',
+    '/admin',
+  ]
+  const authRoutes = ['/login', '/register', '/reset-password', '/update-password']
+
+  const pathname = request.nextUrl.pathname
+
+  // Check if current path is protected
+  const isProtectedRoute = protectedRoutes.some(
+    (route) => pathname === route || pathname.startsWith(route + '/')
+  )
+
+  // Check if current path is an auth route
+  const isAuthRoute = authRoutes.some(
+    (route) => pathname === route || pathname.startsWith(route + '/')
+  )
+
+  // Redirect unauthenticated users from protected routes to login
+  if (isProtectedRoute && !user) {
+    const loginUrl = new URL('/login', request.url)
+    return NextResponse.redirect(loginUrl)
+  }
+
+  // Redirect authenticated users from auth routes to dashboard
+  if (isAuthRoute && user) {
+    const dashboardUrl = new URL('/', request.url)
+    return NextResponse.redirect(dashboardUrl)
+  }
 
   return supabaseResponse
 }
