@@ -14,7 +14,7 @@ Decimal phases appear between their surrounding integers in numeric order.
 
 - [x] **Phase 1: Foundation** - Project scaffold, Supabase setup, design system
 - [x] **Phase 2: Authentication** - User registration, login, session management, RBAC
-- [ ] **Phase 3: Inventory View** - Product listing with pagination, sorting, search, filter
+- [x] **Phase 3: Inventory View** - Product listing with pagination, sorting, search, filter
 - [ ] **Phase 4: Inventory Management** - CSV upload, validation, export, permissions
 - [ ] **Phase 5: RFP Upload** - PDF upload, webhook trigger, file storage
 - [ ] **Phase 6: Processing Status** - Real-time status updates, notifications
@@ -71,11 +71,11 @@ Plans:
   4. User can search products by name, code, or attributes with results updating
   5. User can filter products by category/attributes
   6. Loading states display during data fetches; empty states show when no results
-**Plans**: TBD
+**Plans**: 2 plans in 2 waves
 
 Plans:
-- [ ] 03-01: Inventory page with TanStack Table and pagination
-- [ ] 03-02: Search, sort, and filter functionality
+- [x] 03-01-PLAN.md — Inventory page with TanStack Table and server-side pagination
+- [x] 03-02-PLAN.md — Search, sort, and filter functionality with URL state
 
 ### Phase 4: Inventory Management
 **Goal**: Authorized users can update inventory via CSV upload with validation
@@ -205,8 +205,8 @@ Phases execute in numeric order: 1 -> 2 -> 3 -> ... -> 10
 |-------|----------------|--------|-----------|
 | 1. Foundation | 3/3 | Complete | 2025-01-21 |
 | 2. Authentication | 3/3 | Complete | 2026-01-21 |
-| 3. Inventory View | 0/2 | Not started | - |
-| 4. Inventory Management | 0/3 | Not started | - |
+| 3. Inventory View | 2/2 | Complete | 2026-01-21 |
+| 4. Inventory Management | 0/3 | Ready to execute | - |
 | 5. RFP Upload | 0/3 | Not started | - |
 | 6. Processing Status | 0/3 | Not started | - |
 | 7. Match Review | 0/3 | Not started | - |

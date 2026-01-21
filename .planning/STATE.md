@@ -5,23 +5,23 @@
 See: .planning/PROJECT.md (updated 2025-01-21)
 
 **Core value:** Users can upload an RFP, see suggested product matches, accept/reject interactively, and export confirmed matches
-**Current focus:** Phase 3 - Inventory View (ready to plan)
+**Current focus:** Phase 4 - Inventory Management (ready to plan)
 
 ## Current Position
 
-Phase: 3 of 10 (Inventory View)
+Phase: 4 of 10 (Inventory Management)
 Plan: 0 of TBD in current phase
 Status: Planning required
-Last activity: 2026-01-21 - Completed Phase 2
+Last activity: 2026-01-21 - Completed Phase 3
 
-Progress: [======----] 20%
+Progress: [=======---] 30%
 
 ## Performance Metrics
 
 **Velocity:**
-- Total plans completed: 6
-- Average duration: 12.3 min
-- Total execution time: 1.2 hours
+- Total plans completed: 8
+- Average duration: 10.5 min
+- Total execution time: 1.4 hours
 
 **By Phase:**
 
@@ -29,10 +29,11 @@ Progress: [======----] 20%
 |-------|-------|-------|----------|
 | 01-foundation | 3 | 42min | 14min |
 | 02-authentication | 3 | 32min | 11min |
+| 03-inventory-view | 2 | 10min | 5min |
 
 **Recent Trend:**
-- Last 5 plans: 01-03 (15min), 02-01 (8min), 02-02 (8min), 02-03 (16min)
-- Trend: Slight increase for 02-03 (more complex with admin interface)
+- Last 5 plans: 02-01 (8min), 02-02 (8min), 02-03 (16min), 03-01 (5min), 03-02 (5min)
+- Trend: Phase 3 fast due to straightforward table implementation
 
 *Updated after each plan completion*
 
@@ -69,6 +70,13 @@ Recent decisions affecting current work:
 - [02-03]: Email confirmation route with verifyOtp for password reset
 - [02-03]: Admin actions via client components wrapping server actions
 - [02-03]: Sidebar async server component for role-based rendering
+- [03-01]: TanStack Table with manualPagination for server-side control
+- [03-01]: nuqs with { shallow: false } for server re-render on URL change
+- [03-01]: Artigo type matches artigos table schema
+- [03-02]: 300ms debounce on search input via useDebouncedCallback
+- [03-02]: manualSorting in TanStack Table for server-side sorting
+- [03-02]: Supabase .or() with .ilike() for multi-field search
+- [03-02]: Category filter populated from distinct values in database
 
 ### Pending Todos
 
@@ -88,7 +96,7 @@ None yet.
 ## Session Continuity
 
 Last session: 2026-01-21
-Stopped at: Phase 2 complete, ready for Phase 3 planning
+Stopped at: Phase 3 complete, ready for Phase 4 planning
 Resume file: None
 
 ## Phase 1 Plans
@@ -119,3 +127,16 @@ Resume file: None
 - Wave 3: 02-03 - COMPLETE
 
 **Phase 2 complete.** All authentication requirements (AUTH-01 through AUTH-09) satisfied.
+
+## Phase 3 Plans
+
+| Plan | Wave | Objective | Status |
+|------|------|-----------|--------|
+| 03-01 | 1 | Inventory page with TanStack Table and pagination | Complete |
+| 03-02 | 2 | Search, sort, and filter functionality | Complete |
+
+**Wave execution:**
+- Wave 1: 03-01 - COMPLETE
+- Wave 2: 03-02 - COMPLETE
+
+**Phase 3 complete.** All inventory view requirements (INV-01 through INV-05, UI-04, UI-06) satisfied.
