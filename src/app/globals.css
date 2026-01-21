@@ -1,4 +1,7 @@
 @import "tailwindcss";
+@import "tw-animate-css";
+
+@custom-variant dark (&:is(.dark *));
 
 /* Cardiva Design Tokens - Tailwind v4 @theme directive */
 @theme {
@@ -87,6 +90,7 @@
   --radius: 6px;
 
   /* Sidebar specific - dark theme */
+  --sidebar: oklch(0.20 0 0);                     /* gray-900 */
   --sidebar-background: oklch(0.20 0 0);          /* gray-900 */
   --sidebar-foreground: oklch(0.96 0 0);          /* gray-100 */
   --sidebar-primary: oklch(0.45 0.12 170);        /* teal */
@@ -123,6 +127,7 @@
   --color-border: var(--border);
   --color-input: var(--input);
   --color-ring: var(--ring);
+  --color-sidebar: var(--sidebar);
   --color-sidebar-background: var(--sidebar-background);
   --color-sidebar-foreground: var(--sidebar-foreground);
   --color-sidebar-primary: var(--sidebar-primary);
@@ -139,12 +144,12 @@
 }
 
 /* Base styles */
-* {
-  border-color: var(--border);
-}
-
-body {
-  background: var(--background);
-  color: var(--foreground);
-  font-family: var(--font-sans);
+@layer base {
+  * {
+    @apply border-border outline-ring/50;
+  }
+  body {
+    @apply bg-background text-foreground;
+    font-family: var(--font-sans);
+  }
 }
