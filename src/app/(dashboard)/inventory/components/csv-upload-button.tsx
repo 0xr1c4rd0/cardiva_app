@@ -4,17 +4,18 @@ import { useState } from 'react'
 import { Button } from '@/components/ui/button'
 import { Upload } from 'lucide-react'
 import { CSVUploadDialog } from './csv-upload-dialog'
+import { triggerInventoryUpload } from '../actions'
 import { toast } from 'sonner'
 
-interface CSVUploadButtonProps {
-  onUpload: (file: File, rowCount: number) => Promise<{ success: boolean; error?: string; jobId?: string }>
-}
-
-export function CSVUploadButton({ onUpload }: CSVUploadButtonProps) {
+export function CSVUploadButton() {
   const [open, setOpen] = useState(false)
 
   const handleUpload = async (file: File, rowCount: number) => {
-    const result = await onUpload(file, rowCount)
+    const formData = new FormData()
+    formData.append('file', file)
+    formData.append('rowCount', String(rowCount))
+
+    const result = await triggerInventoryUpload(formData)
 
     if (result.success) {
       toast.success('Upload started', {
