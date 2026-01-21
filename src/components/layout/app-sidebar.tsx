@@ -1,4 +1,4 @@
-import { Home, FileText, Package, History, Settings } from 'lucide-react'
+import { Home, FileText, Package, History, Settings, Users } from 'lucide-react'
 import Link from 'next/link'
 import {
   Sidebar,
@@ -12,6 +12,7 @@ import {
   SidebarHeader,
   SidebarFooter,
 } from '@/components/ui/sidebar'
+import { isAdmin } from '@/lib/auth/utils'
 
 const navItems = [
   { title: 'Dashboard', url: '/', icon: Home },
@@ -20,7 +21,10 @@ const navItems = [
   { title: 'History', url: '/history', icon: History },
 ]
 
-export function AppSidebar() {
+const adminItems = [{ title: 'Users', url: '/admin/users', icon: Users }]
+
+export async function AppSidebar() {
+  const userIsAdmin = await isAdmin()
   return (
     <Sidebar>
       <SidebarHeader className="border-b border-sidebar-border px-6 py-4">
@@ -48,6 +52,26 @@ export function AppSidebar() {
             </SidebarMenu>
           </SidebarGroupContent>
         </SidebarGroup>
+
+        {userIsAdmin && (
+          <SidebarGroup>
+            <SidebarGroupLabel>Admin</SidebarGroupLabel>
+            <SidebarGroupContent>
+              <SidebarMenu>
+                {adminItems.map((item) => (
+                  <SidebarMenuItem key={item.title}>
+                    <SidebarMenuButton asChild>
+                      <Link href={item.url}>
+                        <item.icon className="h-4 w-4" />
+                        <span>{item.title}</span>
+                      </Link>
+                    </SidebarMenuButton>
+                  </SidebarMenuItem>
+                ))}
+              </SidebarMenu>
+            </SidebarGroupContent>
+          </SidebarGroup>
+        )}
       </SidebarContent>
       <SidebarFooter className="border-t border-sidebar-border p-4">
         <SidebarMenu>
