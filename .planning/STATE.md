@@ -5,23 +5,23 @@
 See: .planning/PROJECT.md (updated 2025-01-21)
 
 **Core value:** Users can upload an RFP, see suggested product matches, accept/reject interactively, and export confirmed matches
-**Current focus:** Phase 4 - Inventory Management (ready to plan)
+**Current focus:** Phase 4 - Inventory Management (in progress)
 
 ## Current Position
 
 Phase: 4 of 10 (Inventory Management)
-Plan: 0 of TBD in current phase
-Status: Planning required
-Last activity: 2026-01-21 - Completed Phase 3
+Plan: 1 of 3 in current phase
+Status: In progress
+Last activity: 2026-01-21 - Completed 04-01-PLAN.md
 
-Progress: [=======---] 30%
+Progress: [========--] 33%
 
 ## Performance Metrics
 
 **Velocity:**
-- Total plans completed: 8
-- Average duration: 10.5 min
-- Total execution time: 1.4 hours
+- Total plans completed: 9
+- Average duration: 10.8 min
+- Total execution time: 1.6 hours
 
 **By Phase:**
 
@@ -30,10 +30,11 @@ Progress: [=======---] 30%
 | 01-foundation | 3 | 42min | 14min |
 | 02-authentication | 3 | 32min | 11min |
 | 03-inventory-view | 2 | 10min | 5min |
+| 04-inventory-management | 1 | 13min | 13min |
 
 **Recent Trend:**
-- Last 5 plans: 02-01 (8min), 02-02 (8min), 02-03 (16min), 03-01 (5min), 03-02 (5min)
-- Trend: Phase 3 fast due to straightforward table implementation
+- Last 5 plans: 02-03 (16min), 03-01 (5min), 03-02 (5min), 04-01 (13min)
+- Trend: Phase 4 involves more complex component work
 
 *Updated after each plan completion*
 
@@ -77,6 +78,9 @@ Recent decisions affecting current work:
 - [03-02]: manualSorting in TanStack Table for server-side sorting
 - [03-02]: Supabase .or() with .ilike() for multi-field search
 - [03-02]: Category filter populated from distinct values in database
+- [04-01]: UTF-8/ISO-8859-1 encoding fallback for Portuguese CSV files
+- [04-01]: Zod passthrough schema for dynamic column structure
+- [04-01]: Error/warning separation in CSV validation
 
 ### Pending Todos
 
@@ -96,7 +100,7 @@ None yet.
 ## Session Continuity
 
 Last session: 2026-01-21
-Stopped at: Phase 3 complete, ready for Phase 4 planning
+Stopped at: Completed 04-01-PLAN.md
 Resume file: None
 
 ## Phase 1 Plans
@@ -140,3 +144,18 @@ Resume file: None
 - Wave 2: 03-02 - COMPLETE
 
 **Phase 3 complete.** All inventory view requirements (INV-01 through INV-05, UI-04, UI-06) satisfied.
+
+## Phase 4 Plans
+
+| Plan | Wave | Objective | Status |
+|------|------|-----------|--------|
+| 04-01 | 1 | CSV upload component with client-side parsing and validation | Complete |
+| 04-02 | 2 | n8n webhook integration for CSV processing | Pending |
+| 04-03 | 3 | Realtime job status and UI integration | Pending |
+
+**Wave execution:**
+- Wave 1: 04-01 - COMPLETE
+- Wave 2: 04-02 - PENDING
+- Wave 3: 04-03 - PENDING
+
+**Phase 4 in progress.**
