@@ -10,18 +10,18 @@ See: .planning/PROJECT.md (updated 2025-01-21)
 ## Current Position
 
 Phase: 4 of 10 (Inventory Management)
-Plan: 1 of 3 in current phase
+Plan: 2 of 3 in current phase
 Status: In progress
-Last activity: 2026-01-21 - Completed 04-01-PLAN.md
+Last activity: 2026-01-21 - Completed 04-02-PLAN.md
 
-Progress: [========--] 33%
+Progress: [==========-] 67%
 
 ## Performance Metrics
 
 **Velocity:**
-- Total plans completed: 9
-- Average duration: 10.8 min
-- Total execution time: 1.6 hours
+- Total plans completed: 10
+- Average duration: 10.3 min
+- Total execution time: 1.7 hours
 
 **By Phase:**
 
@@ -30,11 +30,11 @@ Progress: [========--] 33%
 | 01-foundation | 3 | 42min | 14min |
 | 02-authentication | 3 | 32min | 11min |
 | 03-inventory-view | 2 | 10min | 5min |
-| 04-inventory-management | 1 | 13min | 13min |
+| 04-inventory-management | 2 | 20min | 10min |
 
 **Recent Trend:**
-- Last 5 plans: 02-03 (16min), 03-01 (5min), 03-02 (5min), 04-01 (13min)
-- Trend: Phase 4 involves more complex component work
+- Last 5 plans: 03-01 (5min), 03-02 (5min), 04-01 (13min), 04-02 (7min)
+- Trend: Phase 4 plan 2 faster than plan 1 due to less component work
 
 *Updated after each plan completion*
 
@@ -81,6 +81,9 @@ Recent decisions affecting current work:
 - [04-01]: UTF-8/ISO-8859-1 encoding fallback for Portuguese CSV files
 - [04-01]: Zod passthrough schema for dynamic column structure
 - [04-01]: Error/warning separation in CSV validation
+- [04-02]: Fire-and-forget webhook pattern for n8n integration
+- [04-02]: Job tracking table for upload status persistence
+- [04-02]: Admin-only permission for inventory uploads
 
 ### Pending Todos
 
@@ -96,11 +99,13 @@ None yet.
 - User must disable email confirmation in Supabase Dashboard
 - User must update password reset email template in Supabase Dashboard (see 02-03-SUMMARY.md)
 - Admin users must be created manually by updating role in profiles table
+- User must run inventory_upload_jobs migration (see supabase/migrations/20260121_inventory_upload_jobs.sql)
+- User must configure N8N_INVENTORY_WEBHOOK_URL in .env.local
 
 ## Session Continuity
 
 Last session: 2026-01-21
-Stopped at: Completed 04-01-PLAN.md
+Stopped at: Completed 04-02-PLAN.md
 Resume file: None
 
 ## Phase 1 Plans
@@ -150,12 +155,12 @@ Resume file: None
 | Plan | Wave | Objective | Status |
 |------|------|-----------|--------|
 | 04-01 | 1 | CSV upload component with client-side parsing and validation | Complete |
-| 04-02 | 2 | n8n webhook integration for CSV processing | Pending |
+| 04-02 | 2 | n8n webhook integration for CSV processing | Complete |
 | 04-03 | 3 | Realtime job status and UI integration | Pending |
 
 **Wave execution:**
 - Wave 1: 04-01 - COMPLETE
-- Wave 2: 04-02 - PENDING
+- Wave 2: 04-02 - COMPLETE
 - Wave 3: 04-03 - PENDING
 
 **Phase 4 in progress.**
