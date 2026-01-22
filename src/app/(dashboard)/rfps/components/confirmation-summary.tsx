@@ -7,10 +7,9 @@ import type { RFPItemWithMatches } from '@/types/rfp'
 
 interface ConfirmationSummaryProps {
   items: RFPItemWithMatches[]
-  onProceedToExport: () => void
 }
 
-export function ConfirmationSummary({ items, onProceedToExport }: ConfirmationSummaryProps) {
+export function ConfirmationSummary({ items }: ConfirmationSummaryProps) {
   // Calculate stats from items
   const stats = {
     total: items.length,
@@ -76,7 +75,10 @@ export function ConfirmationSummary({ items, onProceedToExport }: ConfirmationSu
         <Button
           className="w-full"
           disabled={!allDecided || !hasMatches}
-          onClick={onProceedToExport}
+          onClick={() => {
+            // Phase 9 will implement export functionality
+            console.log('Proceed to export - Phase 9')
+          }}
         >
           <Download className="h-4 w-4 mr-2" />
           {allDecided

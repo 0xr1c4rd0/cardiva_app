@@ -106,13 +106,7 @@ export default async function MatchReviewPage({ params }: PageProps) {
 
         {/* Confirmation summary - fixed sidebar */}
         <div className="w-72 shrink-0">
-          <ConfirmationSummary
-            items={itemsWithSortedMatches}
-            onProceedToExport={() => {
-              // Phase 9 will implement export - for now, just log
-              console.log('Proceed to export')
-            }}
-          />
+          <ConfirmationSummary items={itemsWithSortedMatches} />
         </div>
       </div>
     </div>
