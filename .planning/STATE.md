@@ -5,13 +5,13 @@
 See: .planning/PROJECT.md (updated 2025-01-21)
 
 **Core value:** Users can upload an RFP, see suggested product matches, accept/reject interactively, and export confirmed matches
-**Current focus:** Phase 6 - Processing Status UI
+**Current focus:** Phase 7 - Match Review (next)
 
 ## Current Position
 
-Phase: 6 of 10 (Processing Status UI)
+Phase: 6 of 10 (Processing Status)
 Plan: 1 of 1 in current phase
-Status: Plan complete
+Status: Phase complete
 Last activity: 2026-01-22 - Completed 06-01-PLAN.md
 
 Progress: [======------] 60%

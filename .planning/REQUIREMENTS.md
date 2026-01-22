@@ -36,9 +36,9 @@ Requirements for initial release. Each maps to roadmap phases.
 
 - [ ] **RFP-01**: User can upload PDF file as RFP
 - [ ] **RFP-02**: Upload triggers n8n webhook for extraction/matching
-- [ ] **RFP-03**: Processing status is shown in UI (pending, processing, complete, error)
-- [ ] **RFP-04**: User receives notification when processing completes
-- [ ] **RFP-05**: Background processing indicator visible during 3-5 min wait
+- [x] **RFP-03**: Processing status is shown in UI (pending, processing, complete, error)
+- [x] **RFP-04**: User receives notification when processing completes
+- [x] **RFP-05**: Background processing indicator visible during 3-5 min wait
 - [ ] **RFP-06**: Uploaded RFP files are stored for history
 
 ### Match Review
@@ -73,8 +73,8 @@ Requirements for initial release. Each maps to roadmap phases.
 - [x] **UI-01**: Gusto-inspired design aesthetic (teal primary, coral accents, white backgrounds)
 - [x] **UI-02**: Left sidebar navigation with icons
 - [x] **UI-03**: Responsive layout for desktop (mobile-responsive is nice-to-have)
-- [ ] **UI-04**: Progress indicators and loading states
-- [ ] **UI-05**: Toast notifications for actions and background processes
+- [x] **UI-04**: Progress indicators and loading states
+- [x] **UI-05**: Toast notifications for actions and background processes
 - [ ] **UI-06**: Empty states with helpful messaging
 - [x] **UI-07**: Clean typography with clear hierarchy
 
@@ -150,9 +150,9 @@ Which phases cover which requirements. Updated during roadmap creation.
 | INV-10 | Phase 4 | Pending |
 | RFP-01 | Phase 5 | Pending |
 | RFP-02 | Phase 5 | Pending |
-| RFP-03 | Phase 6 | Pending |
-| RFP-04 | Phase 6 | Pending |
-| RFP-05 | Phase 6 | Pending |
+| RFP-03 | Phase 6 | Complete |
+| RFP-04 | Phase 6 | Complete |
+| RFP-05 | Phase 6 | Complete |
 | RFP-06 | Phase 5 | Pending |
 | MATCH-01 | Phase 7 | Pending |
 | MATCH-02 | Phase 7 | Pending |
@@ -175,8 +175,8 @@ Which phases cover which requirements. Updated during roadmap creation.
 | UI-01 | Phase 1 | Complete |
 | UI-02 | Phase 1 | Complete |
 | UI-03 | Phase 1 | Complete |
-| UI-04 | Phase 3, 6, 10 | Pending |
-| UI-05 | Phase 6, 10 | Pending |
+| UI-04 | Phase 3, 6, 10 | Complete |
+| UI-05 | Phase 6, 10 | Complete |
 | UI-06 | Phase 3, 10 | Pending |
 | UI-07 | Phase 1 | Complete |
 
@@ -187,4 +187,4 @@ Which phases cover which requirements. Updated during roadmap creation.
 
 ---
 *Requirements defined: 2025-01-21*
-*Last updated: 2025-01-21 after Phase 1 completion*
+*Last updated: 2026-01-22 after Phase 6 completion*
