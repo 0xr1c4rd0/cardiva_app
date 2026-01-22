@@ -161,7 +161,7 @@ function ItemRow({ jobId, item, isLast }: ItemRowProps) {
                 <Button
                   variant="outline"
                   size="sm"
-                  className="text-amber-600 border-amber-200 bg-amber-50/50 hover:bg-amber-50"
+                  className="text-gray-500 border-gray-200 bg-gray-50/50 hover:bg-gray-100"
                 >
                   Sem correspondência
                 </Button>
@@ -189,16 +189,7 @@ function ItemRow({ jobId, item, isLast }: ItemRowProps) {
           ) : (
             <Popover open={isPopoverOpen} onOpenChange={setIsPopoverOpen}>
               <PopoverTrigger asChild>
-                {showAsManual && displayMatch ? (
-                  <Button
-                    variant="outline"
-                    size="sm"
-                    className="text-blue-600 border-blue-200 bg-blue-50/50 hover:bg-blue-50 hover:border-blue-300"
-                  >
-                    <Check className="h-3.5 w-3.5 mr-1.5" />
-                    Selecionado
-                  </Button>
-                ) : showAsMatched && displayMatch ? (
+                {(showAsManual || showAsMatched) && displayMatch ? (
                   <Button
                     variant="outline"
                     size="sm"
@@ -219,7 +210,7 @@ function ItemRow({ jobId, item, isLast }: ItemRowProps) {
                   <Button
                     variant="outline"
                     size="sm"
-                    className="text-primary hover:bg-primary/5"
+                    className="text-amber-600 border-amber-200 bg-amber-50/50 hover:bg-amber-50"
                   >
                     {pendingSuggestions} {pendingSuggestions !== 1 ? 'sugestões' : 'sugestão'}
                   </Button>
@@ -365,7 +356,10 @@ function SuggestionItem({ jobId, rfpItemId, match, isPerfectMatch, onActionCompl
     >
       <div className="flex-1 min-w-0">
         <div className="flex items-center gap-2">
-          <span className="text-sm font-medium truncate">
+          <span
+            className="text-sm font-medium truncate"
+            title={match.artigo ?? match.codigo_spms ?? undefined}
+          >
             {match.artigo ?? match.codigo_spms ?? '—'}
           </span>
           <span
@@ -386,7 +380,10 @@ function SuggestionItem({ jobId, rfpItemId, match, isPerfectMatch, onActionCompl
             </span>
           )}
         </div>
-        <p className="text-xs text-muted-foreground truncate mt-0.5">
+        <p
+          className="text-xs text-muted-foreground truncate mt-0.5"
+          title={match.descricao ?? undefined}
+        >
           {match.descricao ?? '—'}
         </p>
       </div>
@@ -401,7 +398,7 @@ function SuggestionItem({ jobId, rfpItemId, match, isPerfectMatch, onActionCompl
               variant={showAsSelected ? 'default' : 'ghost'}
               className={cn(
                 "h-7 w-7 p-0",
-                showAsSelected && "bg-emerald-500 hover:bg-emerald-600",
+                showAsSelected && "bg-emerald-600 hover:bg-emerald-700 disabled:opacity-100",
                 isLocked && showAsSelected && "cursor-default"
               )}
               onClick={handleAcceptOrToggle}
