@@ -19,7 +19,7 @@ Decimal phases appear between their surrounding integers in numeric order.
 - [x] **Phase 5: RFP Upload** - PDF upload, webhook trigger, file storage
 - [x] **Phase 6: Processing Status** - Real-time status updates, notifications
 - [x] **Phase 7: Match Review** - Display results, accept/reject individual matches
-- [ ] **Phase 8: Bulk Operations** - Bulk accept/reject, manual correction, confirmation
+- [ ] **Phase 8: Bulk Operations** - Manual correction, confirmation step (scope modified)
 - [ ] **Phase 9: Export & Email** - Excel export, email send, preview, configuration
 - [ ] **Phase 10: History & Polish** - RFP history, search, re-download, final polish
 
@@ -142,21 +142,20 @@ Plans:
 - [x] 07-01-PLAN.md — Types, match review page with data fetching, Server Actions for accept/reject
 - [x] 07-02-PLAN.md — Interactive components: ConfidenceBar, MatchSuggestionRow, RFPItemCard with collapse behavior
 
-### Phase 8: Bulk Operations
-**Goal**: Users can efficiently review many matches with bulk actions and make manual corrections
+### Phase 8: Bulk Operations (Modified Scope)
+**Goal**: Users can manually correct wrong matches and must confirm all selections before export
 **Depends on**: Phase 7
-**Requirements**: MATCH-06, MATCH-07, MATCH-09
+**Requirements**: MATCH-07, MATCH-09 (MATCH-06 bulk select removed from scope)
 **Success Criteria** (what must be TRUE):
-  1. User can select multiple items and accept/reject all at once
+  1. ~~User can select multiple items and accept/reject all at once~~ (REMOVED - simplified workflow)
   2. User can manually search and select a different match for any item
   3. Confirmation step requires user to review all selections before proceeding
   4. User cannot proceed to export until all items have a decision
-**Plans**: TBD
+**Plans**: 2 plans in 2 waves
 
 Plans:
-- [ ] 08-01: Multi-select and bulk accept/reject UI
-- [ ] 08-02: Manual match correction with inventory search
-- [ ] 08-03: Confirmation step before export
+- [ ] 08-01-PLAN.md — Server Actions for inventory search and manual match setting
+- [ ] 08-02-PLAN.md — ManualMatchDialog, ConfirmationSummary, and page integration
 
 ### Phase 9: Export & Email
 **Goal**: Users can export confirmed matches to Excel and send via email
@@ -207,10 +206,10 @@ Phases execute in numeric order: 1 -> 2 -> 3 -> ... -> 10
 | 5. RFP Upload | 3/3 | Complete | 2026-01-22 |
 | 6. Processing Status | 1/1 | Complete | 2026-01-22 |
 | 7. Match Review | 2/2 | Complete | 2026-01-22 |
-| 8. Bulk Operations | 0/3 | Not started | - |
+| 8. Bulk Operations | 0/2 | Not started | - |
 | 9. Export & Email | 0/3 | Not started | - |
 | 10. History & Polish | 0/3 | Not started | - |
 
 ---
 *Created: 2025-01-21*
-*Last updated: 2026-01-22 after Phase 7 completion*
+*Last updated: 2026-01-22 after Phase 8 planning (modified scope)*
