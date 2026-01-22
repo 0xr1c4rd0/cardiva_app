@@ -1,0 +1,139 @@
+'use client'
+
+import { useState, useEffect } from 'react'
+import { formatDistanceToNow } from 'date-fns'
+import { FileText, Clock, CheckCircle2, XCircle, Loader2 } from 'lucide-react'
+import {
+  Card,
+  CardContent,
+  CardDescription,
+  CardHeader,
+  CardTitle,
+} from '@/components/ui/card'
+import { Badge } from '@/components/ui/badge'
+import { cn } from '@/lib/utils'
+import { useRFPUploadStatus, RFPUploadJob } from '@/hooks/use-rfp-upload-status'
+
+interface RFPJob {
+  id: string
+  file_name: string
+  file_size: number | null
+  status: 'pending' | 'processing' | 'completed' | 'failed'
+  error_message: string | null
+  created_at: string
+  completed_at: string | null
+}
+
+interface RFPJobsListProps {
+  initialJobs: RFPJob[]
+}
+
+const statusConfig = {
+  pending: {
+    label: 'Pending',
+    icon: Clock,
+    variant: 'secondary' as const,
+    className: 'text-muted-foreground',
+  },
+  processing: {
+    label: 'Processing',
+    icon: Loader2,
+    variant: 'default' as const,
+    className: 'text-blue-600 animate-spin',
+  },
+  completed: {
+    label: 'Completed',
+    icon: CheckCircle2,
+    variant: 'default' as const,
+    className: 'text-green-600',
+  },
+  failed: {
+    label: 'Failed',
+    icon: XCircle,
+    variant: 'destructive' as const,
+    className: 'text-destructive',
+  },
+}
+
+export function RFPJobsList({ initialJobs }: RFPJobsListProps) {
+  const [jobs, setJobs] = useState<RFPJob[]>(initialJobs)
+  const { activeJob } = useRFPUploadStatus()
+
+  // Update jobs list in real-time when activeJob changes
+  useEffect(() => {
+    if (activeJob) {
+      setJobs((prev) => {
+        const index = prev.findIndex((j) => j.id === activeJob.id)
+        if (index >= 0) {
+          // Update existing job
+          const updated = [...prev]
+          updated[index] = activeJob as RFPJob
+          return updated
+        }
+        // New job - prepend to list
+        return [activeJob as RFPJob, ...prev]
+      })
+    }
+  }, [activeJob])
+
+  if (jobs.length === 0) {
+    return (
+      <Card>
+        <CardContent className="flex flex-col items-center justify-center py-12">
+          <FileText className="h-12 w-12 text-muted-foreground/50 mb-4" />
+          <p className="text-muted-foreground text-center">
+            No RFPs uploaded yet. Upload your first RFP to get started.
+          </p>
+        </CardContent>
+      </Card>
+    )
+  }
+
+  return (
+    <Card>
+      <CardHeader>
+        <CardTitle>Recent Uploads</CardTitle>
+        <CardDescription>Your recently uploaded RFP documents</CardDescription>
+      </CardHeader>
+      <CardContent>
+        <div className="space-y-4">
+          {jobs.map((job) => {
+            const status = statusConfig[job.status]
+            const StatusIcon = status.icon
+
+            return (
+              <div
+                key={job.id}
+                className="flex items-center justify-between p-4 border rounded-lg hover:bg-muted/50 transition-colors"
+              >
+                <div className="flex items-center gap-4">
+                  <FileText className="h-8 w-8 text-muted-foreground" />
+                  <div>
+                    <p className="font-medium">{job.file_name}</p>
+                    <div className="flex items-center gap-2 text-sm text-muted-foreground">
+                      {job.file_size && (
+                        <span>{(job.file_size / 1024 / 1024).toFixed(2)} MB</span>
+                      )}
+                      <span>•</span>
+                      <span>
+                        {formatDistanceToNow(new Date(job.created_at), { addSuffix: true })}
+                      </span>
+                    </div>
+                    {job.error_message && (
+                      <p className="text-sm text-destructive mt-1">{job.error_message}</p>
+                    )}
+                  </div>
+                </div>
+
+                <Badge variant={status.variant} className="flex items-center gap-1">
+                  <StatusIcon className={cn('h-3 w-3', status.className)} />
+                  {status.label}
+                </Badge>
+              </div>
+            )
+          })}
+        </div>
+      </CardContent>
+    </Card>
+  )
+}
