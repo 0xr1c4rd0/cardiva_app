@@ -43,14 +43,14 @@ Requirements for initial release. Each maps to roadmap phases.
 
 ### Match Review
 
-- [ ] **MATCH-01**: Match results display extracted RFP items
-- [ ] **MATCH-02**: Each RFP item shows potential inventory matches
-- [ ] **MATCH-03**: Matches display confidence score/indicator
-- [ ] **MATCH-04**: User can accept a suggested match
-- [ ] **MATCH-05**: User can reject a suggested match
+- [x] **MATCH-01**: Match results display extracted RFP items
+- [x] **MATCH-02**: Each RFP item shows potential inventory matches
+- [x] **MATCH-03**: Matches display confidence score/indicator
+- [x] **MATCH-04**: User can accept a suggested match
+- [x] **MATCH-05**: User can reject a suggested match
 - [ ] **MATCH-06**: User can bulk accept/reject multiple items
 - [ ] **MATCH-07**: User can edit/correct a wrong match manually
-- [ ] **MATCH-08**: Review status tracked per item (pending, accepted, rejected)
+- [x] **MATCH-08**: Review status tracked per item (pending, accepted, rejected)
 - [ ] **MATCH-09**: User must confirm all selections before export
 
 ### Export & Communication
@@ -154,14 +154,14 @@ Which phases cover which requirements. Updated during roadmap creation.
 | RFP-04 | Phase 6 | Complete |
 | RFP-05 | Phase 6 | Complete |
 | RFP-06 | Phase 5 | Pending |
-| MATCH-01 | Phase 7 | Pending |
-| MATCH-02 | Phase 7 | Pending |
-| MATCH-03 | Phase 7 | Pending |
-| MATCH-04 | Phase 7 | Pending |
-| MATCH-05 | Phase 7 | Pending |
+| MATCH-01 | Phase 7 | Complete |
+| MATCH-02 | Phase 7 | Complete |
+| MATCH-03 | Phase 7 | Complete |
+| MATCH-04 | Phase 7 | Complete |
+| MATCH-05 | Phase 7 | Complete |
 | MATCH-06 | Phase 8 | Pending |
 | MATCH-07 | Phase 8 | Pending |
-| MATCH-08 | Phase 7 | Pending |
+| MATCH-08 | Phase 7 | Complete |
 | MATCH-09 | Phase 8 | Pending |
 | EXP-01 | Phase 9 | Pending |
 | EXP-02 | Phase 9 | Pending |
@@ -187,4 +187,4 @@ Which phases cover which requirements. Updated during roadmap creation.
 
 ---
 *Requirements defined: 2025-01-21*
-*Last updated: 2026-01-22 after Phase 6 completion*
+*Last updated: 2026-01-22 after Phase 7 completion*
