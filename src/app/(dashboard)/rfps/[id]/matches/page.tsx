@@ -3,8 +3,7 @@ import { notFound, redirect } from 'next/navigation'
 import Link from 'next/link'
 import { ArrowLeft } from 'lucide-react'
 import { Button } from '@/components/ui/button'
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
-import { Badge } from '@/components/ui/badge'
+import { RFPItemCard } from '@/app/(dashboard)/rfps/components/rfp-item-card'
 import type { RFPItemWithMatches, MatchSuggestion } from '@/types/rfp'
 
 interface PageProps {
@@ -90,47 +89,14 @@ export default async function MatchReviewPage({ params }: PageProps) {
         {/* Phase 8 will add Continue/Confirm button here */}
       </div>
 
-      {/* Items list - placeholder cards for Plan 02 */}
+      {/* Items list */}
       <div className="space-y-4">
         {itemsWithSortedMatches.map((item) => (
-          <Card key={item.id}>
-            <CardHeader>
-              <div className="flex items-center justify-between">
-                <div className="flex items-center gap-3">
-                  {item.lote_pedido && (
-                    <Badge variant="outline" className="font-mono">
-                      Lote {item.lote_pedido}
-                      {item.posicao_pedido && `.${item.posicao_pedido}`}
-                    </Badge>
-                  )}
-                  <CardTitle className="text-base font-medium">
-                    {item.descricao_pedido}
-                  </CardTitle>
-                </div>
-                <Badge
-                  variant={
-                    item.review_status === 'accepted'
-                      ? 'default'
-                      : item.review_status === 'rejected'
-                        ? 'secondary'
-                        : 'outline'
-                  }
-                >
-                  {item.review_status}
-                </Badge>
-              </div>
-            </CardHeader>
-            <CardContent>
-              <p className="text-sm text-muted-foreground">
-                Matches: {item.rfp_match_suggestions.length}
-              </p>
-              {/* Plan 02 will replace this with RFPItemCard component */}
-            </CardContent>
-          </Card>
+          <RFPItemCard key={item.id} jobId={jobId} item={item} />
         ))}
 
         {itemsWithSortedMatches.length === 0 && (
-          <div className="text-center py-12 text-muted-foreground">
+          <div className="py-12 text-center text-muted-foreground">
             No items found for this RFP.
           </div>
         )}
