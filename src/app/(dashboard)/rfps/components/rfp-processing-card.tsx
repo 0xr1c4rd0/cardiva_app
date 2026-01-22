@@ -2,6 +2,7 @@
 
 import { useState, useEffect } from 'react'
 import { formatDistanceToNow } from 'date-fns'
+import { pt } from 'date-fns/locale'
 import { Loader2, Clock, FileText } from 'lucide-react'
 import {
   Card,
@@ -11,10 +12,10 @@ import {
   CardTitle,
 } from '@/components/ui/card'
 import { Progress } from '@/components/ui/progress'
-import { useRFPUploadStatus } from '@/hooks/use-rfp-upload-status'
+import { useRFPUploadStatus } from '@/contexts/rfp-upload-status-context'
 
-// Estimated processing time: 4 minutes (midpoint of 3-5 minute range)
-const ESTIMATED_TIME_MS = 4 * 60 * 1000
+// Estimated processing time: 2m45s (midpoint of 2:30-3 minute range)
+const ESTIMATED_TIME_MS = 2.75 * 60 * 1000
 
 export function RFPProcessingCard() {
   const { activeJob, isProcessing } = useRFPUploadStatus()
@@ -50,15 +51,15 @@ export function RFPProcessingCard() {
   // Determine description based on status
   const description =
     activeJob.status === 'pending'
-      ? 'Queued for processing...'
-      : 'Analyzing document and matching against inventory...'
+      ? 'Em fila para processamento...'
+      : 'A analisar documento e a comparar com o inventário...'
 
   return (
     <Card className="border-blue-200 bg-blue-50/50">
       <CardHeader className="pb-2">
         <div className="flex items-center gap-2">
           <Loader2 className="h-5 w-5 text-blue-600 animate-spin" />
-          <CardTitle className="text-lg">Processing RFP</CardTitle>
+          <CardTitle className="text-lg">A Processar Concurso</CardTitle>
         </div>
         <CardDescription>{description}</CardDescription>
       </CardHeader>
@@ -86,7 +87,7 @@ export function RFPProcessingCard() {
             <Progress value={progressPercent} className="h-2" />
             <div className="flex justify-between text-xs text-muted-foreground">
               <span>{Math.round(progressPercent)}%</span>
-              <span>~3-5 minutes total</span>
+              <span>~2-3 minutos no total</span>
             </div>
           </div>
         )}
@@ -95,15 +96,15 @@ export function RFPProcessingCard() {
         <div className="flex items-center gap-2 text-sm text-muted-foreground">
           <Clock className="h-4 w-4" />
           <span>
-            Started{' '}
-            {formatDistanceToNow(new Date(activeJob.created_at), { addSuffix: true })}
+            Iniciado há{' '}
+            {formatDistanceToNow(new Date(activeJob.created_at), { locale: pt })}
           </span>
         </div>
 
         {/* Navigation info */}
         <p className="text-xs text-muted-foreground border-t pt-3">
-          You can navigate away from this page. You&apos;ll receive a notification when
-          processing completes.
+          Pode navegar para outra página. Receberá uma notificação quando o processamento
+          terminar.
         </p>
       </CardContent>
     </Card>

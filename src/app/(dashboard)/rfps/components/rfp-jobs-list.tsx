@@ -3,6 +3,7 @@
 import { useState, useEffect } from 'react'
 import Link from 'next/link'
 import { formatDistanceToNow } from 'date-fns'
+import { pt } from 'date-fns/locale'
 import { FileText, Clock, CheckCircle2, XCircle, Loader2, FileDown, Trash2 } from 'lucide-react'
 import {
   Card,
@@ -43,7 +44,7 @@ const statusConfig = {
     label: 'A processar',
     icon: Loader2,
     variant: 'default' as const,
-    className: 'text-blue-600 animate-spin',
+    className: 'text-white animate-spin',
   },
   completed: {
     label: 'Concluído',
@@ -150,7 +151,7 @@ export function RFPJobsList({ initialJobs }: RFPJobsListProps) {
                       )}
                       <span>•</span>
                       <span>
-                        {formatDistanceToNow(new Date(job.created_at), { addSuffix: true })}
+                        {formatDistanceToNow(new Date(job.created_at), { addSuffix: true, locale: pt })}
                       </span>
                     </div>
                     {job.error_message && (
