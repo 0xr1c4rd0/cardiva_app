@@ -3,7 +3,7 @@
 import { useState, useEffect } from 'react'
 import Link from 'next/link'
 import { formatDistanceToNow } from 'date-fns'
-import { FileText, Clock, CheckCircle2, XCircle, Loader2, ChevronRight } from 'lucide-react'
+import { FileText, Clock, CheckCircle2, XCircle, Loader2, FileDown, Trash2 } from 'lucide-react'
 import {
   Card,
   CardContent,
@@ -12,8 +12,11 @@ import {
   CardTitle,
 } from '@/components/ui/card'
 import { Badge } from '@/components/ui/badge'
+import { Button } from '@/components/ui/button'
 import { cn } from '@/lib/utils'
-import { useRFPUploadStatus, RFPUploadJob } from '@/hooks/use-rfp-upload-status'
+import { useRFPUploadStatus, type RFPUploadJob } from '@/contexts/rfp-upload-status-context'
+import { DeleteRFPDialog } from './delete-rfp-dialog'
+import { getRFPFileUrl } from '../actions'
 
 interface RFPJob {
   id: string
@@ -31,25 +34,25 @@ interface RFPJobsListProps {
 
 const statusConfig = {
   pending: {
-    label: 'Pending',
+    label: 'Pendente',
     icon: Clock,
     variant: 'secondary' as const,
     className: 'text-muted-foreground',
   },
   processing: {
-    label: 'Processing',
+    label: 'A processar',
     icon: Loader2,
     variant: 'default' as const,
     className: 'text-blue-600 animate-spin',
   },
   completed: {
-    label: 'Completed',
+    label: 'Concluído',
     icon: CheckCircle2,
     variant: 'default' as const,
     className: 'text-green-600',
   },
   failed: {
-    label: 'Failed',
+    label: 'Falhou',
     icon: XCircle,
     variant: 'destructive' as const,
     className: 'text-destructive',
@@ -59,6 +62,8 @@ const statusConfig = {
 export function RFPJobsList({ initialJobs }: RFPJobsListProps) {
   const [jobs, setJobs] = useState<RFPJob[]>(initialJobs)
   const { activeJob } = useRFPUploadStatus()
+  const [deleteDialogOpen, setDeleteDialogOpen] = useState(false)
+  const [jobToDelete, setJobToDelete] = useState<{ id: string; name: string } | null>(null)
 
   // Update jobs list in real-time when activeJob changes
   useEffect(() => {
@@ -77,13 +82,37 @@ export function RFPJobsList({ initialJobs }: RFPJobsListProps) {
     }
   }, [activeJob])
 
+  const handleViewPDF = async (e: React.MouseEvent, jobId: string) => {
+    e.preventDefault()
+    e.stopPropagation()
+
+    const result = await getRFPFileUrl(jobId)
+    if (result.success && result.url) {
+      window.open(result.url, '_blank')
+    }
+  }
+
+  const handleDeleteClick = (e: React.MouseEvent, job: RFPJob) => {
+    e.preventDefault()
+    e.stopPropagation()
+    setJobToDelete({ id: job.id, name: job.file_name })
+    setDeleteDialogOpen(true)
+  }
+
+  const handleDeleted = () => {
+    if (jobToDelete) {
+      setJobs((prev) => prev.filter((j) => j.id !== jobToDelete.id))
+      setJobToDelete(null)
+    }
+  }
+
   if (jobs.length === 0) {
     return (
       <Card>
         <CardContent className="flex flex-col items-center justify-center py-12">
           <FileText className="h-12 w-12 text-muted-foreground/50 mb-4" />
           <p className="text-muted-foreground text-center">
-            No RFPs uploaded yet. Upload your first RFP to get started.
+            Ainda não há concursos carregados. Carregue o seu primeiro concurso para começar.
           </p>
         </CardContent>
       </Card>
@@ -93,15 +122,16 @@ export function RFPJobsList({ initialJobs }: RFPJobsListProps) {
   return (
     <Card>
       <CardHeader>
-        <CardTitle>Recent Uploads</CardTitle>
-        <CardDescription>Your recently uploaded RFP documents</CardDescription>
+        <CardTitle>Carregamentos Recentes</CardTitle>
+        <CardDescription>Os seus documentos de concurso carregados recentemente</CardDescription>
       </CardHeader>
       <CardContent>
-        <div className="space-y-4">
+        <div className="flex flex-col gap-2">
           {jobs.map((job) => {
             const status = statusConfig[job.status]
             const StatusIcon = status.icon
             const isClickable = job.status === 'completed'
+            const showActions = job.status === 'completed' || job.status === 'failed'
 
             const content = (
               <div
@@ -134,8 +164,28 @@ export function RFPJobsList({ initialJobs }: RFPJobsListProps) {
                     <StatusIcon className={cn('h-3 w-3', status.className)} />
                     {status.label}
                   </Badge>
-                  {isClickable && (
-                    <ChevronRight className="h-4 w-4 text-muted-foreground" />
+
+                  {showActions && (
+                    <>
+                      <Button
+                        variant="outline"
+                        size="icon"
+                        className="h-8 w-8"
+                        onClick={(e) => handleViewPDF(e, job.id)}
+                        title="Ver PDF"
+                      >
+                        <FileDown className="h-4 w-4" />
+                      </Button>
+                      <Button
+                        variant="outline"
+                        size="icon"
+                        className="h-8 w-8 hover:bg-destructive hover:text-white hover:border-destructive"
+                        onClick={(e) => handleDeleteClick(e, job)}
+                        title="Eliminar"
+                      >
+                        <Trash2 className="h-4 w-4" />
+                      </Button>
+                    </>
                   )}
                 </div>
               </div>
@@ -151,6 +201,14 @@ export function RFPJobsList({ initialJobs }: RFPJobsListProps) {
           })}
         </div>
       </CardContent>
+
+      <DeleteRFPDialog
+        jobId={jobToDelete?.id ?? null}
+        jobName={jobToDelete?.name}
+        open={deleteDialogOpen}
+        onOpenChange={setDeleteDialogOpen}
+        onDeleted={handleDeleted}
+      />
     </Card>
   )
 }
