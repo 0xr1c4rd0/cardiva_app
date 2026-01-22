@@ -143,6 +143,12 @@
   --color-chart-5: var(--chart-5);
 }
 
+/* Animations */
+@keyframes indeterminate {
+  0% { transform: translateX(-100%); }
+  100% { transform: translateX(400%); }
+}
+
 /* Base styles */
 @layer base {
   * {
