@@ -1,8 +1,9 @@
 'use client'
 
 import { useState, useEffect } from 'react'
+import Link from 'next/link'
 import { formatDistanceToNow } from 'date-fns'
-import { FileText, Clock, CheckCircle2, XCircle, Loader2 } from 'lucide-react'
+import { FileText, Clock, CheckCircle2, XCircle, Loader2, ChevronRight } from 'lucide-react'
 import {
   Card,
   CardContent,
@@ -100,11 +101,14 @@ export function RFPJobsList({ initialJobs }: RFPJobsListProps) {
           {jobs.map((job) => {
             const status = statusConfig[job.status]
             const StatusIcon = status.icon
+            const isClickable = job.status === 'completed'
 
-            return (
+            const content = (
               <div
-                key={job.id}
-                className="flex items-center justify-between p-4 border rounded-lg hover:bg-muted/50 transition-colors"
+                className={cn(
+                  "flex items-center justify-between p-4 border rounded-lg transition-colors",
+                  isClickable ? "hover:bg-muted/50 cursor-pointer" : ""
+                )}
               >
                 <div className="flex items-center gap-4">
                   <FileText className="h-8 w-8 text-muted-foreground" />
@@ -125,11 +129,24 @@ export function RFPJobsList({ initialJobs }: RFPJobsListProps) {
                   </div>
                 </div>
 
-                <Badge variant={status.variant} className="flex items-center gap-1">
-                  <StatusIcon className={cn('h-3 w-3', status.className)} />
-                  {status.label}
-                </Badge>
+                <div className="flex items-center gap-2">
+                  <Badge variant={status.variant} className="flex items-center gap-1">
+                    <StatusIcon className={cn('h-3 w-3', status.className)} />
+                    {status.label}
+                  </Badge>
+                  {isClickable && (
+                    <ChevronRight className="h-4 w-4 text-muted-foreground" />
+                  )}
+                </div>
               </div>
+            )
+
+            return isClickable ? (
+              <Link key={job.id} href={`/rfps/${job.id}/matches`}>
+                {content}
+              </Link>
+            ) : (
+              <div key={job.id}>{content}</div>
             )
           })}
         </div>
