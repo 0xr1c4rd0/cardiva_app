@@ -3,7 +3,8 @@ import { notFound, redirect } from 'next/navigation'
 import Link from 'next/link'
 import { ArrowLeft } from 'lucide-react'
 import { Button } from '@/components/ui/button'
-import { RFPItemCard } from '@/app/(dashboard)/rfps/components/rfp-item-card'
+import { MatchReviewTable } from '@/app/(dashboard)/rfps/components/match-review-table'
+import { ConfirmationSummary } from '@/app/(dashboard)/rfps/components/confirmation-summary'
 import type { RFPItemWithMatches, MatchSuggestion } from '@/types/rfp'
 
 interface PageProps {
@@ -36,12 +37,15 @@ export default async function MatchReviewPage({ params }: PageProps) {
   }
 
   // Fetch items with nested match suggestions
+  // Use explicit FK name because there are two relationships:
+  // 1. rfp_match_suggestions.rfp_item_id -> rfp_items.id (one-to-many, what we want)
+  // 2. rfp_items.selected_match_id -> rfp_match_suggestions.id (many-to-one)
   const { data: items, error: itemsError } = await supabase
     .from('rfp_items')
     .select(
       `
       *,
-      rfp_match_suggestions (*)
+      rfp_match_suggestions!rfp_match_suggestions_rfp_item_id_fkey (*)
     `
     )
     .eq('job_id', jobId)
@@ -49,8 +53,14 @@ export default async function MatchReviewPage({ params }: PageProps) {
     .order('posicao_pedido', { ascending: true })
 
   if (itemsError) {
-    console.error('Failed to fetch items:', itemsError)
-    throw new Error('Failed to load match results')
+    console.error('Failed to fetch items:', JSON.stringify(itemsError, null, 2))
+    console.error('Error details:', {
+      message: itemsError.message,
+      code: itemsError.code,
+      hint: itemsError.hint,
+      details: itemsError.details,
+    })
+    throw new Error(`Failed to load match results: ${itemsError.message || 'Unknown error'}`)
   }
 
   // Sort each item's match suggestions by similarity_score DESC (client-side)
@@ -68,7 +78,7 @@ export default async function MatchReviewPage({ params }: PageProps) {
   ).length
 
   return (
-    <div className="flex flex-1 flex-col gap-6 p-4">
+    <div className="flex flex-1 flex-col gap-6">
       {/* Header */}
       <div className="flex items-center justify-between">
         <div className="flex items-center gap-4">
@@ -79,27 +89,31 @@ export default async function MatchReviewPage({ params }: PageProps) {
             </Link>
           </Button>
           <div>
-            <h1 className="text-2xl font-semibold">Review Matches</h1>
+            <h1 className="text-2xl font-semibold">Rever Correspondências</h1>
             <p className="text-muted-foreground">
-              {job.file_name} - {reviewedItems} of {totalItems} items reviewed
+              {job.file_name} - {reviewedItems} de {totalItems} itens revistos
             </p>
           </div>
         </div>
-
-        {/* Phase 8 will add Continue/Confirm button here */}
       </div>
 
-      {/* Items list */}
-      <div className="space-y-4">
-        {itemsWithSortedMatches.map((item) => (
-          <RFPItemCard key={item.id} jobId={jobId} item={item} />
-        ))}
+      {/* Main content with summary sidebar */}
+      <div className="flex gap-6">
+        {/* Items table - takes most space */}
+        <div className="flex-1 min-w-0">
+          <MatchReviewTable jobId={jobId} items={itemsWithSortedMatches} />
+        </div>
 
-        {itemsWithSortedMatches.length === 0 && (
-          <div className="py-12 text-center text-muted-foreground">
-            No items found for this RFP.
-          </div>
-        )}
+        {/* Confirmation summary - fixed sidebar */}
+        <div className="w-72 shrink-0">
+          <ConfirmationSummary
+            items={itemsWithSortedMatches}
+            onProceedToExport={() => {
+              // Phase 9 will implement export - for now, just log
+              console.log('Proceed to export')
+            }}
+          />
+        </div>
       </div>
     </div>
   )

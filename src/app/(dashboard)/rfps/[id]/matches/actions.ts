@@ -8,6 +8,15 @@ interface ActionResult {
   error?: string
 }
 
+export interface InventorySearchResult {
+  id: string
+  codigo_spms: string | null
+  artigo: string | null
+  descricao: string | null
+  unidade_venda: string | null
+  preco: number | null
+}
+
 /**
  * Accept a match suggestion for an RFP item.
  * - Sets the selected match's status to 'accepted'
@@ -71,6 +80,64 @@ export async function acceptMatch(
     return { success: true }
   } catch (error) {
     console.error('acceptMatch error:', error)
+    return {
+      success: false,
+      error: error instanceof Error ? error.message : 'Unknown error',
+    }
+  }
+}
+
+/**
+ * Unselect (toggle off) an accepted match suggestion.
+ * - Sets the match's status back to 'pending'
+ * - Restores all other matches to 'pending' as well
+ * - Resets the RFP item's review_status to 'pending' and clears selected_match_id
+ */
+export async function unselectMatch(
+  jobId: string,
+  rfpItemId: string,
+  matchId: string
+): Promise<ActionResult> {
+  try {
+    const supabase = await createClient()
+
+    // Verify user is authenticated
+    const {
+      data: { user },
+    } = await supabase.auth.getUser()
+    if (!user) {
+      return { success: false, error: 'Not authenticated' }
+    }
+
+    // Step 1: Reset all matches for this RFP item to 'pending'
+    const { error: matchError } = await supabase
+      .from('rfp_match_suggestions')
+      .update({ status: 'pending' })
+      .eq('rfp_item_id', rfpItemId)
+
+    if (matchError) {
+      return { success: false, error: matchError.message }
+    }
+
+    // Step 2: Reset the RFP item's review_status and clear selected_match_id
+    const { error: itemError } = await supabase
+      .from('rfp_items')
+      .update({
+        review_status: 'pending',
+        selected_match_id: null,
+      })
+      .eq('id', rfpItemId)
+
+    if (itemError) {
+      return { success: false, error: itemError.message }
+    }
+
+    // Invalidate cache to refresh page data
+    revalidatePath(`/rfps/${jobId}/matches`)
+
+    return { success: true }
+  } catch (error) {
+    console.error('unselectMatch error:', error)
     return {
       success: false,
       error: error instanceof Error ? error.message : 'Unknown error',
@@ -159,6 +226,134 @@ export async function rejectMatch(
     return { success: true }
   } catch (error) {
     console.error('rejectMatch error:', error)
+    return {
+      success: false,
+      error: error instanceof Error ? error.message : 'Unknown error',
+    }
+  }
+}
+
+/**
+ * Search inventory items by codigo_spms, artigo, or descricao.
+ * Used for manual match selection when AI suggestions are wrong or missing.
+ */
+export async function searchInventory(
+  query: string
+): Promise<InventorySearchResult[]> {
+  try {
+    // Return early if query is too short
+    if (!query || query.length < 2) {
+      return []
+    }
+
+    const supabase = await createClient()
+
+    // Verify user is authenticated
+    const {
+      data: { user },
+    } = await supabase.auth.getUser()
+    if (!user) {
+      return []
+    }
+
+    // Search across codigo_spms, artigo, and descricao with case-insensitive matching
+    const searchPattern = `%${query}%`
+    const { data, error } = await supabase
+      .from('artigos')
+      .select('id, codigo_spms, artigo, descricao, unidade_venda, preco')
+      .or(
+        `codigo_spms.ilike.${searchPattern},artigo.ilike.${searchPattern},descricao.ilike.${searchPattern}`
+      )
+      .limit(50)
+
+    if (error) {
+      console.error('searchInventory error:', error)
+      return []
+    }
+
+    return data as InventorySearchResult[]
+  } catch (error) {
+    console.error('searchInventory error:', error)
+    return []
+  }
+}
+
+/**
+ * Set a manual match for an RFP item by creating a new match suggestion from an inventory item.
+ * - Creates a new match suggestion with status 'accepted' and match_type 'Manual'
+ * - Rejects all existing matches for this RFP item
+ * - Updates the RFP item's review_status to 'manual' and sets selected_match_id
+ */
+export async function setManualMatch(
+  jobId: string,
+  rfpItemId: string,
+  inventoryItem: InventorySearchResult
+): Promise<ActionResult> {
+  try {
+    const supabase = await createClient()
+
+    // Verify user is authenticated
+    const {
+      data: { user },
+    } = await supabase.auth.getUser()
+    if (!user) {
+      return { success: false, error: 'Not authenticated' }
+    }
+
+    // Step 1: Insert the new manual match suggestion
+    const { data: newMatch, error: insertError } = await supabase
+      .from('rfp_match_suggestions')
+      .insert({
+        rfp_item_id: rfpItemId,
+        codigo_spms: inventoryItem.codigo_spms,
+        artigo: inventoryItem.artigo,
+        descricao: inventoryItem.descricao,
+        unidade_venda: inventoryItem.unidade_venda,
+        preco: inventoryItem.preco,
+        similarity_score: 1.0, // Manual = 100% user confidence
+        match_type: 'Manual',
+        rank: 0, // Top priority
+        status: 'accepted',
+      })
+      .select('id')
+      .single()
+
+    if (insertError) {
+      console.error('setManualMatch insert error:', insertError)
+      return { success: false, error: insertError.message }
+    }
+
+    // Step 2: Reject all other matches for this RFP item
+    const { error: rejectError } = await supabase
+      .from('rfp_match_suggestions')
+      .update({ status: 'rejected' })
+      .eq('rfp_item_id', rfpItemId)
+      .neq('id', newMatch.id)
+
+    if (rejectError) {
+      console.error('Failed to reject other matches:', rejectError)
+      // Non-fatal: continue
+    }
+
+    // Step 3: Update the RFP item's review_status and selected_match_id
+    const { error: itemError } = await supabase
+      .from('rfp_items')
+      .update({
+        review_status: 'manual',
+        selected_match_id: newMatch.id,
+      })
+      .eq('id', rfpItemId)
+
+    if (itemError) {
+      return { success: false, error: itemError.message }
+    }
+
+    // Invalidate cache to refresh page data
+    revalidatePath(`/rfps/${jobId}/matches`)
+
+    return { success: true }
+  } catch (error) {
+    console.error('setManualMatch error:', error)
     return {
       success: false,
       error: error instanceof Error ? error.message : 'Unknown error',

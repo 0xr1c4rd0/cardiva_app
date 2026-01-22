@@ -1,0 +1,382 @@
+'use client'
+
+import { useState, useTransition } from 'react'
+import { Check, X, Loader2, Edit } from 'lucide-react'
+import {
+  Table,
+  TableBody,
+  TableCell,
+  TableHead,
+  TableHeader,
+  TableRow,
+} from '@/components/ui/table'
+import { Button } from '@/components/ui/button'
+import {
+  Popover,
+  PopoverContent,
+  PopoverTrigger,
+} from '@/components/ui/popover'
+import { cn } from '@/lib/utils'
+import { acceptMatch, rejectMatch, unselectMatch } from '../[id]/matches/actions'
+import { ManualMatchDialog } from './manual-match-dialog'
+import type { RFPItemWithMatches, MatchSuggestion } from '@/types/rfp'
+
+interface MatchReviewTableProps {
+  jobId: string
+  items: RFPItemWithMatches[]
+}
+
+export function MatchReviewTable({ jobId, items }: MatchReviewTableProps) {
+  return (
+    <div className="rounded-lg border border-border/40 overflow-x-auto">
+      <Table>
+        <TableHeader>
+          <TableRow className="hover:bg-transparent border-b border-border/40">
+            {/* RFP Item columns - short columns fit content */}
+            <TableHead className="pl-6 w-[1%] text-xs font-medium text-muted-foreground/70 uppercase tracking-wider">Lote</TableHead>
+            <TableHead className="w-[1%] text-xs font-medium text-muted-foreground/70 uppercase tracking-wider">Pos</TableHead>
+            <TableHead className="w-[1%] text-xs font-medium text-muted-foreground/70 uppercase tracking-wider">Artigo</TableHead>
+            <TableHead className="text-xs font-medium text-muted-foreground/70 uppercase tracking-wider">Descrição</TableHead>
+            {/* Separator */}
+            <TableHead className="w-[1px] px-0"></TableHead>
+            {/* Matched product columns */}
+            <TableHead className="w-[1%] text-xs font-medium text-emerald-600/70 uppercase tracking-wider">Cód. SPMS</TableHead>
+            <TableHead className="w-[1%] text-xs font-medium text-emerald-600/70 uppercase tracking-wider">Artigo Match</TableHead>
+            <TableHead className="text-xs font-medium text-emerald-600/70 uppercase tracking-wider">Descrição Match</TableHead>
+            {/* Status */}
+            <TableHead className="w-[1%] pr-6 text-xs font-medium text-muted-foreground/70 uppercase tracking-wider text-right">Status</TableHead>
+          </TableRow>
+        </TableHeader>
+        <TableBody>
+          {items.map((item, index) => (
+            <ItemRow
+              key={item.id}
+              jobId={jobId}
+              item={item}
+              isLast={index === items.length - 1}
+            />
+          ))}
+          {items.length === 0 && (
+            <TableRow>
+              <TableCell colSpan={9} className="h-32 text-center text-muted-foreground">
+                Nenhum item encontrado para este concurso.
+              </TableCell>
+            </TableRow>
+          )}
+        </TableBody>
+      </Table>
+    </div>
+  )
+}
+
+interface ItemRowProps {
+  jobId: string
+  item: RFPItemWithMatches
+  isLast: boolean
+}
+
+function ItemRow({ jobId, item, isLast }: ItemRowProps) {
+  const [isPopoverOpen, setIsPopoverOpen] = useState(false)
+  const [showManualDialog, setShowManualDialog] = useState(false)
+
+  const hasNoSuggestions = item.rfp_match_suggestions.length === 0
+  const perfectMatch = item.rfp_match_suggestions.find((m) => m.similarity_score >= 0.9999)
+  const acceptedMatch = item.rfp_match_suggestions.find((m) => m.status === 'accepted')
+
+  const isExplicitlyReviewed = item.review_status !== 'pending'
+  const hasPerfectMatch = !!perfectMatch && item.review_status === 'pending'
+  const displayMatch = acceptedMatch || (hasPerfectMatch ? perfectMatch : null)
+
+  const showAsMatched = item.review_status === 'accepted' || item.review_status === 'manual' || hasPerfectMatch
+  const showAsRejected = item.review_status === 'rejected'
+  const showAsManual = item.review_status === 'manual'
+  const pendingSuggestions = item.rfp_match_suggestions.filter(m => m.status === 'pending').length
+
+  // Matched product data to display
+  const matchedCodigo = displayMatch?.codigo_spms ?? null
+  const matchedArtigo = displayMatch?.artigo ?? null
+  const matchedDescricao = displayMatch?.descricao ?? null
+
+  return (
+    <TableRow
+      className={cn(
+        'hover:bg-muted/30 transition-colors',
+        !isLast && 'border-b border-border/30',
+        showAsRejected && 'opacity-75'
+      )}
+    >
+      {/* RFP Item columns - short columns fit content */}
+      <TableCell className="pl-6 font-mono">
+        {item.lote_pedido ?? <span className="text-muted-foreground/50">—</span>}
+      </TableCell>
+      <TableCell className="font-mono">
+        {item.posicao_pedido ?? <span className="text-muted-foreground/50">—</span>}
+      </TableCell>
+      <TableCell>
+        {item.artigo_pedido ?? <span className="text-muted-foreground/50">—</span>}
+      </TableCell>
+      <TableCell className="whitespace-normal">
+        {item.descricao_pedido}
+      </TableCell>
+
+      {/* Visual separator */}
+      <TableCell className="px-0 w-[1px]">
+        <div className="h-8 w-px bg-border/50"></div>
+      </TableCell>
+
+      {/* Matched product columns */}
+      <TableCell className="font-mono">
+        {matchedCodigo ? (
+          <span className="text-emerald-700">{matchedCodigo}</span>
+        ) : (
+          <span className="text-muted-foreground/30">—</span>
+        )}
+      </TableCell>
+      <TableCell>
+        {matchedArtigo ? (
+          <span className="text-emerald-700">{matchedArtigo}</span>
+        ) : (
+          <span className="text-muted-foreground/30">—</span>
+        )}
+      </TableCell>
+      <TableCell className="whitespace-normal">
+        {matchedDescricao ? (
+          <span className="text-emerald-700">{matchedDescricao}</span>
+        ) : (
+          <span className="text-muted-foreground/30">—</span>
+        )}
+      </TableCell>
+
+      {/* Status / Action column */}
+      <TableCell className="text-right pr-6">
+        <div className="flex items-center justify-end gap-2">
+          {/* Corrigir button - always available for manual correction */}
+          <Button
+            variant="ghost"
+            size="sm"
+            className="text-blue-600 hover:text-blue-700 hover:bg-blue-50"
+            onClick={() => setShowManualDialog(true)}
+          >
+            <Edit className="h-3.5 w-3.5 mr-1" />
+            Corrigir
+          </Button>
+
+          {/* Status button / Popover */}
+          {hasNoSuggestions ? (
+            <Button
+              variant="outline"
+              size="sm"
+              className="text-amber-600 border-amber-200 bg-amber-50/50 hover:bg-amber-50 cursor-default pointer-events-none"
+            >
+              Sem correspondência
+            </Button>
+          ) : (
+            <Popover open={isPopoverOpen} onOpenChange={setIsPopoverOpen}>
+              <PopoverTrigger asChild>
+                {showAsManual && displayMatch ? (
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    className="text-blue-600 border-blue-200 bg-blue-50/50 hover:bg-blue-50 hover:border-blue-300"
+                  >
+                    <Edit className="h-3.5 w-3.5 mr-1.5" />
+                    Manual
+                  </Button>
+                ) : showAsMatched && displayMatch ? (
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    className="text-emerald-600 border-emerald-200 bg-emerald-50/50 hover:bg-emerald-50 hover:border-emerald-300"
+                  >
+                    <Check className="h-3.5 w-3.5 mr-1.5" />
+                    Selecionado
+                  </Button>
+                ) : showAsRejected ? (
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    className="text-muted-foreground hover:bg-muted/50"
+                  >
+                    <X className="h-3.5 w-3.5 mr-1.5" />
+                    Rejeitado
+                  </Button>
+                ) : (
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    className="text-primary hover:bg-primary/5"
+                  >
+                    {pendingSuggestions} {pendingSuggestions !== 1 ? 'sugestões' : 'sugestão'}
+                  </Button>
+                )}
+              </PopoverTrigger>
+              <PopoverContent
+                align="end"
+                className="w-[420px] p-0 shadow-lg border-border/50"
+                sideOffset={8}
+              >
+                <div className="p-4 border-b border-border/40">
+                  <p className="text-sm font-medium">
+                    {showAsMatched ? 'Alterar seleção' : showAsRejected ? 'Rever sugestões' : 'Selecionar correspondência'}
+                  </p>
+                  <p className="text-xs text-muted-foreground mt-0.5 line-clamp-2">
+                    {item.descricao_pedido}
+                  </p>
+                </div>
+                <div className="max-h-[280px] overflow-y-auto">
+                  {item.rfp_match_suggestions.map((match) => (
+                    <SuggestionItem
+                      key={match.id}
+                      jobId={jobId}
+                      rfpItemId={item.id}
+                      match={match}
+                      isPerfectMatch={match.similarity_score >= 0.9999}
+                      onActionComplete={() => setIsPopoverOpen(false)}
+                    />
+                  ))}
+                </div>
+              </PopoverContent>
+            </Popover>
+          )}
+        </div>
+
+        {/* Manual Match Dialog */}
+        <ManualMatchDialog
+          open={showManualDialog}
+          onOpenChange={setShowManualDialog}
+          jobId={jobId}
+          rfpItemId={item.id}
+          rfpItemDescription={item.descricao_pedido}
+        />
+      </TableCell>
+    </TableRow>
+  )
+}
+
+interface SuggestionItemProps {
+  jobId: string
+  rfpItemId: string
+  match: MatchSuggestion
+  isPerfectMatch: boolean
+  onActionComplete: () => void
+}
+
+function SuggestionItem({ jobId, rfpItemId, match, isPerfectMatch, onActionComplete }: SuggestionItemProps) {
+  const [isPending, startTransition] = useTransition()
+
+  const isAccepted = match.status === 'accepted'
+  const isRejected = match.status === 'rejected'
+  const isPendingStatus = match.status === 'pending'
+  const confidencePercent = Math.round(match.similarity_score * 100)
+
+  // Show as selected if accepted OR if it's a perfect match that hasn't been reviewed
+  const showAsSelected = isAccepted || (isPerfectMatch && isPendingStatus)
+
+  // Perfect matches (100%) cannot be toggled - they are locked
+  const isLocked = isPerfectMatch
+
+  const handleAcceptOrToggle = () => {
+    // If locked (perfect match), do nothing
+    if (isLocked) return
+
+    startTransition(async () => {
+      if (isAccepted) {
+        // Toggle off - unselect
+        await unselectMatch(jobId, rfpItemId, match.id)
+      } else {
+        // Accept this match
+        await acceptMatch(jobId, rfpItemId, match.id)
+      }
+      onActionComplete()
+    })
+  }
+
+  const handleRejectOrToggle = () => {
+    // If locked (perfect match), do nothing
+    if (isLocked) return
+
+    startTransition(async () => {
+      if (isRejected) {
+        // Toggle off - unreject (restore to pending)
+        await unselectMatch(jobId, rfpItemId, match.id)
+      } else {
+        // Reject this match
+        await rejectMatch(jobId, rfpItemId, match.id)
+      }
+    })
+  }
+
+  return (
+    <div
+      className={cn(
+        'flex items-center gap-3 px-4 py-3 border-b border-border/20 last:border-0 transition-colors',
+        'hover:bg-muted/40',
+        showAsSelected && 'bg-emerald-50/50 border-l-2 border-l-emerald-500',
+        isRejected && 'opacity-75'
+      )}
+    >
+      <div className="flex-1 min-w-0">
+        <div className="flex items-center gap-2">
+          <span className="text-sm font-medium truncate">
+            {match.artigo ?? match.codigo_spms ?? '—'}
+          </span>
+          <span
+            className={cn(
+              'text-xs font-mono px-1.5 py-0.5 rounded',
+              confidencePercent >= 99 ? 'bg-emerald-100 text-emerald-700' :
+              confidencePercent >= 80 ? 'bg-blue-100 text-blue-700' :
+              confidencePercent >= 60 ? 'bg-amber-100 text-amber-700' :
+              'bg-gray-100 text-gray-600'
+            )}
+          >
+            {confidencePercent}%
+          </span>
+          {isLocked && (
+            <span className="text-[10px] text-muted-foreground uppercase tracking-wide">
+              Auto
+            </span>
+          )}
+        </div>
+        <p className="text-xs text-muted-foreground truncate mt-0.5">
+          {match.descricao ?? '—'}
+        </p>
+      </div>
+
+      <div className="flex items-center gap-1">
+        {isPending ? (
+          <Loader2 className="h-4 w-4 animate-spin text-muted-foreground" />
+        ) : (
+          <>
+            <Button
+              size="sm"
+              variant={showAsSelected ? 'default' : 'ghost'}
+              className={cn(
+                "h-7 w-7 p-0",
+                showAsSelected && "bg-emerald-600 hover:bg-emerald-700",
+                isLocked && showAsSelected && "cursor-default"
+              )}
+              onClick={handleAcceptOrToggle}
+              disabled={isLocked && showAsSelected}
+            >
+              <Check className="h-3.5 w-3.5" />
+            </Button>
+            <Button
+              size="sm"
+              variant="ghost"
+              className={cn(
+                "h-7 w-7 p-0",
+                isRejected
+                  ? "bg-gray-200 text-gray-700 hover:bg-gray-200"
+                  : "text-muted-foreground hover:text-gray-600 hover:bg-gray-100"
+              )}
+              onClick={handleRejectOrToggle}
+              disabled={isLocked}
+            >
+              <X className="h-3.5 w-3.5" />
+            </Button>
+          </>
+        )}
+      </div>
+    </div>
+  )
+}
