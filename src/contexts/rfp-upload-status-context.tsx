@@ -19,6 +19,7 @@ export interface RFPUploadJob {
 
 interface RFPUploadStatusContextValue {
   activeJob: RFPUploadJob | null
+  lastCompletedJob: RFPUploadJob | null
   isProcessing: boolean
   refetch: () => Promise<void>
 }
@@ -35,9 +36,11 @@ interface RFPUploadStatusProviderProps {
  */
 export function RFPUploadStatusProvider({ children }: RFPUploadStatusProviderProps) {
   const [activeJob, setActiveJob] = useState<RFPUploadJob | null>(null)
+  const [lastCompletedJob, setLastCompletedJob] = useState<RFPUploadJob | null>(null)
   const supabase = createClient()
   const channelRef = useRef<ReturnType<typeof supabase.channel> | null>(null)
   const userIdRef = useRef<string | null>(null)
+  const completionTimeoutRef = useRef<NodeJS.Timeout | null>(null)
 
   // Fetch any pending/processing jobs for current user
   const fetchActiveJob = useCallback(async () => {
@@ -69,11 +72,23 @@ export function RFPUploadStatusProvider({ children }: RFPUploadStatusProviderPro
     // Only process if this is the user's job
     if (userIdRef.current && newJob.user_id !== userIdRef.current) return
 
+    // Clear any pending completion timeout
+    if (completionTimeoutRef.current) {
+      clearTimeout(completionTimeoutRef.current)
+      completionTimeoutRef.current = null
+    }
+
     // Update local state
     if (newJob.status === 'pending' || newJob.status === 'processing') {
       setActiveJob(newJob)
+      setLastCompletedJob(null)
     } else {
-      setActiveJob(null)
+      // Job completed/failed - set lastCompletedJob FIRST for smooth transition
+      setLastCompletedJob(newJob)
+      // Then clear activeJob after a delay (1s animation + 500ms pause)
+      completionTimeoutRef.current = setTimeout(() => {
+        setActiveJob(null)
+      }, 1500)
     }
 
     // Enhanced toast notifications for status changes
@@ -195,11 +210,16 @@ export function RFPUploadStatusProvider({ children }: RFPUploadStatusProviderPro
         supabase.removeChannel(channelRef.current)
         channelRef.current = null
       }
+      if (completionTimeoutRef.current) {
+        clearTimeout(completionTimeoutRef.current)
+        completionTimeoutRef.current = null
+      }
     }
   }, [supabase, fetchActiveJob, handleJobUpdate, handleJobInsert])
 
   const value: RFPUploadStatusContextValue = {
     activeJob,
+    lastCompletedJob,
     isProcessing: activeJob?.status === 'pending' || activeJob?.status === 'processing',
     refetch: fetchActiveJob,
   }

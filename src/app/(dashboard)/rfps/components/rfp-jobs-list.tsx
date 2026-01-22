@@ -62,26 +62,38 @@ const statusConfig = {
 
 export function RFPJobsList({ initialJobs }: RFPJobsListProps) {
   const [jobs, setJobs] = useState<RFPJob[]>(initialJobs)
-  const { activeJob } = useRFPUploadStatus()
+  const { activeJob, lastCompletedJob } = useRFPUploadStatus()
   const [deleteDialogOpen, setDeleteDialogOpen] = useState(false)
   const [jobToDelete, setJobToDelete] = useState<{ id: string; name: string } | null>(null)
 
-  // Update jobs list in real-time when activeJob changes
+  // Helper to update a job in the list
+  const updateJobInList = (job: RFPUploadJob) => {
+    setJobs((prev) => {
+      const index = prev.findIndex((j) => j.id === job.id)
+      if (index >= 0) {
+        // Update existing job
+        const updated = [...prev]
+        updated[index] = job as RFPJob
+        return updated
+      }
+      // New job - prepend to list
+      return [job as RFPJob, ...prev]
+    })
+  }
+
+  // Update jobs list in real-time when activeJob changes (processing jobs)
   useEffect(() => {
     if (activeJob) {
-      setJobs((prev) => {
-        const index = prev.findIndex((j) => j.id === activeJob.id)
-        if (index >= 0) {
-          // Update existing job
-          const updated = [...prev]
-          updated[index] = activeJob as RFPJob
-          return updated
-        }
-        // New job - prepend to list
-        return [activeJob as RFPJob, ...prev]
-      })
+      updateJobInList(activeJob)
     }
   }, [activeJob])
+
+  // Update jobs list when lastCompletedJob changes (completed/failed jobs)
+  useEffect(() => {
+    if (lastCompletedJob) {
+      updateJobInList(lastCompletedJob)
+    }
+  }, [lastCompletedJob])
 
   const handleViewPDF = async (e: React.MouseEvent, jobId: string) => {
     e.preventDefault()
