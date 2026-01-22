@@ -1,5 +1,6 @@
 'use client'
 
+import { Suspense } from 'react'
 import { useActionState } from 'react'
 import { useSearchParams } from 'next/navigation'
 import Link from 'next/link'
@@ -14,7 +15,7 @@ import {
 import { Input } from '@/components/ui/input'
 import { Button } from '@/components/ui/button'
 
-export default function RegisterPage() {
+function RegisterForm() {
   const [state, formAction, isPending] = useActionState(signup, null)
   const searchParams = useSearchParams()
   const message = searchParams.get('message')
@@ -111,5 +112,45 @@ export default function RegisterPage() {
         </div>
       </CardContent>
     </Card>
+  )
+}
+
+function RegisterFormFallback() {
+  return (
+    <Card className="w-full max-w-md">
+      <CardHeader>
+        <CardTitle>Create Account</CardTitle>
+        <CardDescription>
+          Register for a new account. Your account will be pending admin approval before you can log in.
+        </CardDescription>
+      </CardHeader>
+      <CardContent>
+        <div className="space-y-4">
+          <div className="space-y-2">
+            <label className="text-sm font-medium">Email</label>
+            <Input type="email" placeholder="you@example.com" disabled />
+          </div>
+          <div className="space-y-2">
+            <label className="text-sm font-medium">Password</label>
+            <Input type="password" placeholder="••••••••" disabled />
+          </div>
+          <div className="space-y-2">
+            <label className="text-sm font-medium">Confirm Password</label>
+            <Input type="password" placeholder="••••••••" disabled />
+          </div>
+          <Button className="w-full" disabled>
+            Loading...
+          </Button>
+        </div>
+      </CardContent>
+    </Card>
+  )
+}
+
+export default function RegisterPage() {
+  return (
+    <Suspense fallback={<RegisterFormFallback />}>
+      <RegisterForm />
+    </Suspense>
   )
 }

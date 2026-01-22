@@ -67,3 +67,7 @@ CREATE TRIGGER inventory_job_updated_at
 -- Grant permissions
 GRANT SELECT, INSERT ON inventory_upload_jobs TO authenticated;
 GRANT ALL ON inventory_upload_jobs TO service_role;
+
+-- Enable Realtime for this table (required for live status updates)
+-- This adds the table to the supabase_realtime publication
+ALTER PUBLICATION supabase_realtime ADD TABLE inventory_upload_jobs;

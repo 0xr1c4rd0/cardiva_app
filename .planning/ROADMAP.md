@@ -15,7 +15,7 @@ Decimal phases appear between their surrounding integers in numeric order.
 - [x] **Phase 1: Foundation** - Project scaffold, Supabase setup, design system
 - [x] **Phase 2: Authentication** - User registration, login, session management, RBAC
 - [x] **Phase 3: Inventory View** - Product listing with pagination, sorting, search, filter
-- [ ] **Phase 4: Inventory Management** - CSV upload, validation, export, permissions
+- [x] **Phase 4: Inventory Management** - CSV upload, validation, export, permissions
 - [ ] **Phase 5: RFP Upload** - PDF upload, webhook trigger, file storage
 - [ ] **Phase 6: Processing Status** - Real-time status updates, notifications
 - [ ] **Phase 7: Match Review** - Display results, accept/reject individual matches
@@ -87,12 +87,12 @@ Plans:
   3. CSV upload triggers n8n workflow for processing
   4. User can export inventory to CSV/Excel format
   5. Only users with inventory permission can access upload/modify features
-**Plans**: TBD
+**Plans**: 3 plans in 3 waves
 
 Plans:
-- [ ] 04-01: CSV upload component with validation
-- [ ] 04-02: n8n webhook integration and export functionality
-- [ ] 04-03: Permission-based access control for inventory actions
+- [x] 04-01-PLAN.md — CSV upload component with drag-drop, parsing, and validation
+- [x] 04-02-PLAN.md — n8n webhook integration, job tracking, and export functionality
+- [x] 04-03-PLAN.md — Permission-based access control and inventory page integration
 
 ### Phase 5: RFP Upload
 **Goal**: Users can upload RFP PDFs and trigger the matching workflow
@@ -206,8 +206,8 @@ Phases execute in numeric order: 1 -> 2 -> 3 -> ... -> 10
 | 1. Foundation | 3/3 | Complete | 2025-01-21 |
 | 2. Authentication | 3/3 | Complete | 2026-01-21 |
 | 3. Inventory View | 2/2 | Complete | 2026-01-21 |
-| 4. Inventory Management | 0/3 | Ready to execute | - |
-| 5. RFP Upload | 0/3 | Not started | - |
+| 4. Inventory Management | 3/3 | Complete | 2026-01-21 |
+| 5. RFP Upload | 0/3 | Ready to execute | - |
 | 6. Processing Status | 0/3 | Not started | - |
 | 7. Match Review | 0/3 | Not started | - |
 | 8. Bulk Operations | 0/3 | Not started | - |

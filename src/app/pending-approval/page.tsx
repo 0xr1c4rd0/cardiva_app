@@ -12,6 +12,9 @@ import {
 import { Button } from '@/components/ui/button'
 import { Clock, LogOut, Mail } from 'lucide-react'
 
+// Force dynamic rendering to prevent caching of auth state
+export const dynamic = 'force-dynamic'
+
 export default async function PendingApprovalPage() {
   const supabase = await createClient()
   const {

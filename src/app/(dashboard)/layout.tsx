@@ -5,6 +5,9 @@ import { SidebarProvider, SidebarInset, SidebarTrigger } from '@/components/ui/s
 import { AppSidebar } from '@/components/layout/app-sidebar'
 import { UserMenu } from '@/components/layout/user-menu'
 
+// Force dynamic rendering to prevent caching of auth state
+export const dynamic = 'force-dynamic'
+
 export default async function DashboardLayout({
   children,
 }: {
@@ -22,13 +25,29 @@ export default async function DashboardLayout({
   }
 
   // Check if user is approved
-  const { data: profile } = await supabase
+  const { data: profile, error: profileError } = await supabase
     .from('profiles')
     .select('approved_at')
     .eq('id', user.id)
     .single()
 
-  if (!profile?.approved_at) {
+  // Log for debugging (remove in production)
+  console.log('Profile check:', {
+    userId: user.id,
+    userEmail: user.email,
+    profile: profile,
+    profileError: profileError?.message,
+    approved_at: profile?.approved_at,
+    approved_at_type: typeof profile?.approved_at,
+  })
+
+  // If profile doesn't exist or approved_at is null, redirect to pending approval
+  if (profileError || !profile || !profile.approved_at) {
+    console.log('Redirecting to pending-approval because:', {
+      hasProfileError: !!profileError,
+      hasProfile: !!profile,
+      hasApprovedAt: !!profile?.approved_at,
+    })
     redirect('/pending-approval')
   }
 

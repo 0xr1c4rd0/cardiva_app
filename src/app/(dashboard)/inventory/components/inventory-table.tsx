@@ -1,13 +1,15 @@
 'use client'
 
-import { useTransition } from 'react'
+import { useMemo, useTransition } from 'react'
 import {
   useReactTable,
   getCoreRowModel,
   flexRender,
   SortingState,
+  ColumnDef,
 } from '@tanstack/react-table'
 import { useQueryStates, parseAsInteger, parseAsString } from 'nuqs'
+import { ArrowUpDown, ArrowUp, ArrowDown } from 'lucide-react'
 import {
   Table,
   TableBody,
@@ -16,17 +18,30 @@ import {
   TableHeader,
   TableRow,
 } from '@/components/ui/table'
+import { Button } from '@/components/ui/button'
 import { Skeleton } from '@/components/ui/skeleton'
 import { PackageOpen } from 'lucide-react'
-import { columns } from './inventory-columns'
 import { DataTablePagination } from './data-table-pagination'
 import { TableToolbar } from './table-toolbar'
-import { Artigo } from '@/lib/supabase/types'
+import { Artigo, InventoryColumnConfig } from '@/lib/supabase/types'
+
+// Currency formatter for currency columns
+const currencyFormatter = new Intl.NumberFormat('pt-PT', {
+  style: 'currency',
+  currency: 'EUR',
+})
+
+// Date formatter for date columns
+const dateFormatter = new Intl.DateTimeFormat('pt-PT', {
+  dateStyle: 'medium',
+})
 
 interface InventoryTableProps {
   data: Artigo[]
   totalCount: number
   categories: string[]
+  columnConfig: InventoryColumnConfig[]
+  categoryColumnName?: string
   initialState: {
     page: number
     pageSize: number
@@ -37,13 +52,80 @@ interface InventoryTableProps {
   }
 }
 
+// Generate column definitions dynamically from config
+function createColumns(config: InventoryColumnConfig[]): ColumnDef<Artigo>[] {
+  return config.map((col): ColumnDef<Artigo> => {
+    const baseColumn: ColumnDef<Artigo> = {
+      accessorKey: col.column_name,
+      enableSorting: col.sortable,
+      header: col.sortable
+        ? ({ column }) => (
+            <Button
+              variant="ghost"
+              onClick={() => column.toggleSorting(column.getIsSorted() === 'asc')}
+              className="-ml-4"
+            >
+              {col.display_name}
+              {column.getIsSorted() === 'asc' ? (
+                <ArrowUp className="ml-2 h-4 w-4" />
+              ) : column.getIsSorted() === 'desc' ? (
+                <ArrowDown className="ml-2 h-4 w-4" />
+              ) : (
+                <ArrowUpDown className="ml-2 h-4 w-4 text-muted-foreground" />
+              )}
+            </Button>
+          )
+        : col.display_name,
+    }
+
+    // Add cell renderer based on column type
+    switch (col.column_type) {
+      case 'currency':
+        baseColumn.cell = ({ row }) => {
+          const value = row.getValue(col.column_name) as number | null
+          return value != null ? currencyFormatter.format(value) : '-'
+        }
+        break
+      case 'number':
+        baseColumn.cell = ({ row }) => {
+          const value = row.getValue(col.column_name) as number | null
+          return value != null ? value.toLocaleString('pt-PT') : '-'
+        }
+        break
+      case 'date':
+        baseColumn.cell = ({ row }) => {
+          const value = row.getValue(col.column_name) as string | null
+          if (!value) return '-'
+          try {
+            return dateFormatter.format(new Date(value))
+          } catch {
+            return value
+          }
+        }
+        break
+      default: // text
+        baseColumn.cell = ({ row }) => {
+          const value = row.getValue(col.column_name)
+          return value != null && value !== '' ? String(value) : '-'
+        }
+    }
+
+    return baseColumn
+  })
+}
+
 export function InventoryTable({
   data,
   totalCount,
   categories,
+  columnConfig,
+  categoryColumnName,
   initialState,
 }: InventoryTableProps) {
   const [isPending, startTransition] = useTransition()
+
+  // Generate columns from config
+  const columns = useMemo(() => createColumns(columnConfig), [columnConfig])
 
   const [{ page, pageSize, search, sortBy, sortOrder, category }, setParams] =
     useQueryStates(
@@ -114,6 +196,9 @@ export function InventoryTable({
     })
   }
 
+  // Only show category filter if we have a category column configured
+  const showCategoryFilter = !!categoryColumnName && categories.length > 0
+
   return (
     <div className="space-y-4">
       <TableToolbar
@@ -121,7 +206,7 @@ export function InventoryTable({
         onSearchChange={handleSearchChange}
         category={category}
         onCategoryChange={handleCategoryChange}
-        categories={categories}
+        categories={showCategoryFilter ? categories : []}
         isPending={isPending}
       />
       <div className="rounded-md border">

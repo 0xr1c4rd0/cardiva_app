@@ -42,14 +42,6 @@ export async function triggerInventoryUpload(
     return { success: false, error: 'No file provided' }
   }
 
-  // Read file content
-  let fileContent: string
-  try {
-    fileContent = await file.text()
-  } catch {
-    return { success: false, error: 'Failed to read file content' }
-  }
-
   // Create upload job record
   const { data: job, error: jobError } = await supabase
     .from('inventory_upload_jobs')
@@ -75,7 +67,7 @@ export async function triggerInventoryUpload(
   try {
     await triggerN8nWebhook({
       jobId: job.id,
-      csvContent: fileContent,
+      attachment_0: file,
       fileName: file.name,
       userId: user.id,
       rowCount: rowCount,

@@ -46,3 +46,7 @@ next-env.d.ts
 # Test artifacts
 playwright-report/
 test-results/
+.playwright-mcp/
+
+# Debug API routes (development only)
+src/app/api/debug/
