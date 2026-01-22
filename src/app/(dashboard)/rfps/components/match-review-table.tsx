@@ -1,7 +1,7 @@
 'use client'
 
 import { useState, useTransition } from 'react'
-import { Check, X, Loader2, Edit } from 'lucide-react'
+import { Check, X, Loader2 } from 'lucide-react'
 import {
   Table,
   TableBody,
@@ -92,6 +92,10 @@ function ItemRow({ jobId, item, isLast }: ItemRowProps) {
   const showAsManual = item.review_status === 'manual'
   const pendingSuggestions = item.rfp_match_suggestions.filter(m => m.status === 'pending').length
 
+  // Check if all suggestions have been rejected (for showing "Selecionar produto do inventário?" link)
+  const allSuggestionsRejected = item.rfp_match_suggestions.length > 0 &&
+    item.rfp_match_suggestions.every(m => m.status === 'rejected')
+
   // Matched product data to display
   const matchedCodigo = displayMatch?.codigo_spms ?? null
   const matchedArtigo = displayMatch?.artigo ?? null
@@ -101,8 +105,7 @@ function ItemRow({ jobId, item, isLast }: ItemRowProps) {
     <TableRow
       className={cn(
         'hover:bg-muted/30 transition-colors',
-        !isLast && 'border-b border-border/30',
-        showAsRejected && 'opacity-75'
+        !isLast && 'border-b border-border/30'
       )}
     >
       {/* RFP Item columns - short columns fit content */}
@@ -150,26 +153,39 @@ function ItemRow({ jobId, item, isLast }: ItemRowProps) {
       {/* Status / Action column */}
       <TableCell className="text-right pr-6">
         <div className="flex items-center justify-end gap-2">
-          {/* Corrigir button - always available for manual correction */}
-          <Button
-            variant="ghost"
-            size="sm"
-            className="text-blue-600 hover:text-blue-700 hover:bg-blue-50"
-            onClick={() => setShowManualDialog(true)}
-          >
-            <Edit className="h-3.5 w-3.5 mr-1" />
-            Corrigir
-          </Button>
-
           {/* Status button / Popover */}
           {hasNoSuggestions ? (
-            <Button
-              variant="outline"
-              size="sm"
-              className="text-amber-600 border-amber-200 bg-amber-50/50 hover:bg-amber-50 cursor-default pointer-events-none"
-            >
-              Sem correspondência
-            </Button>
+            /* "Sem correspondência" - now clickable to show manual correction option */
+            <Popover open={isPopoverOpen} onOpenChange={setIsPopoverOpen}>
+              <PopoverTrigger asChild>
+                <Button
+                  variant="outline"
+                  size="sm"
+                  className="text-amber-600 border-amber-200 bg-amber-50/50 hover:bg-amber-50"
+                >
+                  Sem correspondência
+                </Button>
+              </PopoverTrigger>
+              <PopoverContent
+                align="end"
+                className="w-[300px] p-4 shadow-lg border-border/50"
+                sideOffset={8}
+              >
+                <p className="text-sm text-muted-foreground mb-3">
+                  Não foram encontradas correspondências automáticas para este item.
+                </p>
+                <button
+                  type="button"
+                  className="text-sm font-medium text-muted-foreground hover:text-foreground underline text-left"
+                  onClick={() => {
+                    setIsPopoverOpen(false)
+                    setShowManualDialog(true)
+                  }}
+                >
+                  Selecionar produto do inventário?
+                </button>
+              </PopoverContent>
+            </Popover>
           ) : (
             <Popover open={isPopoverOpen} onOpenChange={setIsPopoverOpen}>
               <PopoverTrigger asChild>
@@ -179,8 +195,8 @@ function ItemRow({ jobId, item, isLast }: ItemRowProps) {
                     size="sm"
                     className="text-blue-600 border-blue-200 bg-blue-50/50 hover:bg-blue-50 hover:border-blue-300"
                   >
-                    <Edit className="h-3.5 w-3.5 mr-1.5" />
-                    Manual
+                    <Check className="h-3.5 w-3.5 mr-1.5" />
+                    Selecionado
                   </Button>
                 ) : showAsMatched && displayMatch ? (
                   <Button
@@ -195,10 +211,9 @@ function ItemRow({ jobId, item, isLast }: ItemRowProps) {
                   <Button
                     variant="outline"
                     size="sm"
-                    className="text-muted-foreground hover:bg-muted/50"
+                    className="text-gray-500 border-gray-200 bg-gray-50/50 hover:bg-gray-100"
                   >
-                    <X className="h-3.5 w-3.5 mr-1.5" />
-                    Rejeitado
+                    Sem correspondência
                   </Button>
                 ) : (
                   <Button
@@ -235,6 +250,37 @@ function ItemRow({ jobId, item, isLast }: ItemRowProps) {
                     />
                   ))}
                 </div>
+                {/* Footer - Show "Selecionar produto do inventário?" if all rejected, otherwise "Selecionar outro produto" */}
+                <div className="p-3 border-t border-border/40 bg-muted/20">
+                  {allSuggestionsRejected ? (
+                    <div className="text-left">
+                      <p className="text-xs text-muted-foreground mb-1">
+                        Todas as sugestões foram rejeitadas.
+                      </p>
+                      <button
+                        type="button"
+                        className="text-sm font-medium text-muted-foreground hover:text-foreground underline text-left"
+                        onClick={() => {
+                          setIsPopoverOpen(false)
+                          setShowManualDialog(true)
+                        }}
+                      >
+                        Selecionar produto do inventário?
+                      </button>
+                    </div>
+                  ) : (
+                    <button
+                      type="button"
+                      className="text-sm font-medium text-muted-foreground hover:text-foreground underline text-left"
+                      onClick={() => {
+                        setIsPopoverOpen(false)
+                        setShowManualDialog(true)
+                      }}
+                    >
+                      Selecionar produto do inventário?
+                    </button>
+                  )}
+                </div>
               </PopoverContent>
             </Popover>
           )}
@@ -268,12 +314,14 @@ function SuggestionItem({ jobId, rfpItemId, match, isPerfectMatch, onActionCompl
   const isRejected = match.status === 'rejected'
   const isPendingStatus = match.status === 'pending'
   const confidencePercent = Math.round(match.similarity_score * 100)
+  const isManualMatch = match.match_type === 'Manual'
 
   // Show as selected if accepted OR if it's a perfect match that hasn't been reviewed
   const showAsSelected = isAccepted || (isPerfectMatch && isPendingStatus)
 
   // Perfect matches (100%) cannot be toggled - they are locked
-  const isLocked = isPerfectMatch
+  // But manual matches CAN be toggled (user should be able to undo their selection)
+  const isLocked = isPerfectMatch && !isManualMatch
 
   const handleAcceptOrToggle = () => {
     // If locked (perfect match), do nothing
@@ -311,7 +359,7 @@ function SuggestionItem({ jobId, rfpItemId, match, isPerfectMatch, onActionCompl
       className={cn(
         'flex items-center gap-3 px-4 py-3 border-b border-border/20 last:border-0 transition-colors',
         'hover:bg-muted/40',
-        showAsSelected && 'bg-emerald-50/50 border-l-2 border-l-emerald-500',
+        showAsSelected && 'bg-emerald-50/30 border-l-2 border-l-emerald-400',
         isRejected && 'opacity-75'
       )}
     >
@@ -322,16 +370,17 @@ function SuggestionItem({ jobId, rfpItemId, match, isPerfectMatch, onActionCompl
           </span>
           <span
             className={cn(
-              'text-xs font-mono px-1.5 py-0.5 rounded',
-              confidencePercent >= 99 ? 'bg-emerald-100 text-emerald-700' :
-              confidencePercent >= 80 ? 'bg-blue-100 text-blue-700' :
-              confidencePercent >= 60 ? 'bg-amber-100 text-amber-700' :
-              'bg-gray-100 text-gray-600'
+              'text-xs px-1.5 py-0.5 rounded',
+              isManualMatch ? 'bg-blue-100 text-blue-700' :
+              confidencePercent >= 99 ? 'bg-emerald-100 text-emerald-700 font-mono' :
+              confidencePercent >= 80 ? 'bg-blue-100 text-blue-700 font-mono' :
+              confidencePercent >= 60 ? 'bg-amber-100 text-amber-700 font-mono' :
+              'bg-gray-100 text-gray-600 font-mono'
             )}
           >
-            {confidencePercent}%
+            {isManualMatch ? 'Manual' : `${confidencePercent}%`}
           </span>
-          {isLocked && (
+          {isLocked && !isManualMatch && (
             <span className="text-[10px] text-muted-foreground uppercase tracking-wide">
               Auto
             </span>
@@ -352,7 +401,7 @@ function SuggestionItem({ jobId, rfpItemId, match, isPerfectMatch, onActionCompl
               variant={showAsSelected ? 'default' : 'ghost'}
               className={cn(
                 "h-7 w-7 p-0",
-                showAsSelected && "bg-emerald-600 hover:bg-emerald-700",
+                showAsSelected && "bg-emerald-500 hover:bg-emerald-600",
                 isLocked && showAsSelected && "cursor-default"
               )}
               onClick={handleAcceptOrToggle}

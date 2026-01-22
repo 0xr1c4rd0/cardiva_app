@@ -1,10 +1,11 @@
 import { createClient } from '@/lib/supabase/server'
 import { notFound, redirect } from 'next/navigation'
 import Link from 'next/link'
-import { ArrowLeft } from 'lucide-react'
-import { Button } from '@/components/ui/button'
+import { ChevronRight } from 'lucide-react'
 import { MatchReviewTable } from '@/app/(dashboard)/rfps/components/match-review-table'
-import { ConfirmationSummary } from '@/app/(dashboard)/rfps/components/confirmation-summary'
+import { ReviewStatsChips } from '@/app/(dashboard)/rfps/components/review-stats-chips'
+import { HeaderExportButton } from '@/app/(dashboard)/rfps/components/header-export-button'
+import { autoAcceptExactMatches } from './actions'
 import type { RFPItemWithMatches, MatchSuggestion } from '@/types/rfp'
 
 interface PageProps {
@@ -35,6 +36,10 @@ export default async function MatchReviewPage({ params }: PageProps) {
   if (jobError || !job) {
     notFound()
   }
+
+  // Auto-accept exact matches (100% similarity) on first load
+  // This pre-confirms obvious matches before user reviews them
+  await autoAcceptExactMatches(jobId)
 
   // Fetch items with nested match suggestions
   // Use explicit FK name because there are two relationships:
@@ -71,43 +76,31 @@ export default async function MatchReviewPage({ params }: PageProps) {
     ),
   }))
 
-  // Calculate review progress
-  const totalItems = itemsWithSortedMatches.length
-  const reviewedItems = itemsWithSortedMatches.filter(
-    (item) => item.review_status !== 'pending'
-  ).length
-
   return (
-    <div className="flex flex-1 flex-col gap-6">
-      {/* Header */}
-      <div className="flex items-center justify-between">
-        <div className="flex items-center gap-4">
-          <Button variant="ghost" size="icon" asChild>
-            <Link href="/rfps">
-              <ArrowLeft className="h-4 w-4" />
-              <span className="sr-only">Back to RFPs</span>
-            </Link>
-          </Button>
-          <div>
-            <h1 className="text-2xl font-semibold">Rever Correspondências</h1>
-            <p className="text-muted-foreground">
-              {job.file_name} - {reviewedItems} de {totalItems} itens revistos
-            </p>
-          </div>
+    <div className="flex flex-1 flex-col">
+      {/* Breadcrumb */}
+      <nav className="flex items-center gap-1.5 text-sm text-muted-foreground">
+        <Link href="/rfps" className="hover:text-foreground transition-colors">
+          Concursos
+        </Link>
+        <ChevronRight className="h-4 w-4" />
+        <span className="text-foreground font-medium">Rever Correspondências</span>
+      </nav>
+
+      {/* Header with document name, stats, and export */}
+      <div className="flex items-center justify-between gap-4 mt-1 mb-6">
+        <h1 className="text-2xl font-semibold truncate" title={job.file_name}>
+          {job.file_name}
+        </h1>
+        <div className="flex items-center gap-4 shrink-0">
+          <ReviewStatsChips items={itemsWithSortedMatches} />
+          <HeaderExportButton items={itemsWithSortedMatches} jobId={jobId} />
         </div>
       </div>
 
-      {/* Main content with summary sidebar */}
-      <div className="flex gap-6">
-        {/* Items table - takes most space */}
-        <div className="flex-1 min-w-0">
-          <MatchReviewTable jobId={jobId} items={itemsWithSortedMatches} />
-        </div>
-
-        {/* Confirmation summary - fixed sidebar */}
-        <div className="w-72 shrink-0">
-          <ConfirmationSummary items={itemsWithSortedMatches} />
-        </div>
+      {/* Main content - full width table */}
+      <div className="flex-1 min-w-0">
+        <MatchReviewTable jobId={jobId} items={itemsWithSortedMatches} />
       </div>
     </div>
   )

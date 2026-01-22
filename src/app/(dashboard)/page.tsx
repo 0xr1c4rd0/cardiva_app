@@ -3,11 +3,11 @@ import Link from 'next/link'
 
 export default function DashboardPage() {
   return (
-    <div className="space-y-8">
+    <div className="flex flex-1 flex-col gap-6">
       <div>
         <h1 className="text-3xl font-semibold text-gray-900">Dashboard</h1>
         <p className="mt-2 text-gray-600">
-          Welcome to Cardiva RFP Matching
+          Bem-vindo ao Cardiva - Correspondência de Concursos
         </p>
       </div>
 
@@ -18,9 +18,9 @@ export default function DashboardPage() {
         >
           <FileText className="h-8 w-8 text-primary" />
           <div>
-            <h2 className="font-semibold text-gray-900">Upload RFP</h2>
+            <h2 className="font-semibold text-gray-900">Carregar Concurso</h2>
             <p className="text-sm text-gray-600">
-              Upload a PDF to start matching
+              Carregar PDF para iniciar correspondência
             </p>
           </div>
         </Link>
@@ -31,9 +31,9 @@ export default function DashboardPage() {
         >
           <Package className="h-8 w-8 text-primary" />
           <div>
-            <h2 className="font-semibold text-gray-900">Inventory</h2>
+            <h2 className="font-semibold text-gray-900">Inventário</h2>
             <p className="text-sm text-gray-600">
-              Browse and manage products
+              Consultar e gerir produtos
             </p>
           </div>
         </Link>
@@ -44,9 +44,9 @@ export default function DashboardPage() {
         >
           <History className="h-8 w-8 text-primary" />
           <div>
-            <h2 className="font-semibold text-gray-900">History</h2>
+            <h2 className="font-semibold text-gray-900">Histórico</h2>
             <p className="text-sm text-gray-600">
-              View past RFP matches
+              Ver concursos anteriores
             </p>
           </div>
         </Link>

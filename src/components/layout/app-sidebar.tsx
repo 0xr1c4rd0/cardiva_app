@@ -16,12 +16,12 @@ import { isAdmin } from '@/lib/auth/utils'
 
 const navItems = [
   { title: 'Dashboard', url: '/', icon: Home },
-  { title: 'RFPs', url: '/rfps', icon: FileText },
-  { title: 'Inventory', url: '/inventory', icon: Package },
-  { title: 'History', url: '/history', icon: History },
+  { title: 'Concursos', url: '/rfps', icon: FileText },
+  { title: 'Inventário', url: '/inventory', icon: Package },
+  { title: 'Histórico', url: '/history', icon: History },
 ]
 
-const adminItems = [{ title: 'Users', url: '/admin/users', icon: Users }]
+const adminItems = [{ title: 'Utilizadores', url: '/admin/users', icon: Users }]
 
 export async function AppSidebar() {
   const userIsAdmin = await isAdmin()
@@ -36,7 +36,7 @@ export async function AppSidebar() {
       </SidebarHeader>
       <SidebarContent>
         <SidebarGroup>
-          <SidebarGroupLabel>Navigation</SidebarGroupLabel>
+          <SidebarGroupLabel>Navegação</SidebarGroupLabel>
           <SidebarGroupContent>
             <SidebarMenu>
               {navItems.map((item) => (
@@ -55,7 +55,7 @@ export async function AppSidebar() {
 
         {userIsAdmin && (
           <SidebarGroup>
-            <SidebarGroupLabel>Admin</SidebarGroupLabel>
+            <SidebarGroupLabel>Administração</SidebarGroupLabel>
             <SidebarGroupContent>
               <SidebarMenu>
                 {adminItems.map((item) => (
@@ -79,7 +79,7 @@ export async function AppSidebar() {
             <SidebarMenuButton asChild>
               <Link href="/settings">
                 <Settings className="h-4 w-4" />
-                <span>Settings</span>
+                <span>Definições</span>
               </Link>
             </SidebarMenuButton>
           </SidebarMenuItem>

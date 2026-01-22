@@ -1,22 +1,37 @@
 'use client'
 
+import { useState } from 'react'
 import { Button } from '@/components/ui/button'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { Check, X, AlertCircle, Edit, Download } from 'lucide-react'
 import type { RFPItemWithMatches } from '@/types/rfp'
+import { ExportDialog } from './export-dialog'
 
 interface ConfirmationSummaryProps {
   items: RFPItemWithMatches[]
+  jobId: string
 }
 
-export function ConfirmationSummary({ items }: ConfirmationSummaryProps) {
+export function ConfirmationSummary({ items, jobId }: ConfirmationSummaryProps) {
+  const [exportDialogOpen, setExportDialogOpen] = useState(false)
   // Calculate stats from items
+  // "Sem correspondência" items (no suggestions) are considered reviewed - nothing to decide
+  const noMatchItems = items.filter(
+    (i) => i.review_status === 'pending' && i.rfp_match_suggestions.length === 0
+  ).length
+
+  // Only items with pending status AND suggestions need review
+  const pendingWithSuggestions = items.filter(
+    (i) => i.review_status === 'pending' && i.rfp_match_suggestions.length > 0
+  ).length
+
   const stats = {
     total: items.length,
     accepted: items.filter((i) => i.review_status === 'accepted').length,
     rejected: items.filter((i) => i.review_status === 'rejected').length,
     manual: items.filter((i) => i.review_status === 'manual').length,
-    pending: items.filter((i) => i.review_status === 'pending').length,
+    pending: pendingWithSuggestions, // Only count items that actually need review
+    noMatch: noMatchItems, // Track "Sem correspondência" separately
   }
 
   const allDecided = stats.pending === 0
@@ -40,33 +55,39 @@ export function ConfirmationSummary({ items }: ConfirmationSummaryProps) {
           </div>
           <div className="flex items-center gap-2">
             <X className="h-4 w-4 text-gray-500" />
-            <span>Sem match: {stats.rejected}</span>
+            <span>Rejeitados: {stats.rejected}</span>
           </div>
           <div className="flex items-center gap-2">
             <AlertCircle className="h-4 w-4 text-amber-500" />
-            <span>Pendentes: {stats.pending}</span>
+            <span>Sem corresp.: {stats.noMatch}</span>
           </div>
+          {stats.pending > 0 && (
+            <div className="flex items-center gap-2 col-span-2 text-amber-600 font-medium">
+              <AlertCircle className="h-4 w-4" />
+              <span>Por rever: {stats.pending}</span>
+            </div>
+          )}
         </div>
 
         {/* Progress indicator */}
         <div className="space-y-1">
           <div className="flex justify-between text-xs text-muted-foreground">
             <span>Progresso</span>
-            <span>{stats.total - stats.pending} / {stats.total}</span>
+            <span>{stats.accepted + stats.manual + stats.rejected + stats.noMatch} / {stats.total}</span>
           </div>
           <div className="h-2 bg-muted rounded-full overflow-hidden">
             <div
               className="h-full bg-emerald-500 transition-all duration-300"
-              style={{ width: `${((stats.total - stats.pending) / stats.total) * 100}%` }}
+              style={{ width: `${((stats.accepted + stats.manual + stats.rejected + stats.noMatch) / stats.total) * 100}%` }}
             />
           </div>
         </div>
 
-        {/* Warning message if pending > 0 */}
+        {/* Warning message if there are items with suggestions that need review */}
         {stats.pending > 0 && (
           <div className="rounded-md bg-amber-50 p-3 text-sm text-amber-600">
             <p>
-              Reveja os <strong>{stats.pending}</strong> {stats.pending === 1 ? 'item pendente' : 'itens pendentes'} antes de continuar.
+              Reveja {stats.pending === 1 ? 'o' : 'os'} <strong>{stats.pending}</strong> {stats.pending === 1 ? 'item com sugestões' : 'itens com sugestões'} antes de continuar.
             </p>
           </div>
         )}
@@ -75,10 +96,7 @@ export function ConfirmationSummary({ items }: ConfirmationSummaryProps) {
         <Button
           className="w-full"
           disabled={!allDecided || !hasMatches}
-          onClick={() => {
-            // Phase 9 will implement export functionality
-            console.log('Proceed to export - Phase 9')
-          }}
+          onClick={() => setExportDialogOpen(true)}
         >
           <Download className="h-4 w-4 mr-2" />
           {allDecided
@@ -93,6 +111,14 @@ export function ConfirmationSummary({ items }: ConfirmationSummaryProps) {
           </p>
         )}
       </CardContent>
+
+      {/* Export dialog */}
+      <ExportDialog
+        open={exportDialogOpen}
+        onOpenChange={setExportDialogOpen}
+        items={items}
+        jobId={jobId}
+      />
     </Card>
   )
 }

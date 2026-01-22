@@ -17,14 +17,14 @@ export default function UnauthorizedPage() {
           <div className="mx-auto mb-4 flex h-12 w-12 items-center justify-center rounded-full bg-destructive/10">
             <ShieldAlert className="h-6 w-6 text-destructive" />
           </div>
-          <CardTitle>Access Denied</CardTitle>
+          <CardTitle>Acesso Negado</CardTitle>
           <CardDescription>
-            You don't have permission to access this page.
+            Não tem permissão para aceder a esta página.
           </CardDescription>
         </CardHeader>
         <CardContent className="flex justify-center">
           <Button asChild>
-            <Link href="/">Return to Dashboard</Link>
+            <Link href="/">Voltar ao Dashboard</Link>
           </Button>
         </CardContent>
       </Card>
