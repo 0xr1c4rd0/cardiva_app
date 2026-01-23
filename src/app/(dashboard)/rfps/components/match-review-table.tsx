@@ -108,10 +108,18 @@ export function MatchReviewTable({ jobId, items, totalCount, initialState }: Mat
       if (sortBy === column) {
         // Toggle direction if same column
         const newDir = sortDir === 'asc' ? 'desc' : 'asc'
-        setParams({ sortDir: newDir === 'asc' ? null : newDir, page: 1 })
+        setParams({
+          sortBy: column,
+          sortDir: newDir,
+          page: 1
+        })
       } else {
         // New column, reset to ascending
-        setParams({ sortBy: column === 'lote' ? null : column, sortDir: null, page: 1 })
+        setParams({
+          sortBy: column,
+          sortDir: 'asc',
+          page: 1
+        })
       }
     })
   }
