@@ -87,7 +87,7 @@ export function ConfirmationSummary({ items, jobId }: ConfirmationSummaryProps) 
         {stats.pending > 0 && (
           <div className="rounded-md bg-amber-50 p-3 text-sm text-amber-600">
             <p>
-              Reveja {stats.pending === 1 ? 'o' : 'os'} <strong>{stats.pending}</strong> {stats.pending === 1 ? 'item com sugestões' : 'itens com sugestões'} antes de continuar.
+              Reveja {stats.pending === 1 ? 'o' : 'os'} <strong>{stats.pending}</strong> {stats.pending === 1 ? 'produto com sugestões' : 'produtos com sugestões'} antes de continuar.
             </p>
           </div>
         )}
@@ -101,7 +101,7 @@ export function ConfirmationSummary({ items, jobId }: ConfirmationSummaryProps) 
           <Download className="h-4 w-4 mr-2" />
           {allDecided
             ? 'Confirmar e Exportar'
-            : `${stats.pending} ${stats.pending === 1 ? 'item' : 'itens'} por rever`}
+            : `${stats.pending} ${stats.pending === 1 ? 'produto' : 'produtos'} por rever`}
         </Button>
 
         {/* Help text */}

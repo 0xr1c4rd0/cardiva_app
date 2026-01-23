@@ -28,11 +28,11 @@ export function DataTablePagination<TData>({
   return (
     <div className="flex items-center justify-between px-2 py-4">
       <div className="text-sm text-muted-foreground">
-        Showing {visibleRows} of {rowCount} items
+        A mostrar {visibleRows} de {rowCount} produtos
       </div>
       <div className="flex items-center gap-6">
         <div className="flex items-center gap-2">
-          <p className="text-sm font-medium">Rows per page</p>
+          <p className="text-sm font-medium">Linhas por página</p>
           <Select
             value={`${table.getState().pagination.pageSize}`}
             onValueChange={(value) => {
@@ -54,7 +54,7 @@ export function DataTablePagination<TData>({
         </div>
         <div className="flex items-center gap-2">
           <div className="text-sm font-medium">
-            Page {pageIndex + 1} of {pageCount || 1}
+            Página {pageIndex + 1} de {pageCount || 1}
           </div>
           <div className="flex items-center gap-1">
             <Button
@@ -65,7 +65,7 @@ export function DataTablePagination<TData>({
               disabled={!table.getCanPreviousPage() || isPending}
             >
               <ChevronLeft className="h-4 w-4" />
-              <span className="sr-only">Previous page</span>
+              <span className="sr-only">Página anterior</span>
             </Button>
             <Button
               variant="outline"
@@ -75,7 +75,7 @@ export function DataTablePagination<TData>({
               disabled={!table.getCanNextPage() || isPending}
             >
               <ChevronRight className="h-4 w-4" />
-              <span className="sr-only">Next page</span>
+              <span className="sr-only">Página seguinte</span>
             </Button>
           </div>
         </div>

@@ -13,12 +13,16 @@ interface PageProps {
   searchParams: Promise<Record<string, string | string[] | undefined>>
 }
 
+type SortColumn = 'lote' | 'pos' | 'artigo' | 'descricao' | 'status'
+type SortDirection = 'asc' | 'desc'
+
 interface MatchReviewState {
   page: number
   pageSize: number
   search: string
   status: 'all' | 'pending' | 'matched' | 'no_match'
-  sortBy: 'position' | 'status'
+  sortBy: SortColumn
+  sortDir: SortDirection
 }
 
 export default async function MatchReviewPage({ params, searchParams }: PageProps) {
@@ -33,9 +37,13 @@ export default async function MatchReviewPage({ params, searchParams }: PageProp
   const status = (['all', 'pending', 'matched', 'no_match'].includes(String(queryParams.status))
     ? String(queryParams.status)
     : 'all') as MatchReviewState['status']
-  const sortBy = (queryParams.sortBy === 'status' ? 'status' : 'position') as MatchReviewState['sortBy']
+  const validSortColumns: SortColumn[] = ['lote', 'pos', 'artigo', 'descricao', 'status']
+  const sortBy = (validSortColumns.includes(String(queryParams.sortBy) as SortColumn)
+    ? String(queryParams.sortBy)
+    : 'lote') as SortColumn
+  const sortDir = (queryParams.sortDir === 'desc' ? 'desc' : 'asc') as SortDirection
 
-  const initialState: MatchReviewState = { page, pageSize, search, status, sortBy }
+  const initialState: MatchReviewState = { page, pageSize, search, status, sortBy, sortDir }
 
   // Verify user is authenticated
   const {
@@ -83,17 +91,33 @@ export default async function MatchReviewPage({ params, searchParams }: PageProp
     query = query.or(`artigo_pedido.ilike.%${search}%,descricao_pedido.ilike.%${search}%`)
   }
 
-  // Apply sorting
-  if (sortBy === 'position') {
-    query = query
-      .order('lote_pedido', { ascending: true })
-      .order('posicao_pedido', { ascending: true })
-  } else {
-    // Sort by status: pending first, then matched, then no_match
-    query = query
-      .order('review_status', { ascending: true })
-      .order('lote_pedido', { ascending: true })
-      .order('posicao_pedido', { ascending: true })
+  // Apply sorting based on column and direction
+  const isAsc = sortDir === 'asc'
+  switch (sortBy) {
+    case 'lote':
+      query = query
+        .order('lote_pedido', { ascending: isAsc })
+        .order('posicao_pedido', { ascending: isAsc })
+      break
+    case 'pos':
+      query = query.order('posicao_pedido', { ascending: isAsc })
+      break
+    case 'artigo':
+      query = query.order('artigo_pedido', { ascending: isAsc })
+      break
+    case 'descricao':
+      query = query.order('descricao_pedido', { ascending: isAsc })
+      break
+    case 'status':
+      query = query
+        .order('review_status', { ascending: isAsc })
+        .order('lote_pedido', { ascending: true })
+        .order('posicao_pedido', { ascending: true })
+      break
+    default:
+      query = query
+        .order('lote_pedido', { ascending: true })
+        .order('posicao_pedido', { ascending: true })
   }
 
   // Apply pagination

@@ -43,7 +43,7 @@ export function ReviewStatsChips({ items }: ReviewStatsChipsProps) {
     {
       icon: <AlertCircle className="h-3.5 w-3.5" />,
       count: noMatch,
-      tooltip: `${noMatch} ${noMatch === 1 ? 'item' : 'itens'} sem correspondência`,
+      tooltip: `${noMatch} ${noMatch === 1 ? 'produto' : 'produtos'} sem correspondência`,
       bgColor: 'bg-gray-100',
       textColor: 'text-gray-500',
       show: true,
@@ -51,7 +51,7 @@ export function ReviewStatsChips({ items }: ReviewStatsChipsProps) {
     {
       icon: <Clock className="h-3.5 w-3.5" />,
       count: pending,
-      tooltip: `${pending} ${pending === 1 ? 'item' : 'itens'} por rever`,
+      tooltip: `${pending} ${pending === 1 ? 'produto' : 'produtos'} por rever`,
       bgColor: 'bg-amber-100',
       textColor: 'text-amber-600',
       show: pending > 0,

@@ -38,9 +38,9 @@ export function MatchReviewPagination({
     <div className="flex items-center justify-between px-2 py-4">
       <div className="text-sm text-muted-foreground">
         {totalCount === 0 ? (
-          'Nenhum item'
+          'Nenhum produto'
         ) : (
-          <>A mostrar {start}-{end} de {totalCount} itens</>
+          <>A mostrar {start}-{end} de {totalCount} produtos</>
         )}
       </div>
       <div className="flex items-center gap-6">

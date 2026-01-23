@@ -25,14 +25,16 @@ import { MatchReviewPagination } from './match-review-pagination'
 import type { RFPItemWithMatches, MatchSuggestion } from '@/types/rfp'
 
 type StatusFilter = 'all' | 'pending' | 'matched' | 'no_match'
-type SortOption = 'position' | 'status'
+type SortColumn = 'lote' | 'pos' | 'artigo' | 'descricao' | 'status'
+type SortDirection = 'asc' | 'desc'
 
 interface MatchReviewState {
   page: number
   pageSize: number
   search: string
   status: StatusFilter
-  sortBy: SortOption
+  sortBy: SortColumn
+  sortDir: SortDirection
 }
 
 interface MatchReviewTableProps {
@@ -42,17 +44,49 @@ interface MatchReviewTableProps {
   initialState: MatchReviewState
 }
 
+// Sortable header button component
+interface SortableHeaderProps {
+  column: SortColumn
+  label: string
+  sortBy: string
+  sortDir: string
+  onSort: (column: SortColumn) => void
+  className?: string
+}
+
+function SortableHeader({ column, label, sortBy, sortDir, onSort, className = '' }: SortableHeaderProps) {
+  const isActive = sortBy === column
+  const isAsc = sortDir === 'asc'
+
+  return (
+    <Button
+      variant="ghost"
+      size="sm"
+      onClick={() => onSort(column)}
+      className={cn("h-auto p-0 hover:bg-transparent font-medium", className)}
+    >
+      {label}
+      {isActive ? (
+        isAsc ? <ArrowUp className="ml-1 h-3 w-3" /> : <ArrowDown className="ml-1 h-3 w-3" />
+      ) : (
+        <ArrowUpDown className="ml-1 h-3 w-3 text-muted-foreground" />
+      )}
+    </Button>
+  )
+}
+
 export function MatchReviewTable({ jobId, items, totalCount, initialState }: MatchReviewTableProps) {
   const [isPending, startTransition] = useTransition()
 
   // URL state management
-  const [{ page, pageSize, search, status, sortBy }, setParams] = useQueryStates(
+  const [{ page, pageSize, search, status, sortBy, sortDir }, setParams] = useQueryStates(
     {
       page: parseAsInteger.withDefault(initialState.page),
       pageSize: parseAsInteger.withDefault(initialState.pageSize),
       search: parseAsString.withDefault(initialState.search),
       status: parseAsString.withDefault(initialState.status),
       sortBy: parseAsString.withDefault(initialState.sortBy),
+      sortDir: parseAsString.withDefault(initialState.sortDir),
     },
     { shallow: false }
   )
@@ -70,9 +104,16 @@ export function MatchReviewTable({ jobId, items, totalCount, initialState }: Mat
     })
   }
 
-  const handleSortChange = (newSortBy: SortOption) => {
+  const handleSortChange = (column: SortColumn) => {
     startTransition(() => {
-      setParams({ sortBy: newSortBy === 'position' ? null : newSortBy, page: 1 })
+      if (sortBy === column) {
+        // Toggle direction if same column
+        const newDir = sortDir === 'asc' ? 'desc' : 'asc'
+        setParams({ sortDir: newDir === 'asc' ? null : newDir, page: 1 })
+      } else {
+        // New column, reset to ascending
+        setParams({ sortBy: column === 'lote' ? null : column, sortDir: null, page: 1 })
+      }
     })
   }
 
@@ -114,11 +155,11 @@ export function MatchReviewTable({ jobId, items, totalCount, initialState }: Mat
           <div className="mb-6 rounded-full bg-muted p-6">
             <SearchX className="h-12 w-12 text-muted-foreground" />
           </div>
-          <h3 className="mb-2 text-lg font-medium">Nenhum item encontrado</h3>
+          <h3 className="mb-2 text-lg font-medium">Nenhum produto encontrado</h3>
           <p className="mb-6 max-w-sm text-muted-foreground">
             {search
-              ? `Não foram encontrados itens para "${search}".`
-              : 'Não foram encontrados itens com o filtro selecionado.'}
+              ? `Não foram encontrados produtos para "${search}".`
+              : 'Não foram encontrados produtos com o filtro selecionado.'}
           </p>
           <Button variant="outline" onClick={handleClearFilters}>
             Limpar filtros
@@ -132,40 +173,52 @@ export function MatchReviewTable({ jobId, items, totalCount, initialState }: Mat
               <TableHeader>
                 <TableRow className="hover:bg-transparent border-0">
                   <TableHead className="pl-4 whitespace-nowrap text-xs font-medium text-slate-700 uppercase tracking-wide bg-slate-100/70 py-2 rounded-l-md">
-                    <Button
-                      variant="ghost"
-                      size="sm"
-                      onClick={() => handleSortChange(sortBy === 'position' ? 'status' : 'position')}
-                      className="h-auto p-0 hover:bg-transparent font-medium"
-                    >
-                      Lote
-                      {sortBy === 'position' ? (
-                        <ArrowDown className="ml-1 h-3 w-3" />
-                      ) : (
-                        <ArrowUpDown className="ml-1 h-3 w-3 text-muted-foreground" />
-                      )}
-                    </Button>
+                    <SortableHeader
+                      column="lote"
+                      label="Lote"
+                      sortBy={sortBy}
+                      sortDir={sortDir}
+                      onSort={handleSortChange}
+                    />
                   </TableHead>
-                  <TableHead className="whitespace-nowrap text-xs font-medium text-slate-700 uppercase tracking-wide bg-slate-100/70 py-2 px-3">Pos</TableHead>
-                  <TableHead className="whitespace-nowrap text-xs font-medium text-slate-700 uppercase tracking-wide bg-slate-100/70 py-2 px-3">Artigo</TableHead>
-                  <TableHead className="text-xs font-medium text-slate-700 uppercase tracking-wide bg-slate-100/70 py-2 px-3">Descrição</TableHead>
+                  <TableHead className="whitespace-nowrap text-xs font-medium text-slate-700 uppercase tracking-wide bg-slate-100/70 py-2 px-3">
+                    <SortableHeader
+                      column="pos"
+                      label="Pos"
+                      sortBy={sortBy}
+                      sortDir={sortDir}
+                      onSort={handleSortChange}
+                    />
+                  </TableHead>
+                  <TableHead className="whitespace-nowrap text-xs font-medium text-slate-700 uppercase tracking-wide bg-slate-100/70 py-2 px-3">
+                    <SortableHeader
+                      column="artigo"
+                      label="Artigo"
+                      sortBy={sortBy}
+                      sortDir={sortDir}
+                      onSort={handleSortChange}
+                    />
+                  </TableHead>
+                  <TableHead className="text-xs font-medium text-slate-700 uppercase tracking-wide bg-slate-100/70 py-2 px-3">
+                    <SortableHeader
+                      column="descricao"
+                      label="Descrição"
+                      sortBy={sortBy}
+                      sortDir={sortDir}
+                      onSort={handleSortChange}
+                    />
+                  </TableHead>
                   <TableHead className="whitespace-nowrap text-xs font-medium text-slate-700 uppercase tracking-wide bg-slate-100/70 py-2 px-3">Cód. SPMS</TableHead>
                   <TableHead className="whitespace-nowrap text-xs font-medium text-slate-700 uppercase tracking-wide bg-slate-100/70 py-2 px-3">Artigo</TableHead>
                   <TableHead className="text-xs font-medium text-slate-700 uppercase tracking-wide bg-slate-100/70 py-2 px-3">Descrição</TableHead>
                   <TableHead className="whitespace-nowrap pr-4 text-xs font-medium text-slate-700 uppercase tracking-wide bg-slate-100/70 py-2 text-right rounded-r-md">
-                    <Button
-                      variant="ghost"
-                      size="sm"
-                      onClick={() => handleSortChange(sortBy === 'status' ? 'position' : 'status')}
-                      className="h-auto p-0 hover:bg-transparent font-medium"
-                    >
-                      Estado
-                      {sortBy === 'status' ? (
-                        <ArrowDown className="ml-1 h-3 w-3" />
-                      ) : (
-                        <ArrowUpDown className="ml-1 h-3 w-3 text-muted-foreground" />
-                      )}
-                    </Button>
+                    <SortableHeader
+                      column="status"
+                      label="Estado"
+                      sortBy={sortBy}
+                      sortDir={sortDir}
+                      onSort={handleSortChange}
+                    />
                   </TableHead>
                 </TableRow>
               </TableHeader>
@@ -180,7 +233,7 @@ export function MatchReviewTable({ jobId, items, totalCount, initialState }: Mat
                 {items.length === 0 && (
                   <TableRow>
                     <TableCell colSpan={8} className="h-32 text-center text-muted-foreground">
-                      Nenhum item encontrado para este concurso.
+                      Nenhum produto encontrado para este concurso.
                     </TableCell>
                   </TableRow>
                 )}
@@ -304,7 +357,7 @@ function ItemRow({ jobId, item }: ItemRowProps) {
                 sideOffset={8}
               >
                 <p className="text-sm text-muted-foreground mb-3">
-                  Não foram encontradas correspondências automáticas para este item.
+                  Não foram encontradas correspondências automáticas para este produto.
                 </p>
                 <button
                   type="button"

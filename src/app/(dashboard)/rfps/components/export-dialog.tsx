@@ -166,13 +166,13 @@ export function ExportDialog({ open, onOpenChange, items, jobId }: ExportDialogP
             <div className="flex items-center space-x-3">
               <RadioGroupItem value="matched" id="matched" />
               <Label htmlFor="matched" className="cursor-pointer font-normal">
-                Apenas correspondências ({matchedCount} {matchedCount === 1 ? 'item' : 'itens'})
+                Apenas correspondências ({matchedCount} {matchedCount === 1 ? 'produto' : 'produtos'})
               </Label>
             </div>
             <div className="flex items-center space-x-3">
               <RadioGroupItem value="all" id="all" />
               <Label htmlFor="all" className="cursor-pointer font-normal">
-                Todos os itens ({items.length} {items.length === 1 ? 'item' : 'itens'})
+                Todos os produtos ({items.length} {items.length === 1 ? 'produto' : 'produtos'})
               </Label>
             </div>
           </RadioGroup>

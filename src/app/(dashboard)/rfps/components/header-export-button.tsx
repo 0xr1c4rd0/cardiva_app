@@ -33,14 +33,14 @@ export function HeaderExportButton({ items, jobId }: HeaderExportButtonProps) {
 
   const getButtonText = () => {
     if (pendingCount > 0) {
-      return `${pendingCount} ${pendingCount === 1 ? 'item' : 'itens'} por rever`
+      return `${pendingCount} ${pendingCount === 1 ? 'produto' : 'produtos'} por rever`
     }
     return 'Confirmar e Exportar'
   }
 
   const getTooltipText = () => {
     if (pendingCount > 0) {
-      return 'Reveja todos os itens antes de exportar'
+      return 'Reveja todos os produtos antes de exportar'
     }
     if (!hasConfirmedMatches) {
       return 'Selecione pelo menos um produto para exportar'
