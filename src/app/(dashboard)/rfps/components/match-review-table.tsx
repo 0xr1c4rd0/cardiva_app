@@ -129,43 +129,41 @@ export function MatchReviewTable({ jobId, items, totalCount, initialState }: Mat
       ) : (
         <>
           {/* Table */}
-          <div className="rounded-lg border border-border/40 overflow-x-auto">
-      <Table>
-        <TableHeader>
-          <TableRow className="hover:bg-transparent border-b border-border/40">
-            {/* RFP Item columns - short columns fit content */}
-            <TableHead className="pl-6 w-[1%] text-xs font-medium text-muted-foreground/70 uppercase tracking-wider">Lote</TableHead>
-            <TableHead className="w-[1%] text-xs font-medium text-muted-foreground/70 uppercase tracking-wider">Pos</TableHead>
-            <TableHead className="w-[1%] text-xs font-medium text-muted-foreground/70 uppercase tracking-wider">Artigo</TableHead>
-            <TableHead className="text-xs font-medium text-muted-foreground/70 uppercase tracking-wider">Descrição</TableHead>
-            {/* Separator */}
-            <TableHead className="w-[1px] px-0"></TableHead>
-            {/* Matched product columns */}
-            <TableHead className="w-[1%] text-xs font-medium text-emerald-600/70 uppercase tracking-wider">Cód. SPMS</TableHead>
-            <TableHead className="w-[1%] text-xs font-medium text-emerald-600/70 uppercase tracking-wider">Artigo Cardiva</TableHead>
-            <TableHead className="text-xs font-medium text-emerald-600/70 uppercase tracking-wider">Descrição Cardiva</TableHead>
-            {/* Status */}
-            <TableHead className="w-[1%] pr-6 text-xs font-medium text-muted-foreground/70 uppercase tracking-wider text-right">Status</TableHead>
-          </TableRow>
-        </TableHeader>
-        <TableBody>
-          {items.map((item, index) => (
-            <ItemRow
-              key={item.id}
-              jobId={jobId}
-              item={item}
-              isLast={index === items.length - 1}
-            />
-          ))}
-          {items.length === 0 && (
-            <TableRow>
-              <TableCell colSpan={9} className="h-32 text-center text-muted-foreground">
-                Nenhum item encontrado para este concurso.
-              </TableCell>
-            </TableRow>
-          )}
-        </TableBody>
-      </Table>
+          <div className="rounded-lg border border-slate-200 shadow-xs overflow-hidden">
+            <Table>
+              <TableHeader>
+                <TableRow className="hover:bg-transparent bg-white border-b-2 border-slate-200">
+                  {/* RFP Item columns */}
+                  <TableHead className="pl-6 whitespace-nowrap text-xs font-semibold text-slate-700 uppercase tracking-wide">Lote</TableHead>
+                  <TableHead className="whitespace-nowrap text-xs font-semibold text-slate-700 uppercase tracking-wide">Pos</TableHead>
+                  <TableHead className="whitespace-nowrap text-xs font-semibold text-slate-700 uppercase tracking-wide">Artigo</TableHead>
+                  <TableHead className="text-xs font-semibold text-slate-700 uppercase tracking-wide">Descrição</TableHead>
+                  {/* Matched product columns - Cardiva zone with tinted background */}
+                  <TableHead className="whitespace-nowrap text-xs font-semibold text-emerald-700 uppercase tracking-wide bg-emerald-50/20">Cód. SPMS</TableHead>
+                  <TableHead className="whitespace-nowrap text-xs font-semibold text-emerald-700 uppercase tracking-wide bg-emerald-50/20">Artigo</TableHead>
+                  <TableHead className="text-xs font-semibold text-emerald-700 uppercase tracking-wide bg-emerald-50/20">Descrição</TableHead>
+                  {/* Status */}
+                  <TableHead className="whitespace-nowrap pr-6 text-xs font-semibold text-slate-700 uppercase tracking-wide text-right">Estado</TableHead>
+                </TableRow>
+              </TableHeader>
+              <TableBody>
+                {items.map((item, index) => (
+                  <ItemRow
+                    key={item.id}
+                    jobId={jobId}
+                    item={item}
+                    isLast={index === items.length - 1}
+                  />
+                ))}
+                {items.length === 0 && (
+                  <TableRow>
+                    <TableCell colSpan={8} className="h-32 text-center text-muted-foreground">
+                      Nenhum item encontrado para este concurso.
+                    </TableCell>
+                  </TableRow>
+                )}
+              </TableBody>
+            </Table>
           </div>
 
           {/* Pagination */}
@@ -222,54 +220,51 @@ function ItemRow({ jobId, item, isLast }: ItemRowProps) {
   return (
     <TableRow
       className={cn(
-        'hover:bg-muted/30 transition-colors',
-        !isLast && 'border-b border-border/30'
+        'transition-all duration-100',
+        'hover:bg-emerald-50/20 hover:border-l-2 hover:border-l-emerald-400',
+        'border-l-2 border-l-transparent',
+        !isLast && 'border-b border-slate-100'
       )}
     >
-      {/* RFP Item columns - short columns fit content */}
-      <TableCell className="pl-6 font-mono">
-        {item.lote_pedido ?? <span className="text-muted-foreground/50">—</span>}
+      {/* RFP Item columns */}
+      <TableCell className="pl-6 whitespace-nowrap font-mono text-slate-700">
+        {item.lote_pedido ?? <span className="text-slate-300 italic text-sm">—</span>}
       </TableCell>
-      <TableCell className="font-mono">
-        {item.posicao_pedido ?? <span className="text-muted-foreground/50">—</span>}
+      <TableCell className="whitespace-nowrap font-mono text-slate-700">
+        {item.posicao_pedido ?? <span className="text-slate-300 italic text-sm">—</span>}
       </TableCell>
-      <TableCell>
-        {item.artigo_pedido ?? <span className="text-muted-foreground/50">—</span>}
+      <TableCell className="whitespace-nowrap text-slate-700">
+        {item.artigo_pedido ?? <span className="text-slate-300 italic text-sm">—</span>}
       </TableCell>
-      <TableCell className="whitespace-normal">
+      <TableCell className="text-slate-600">
         {item.descricao_pedido}
       </TableCell>
 
-      {/* Visual separator */}
-      <TableCell className="px-0 w-[1px]">
-        <div className="h-8 w-px bg-border/50"></div>
-      </TableCell>
-
-      {/* Matched product columns */}
-      <TableCell className="font-mono">
+      {/* Matched product columns - Cardiva zone */}
+      <TableCell className="whitespace-nowrap font-mono bg-emerald-50/20">
         {matchedCodigo ? (
-          <span className="text-emerald-700">{matchedCodigo}</span>
+          <span className="text-emerald-700 font-medium">{matchedCodigo}</span>
         ) : (
-          <span className="text-muted-foreground/30">—</span>
+          <span className="text-slate-300 italic text-sm">—</span>
         )}
       </TableCell>
-      <TableCell>
+      <TableCell className="whitespace-nowrap bg-emerald-50/20">
         {matchedArtigo ? (
-          <span className="text-emerald-700">{matchedArtigo}</span>
+          <span className="text-emerald-700 font-medium">{matchedArtigo}</span>
         ) : (
-          <span className="text-muted-foreground/30">—</span>
+          <span className="text-slate-300 italic text-sm">—</span>
         )}
       </TableCell>
-      <TableCell className="whitespace-normal">
+      <TableCell className="bg-emerald-50/20">
         {matchedDescricao ? (
-          <span className="text-emerald-700">{matchedDescricao}</span>
+          <span className="text-emerald-600">{matchedDescricao}</span>
         ) : (
-          <span className="text-muted-foreground/30">—</span>
+          <span className="text-slate-300 italic text-sm">—</span>
         )}
       </TableCell>
 
       {/* Status / Action column */}
-      <TableCell className="text-right pr-6">
+      <TableCell className="whitespace-nowrap text-right pr-6">
         <div className="flex items-center justify-end gap-2">
           {/* Status button / Popover */}
           {hasNoSuggestions ? (
@@ -311,7 +306,7 @@ function ItemRow({ jobId, item, isLast }: ItemRowProps) {
                   <Button
                     variant="outline"
                     size="sm"
-                    className="text-emerald-600 border-emerald-200 bg-emerald-50/50 hover:bg-emerald-50 hover:border-emerald-300"
+                    className="text-emerald-600 border-emerald-200 bg-emerald-50/20 hover:bg-emerald-50 hover:border-emerald-300"
                   >
                     <Check className="h-3.5 w-3.5 mr-1.5" />
                     Selecionado
@@ -468,7 +463,7 @@ function SuggestionItem({ jobId, rfpItemId, match, isPerfectMatch, onActionCompl
       className={cn(
         'flex items-center gap-3 px-4 py-3 border-b border-border/20 last:border-0 transition-colors',
         'hover:bg-muted/40',
-        showAsSelected && 'bg-emerald-50/30 border-l-2 border-l-emerald-400',
+        showAsSelected && 'bg-emerald-50/20 border-l-2 border-l-emerald-400',
         isRejected && 'opacity-75'
       )}
     >
