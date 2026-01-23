@@ -22,6 +22,7 @@ Decimal phases appear between their surrounding integers in numeric order.
 - [ ] **Phase 8: Bulk Operations** - Manual correction, confirmation step (scope modified)
 - [ ] **Phase 9: Export & Email** - Excel export, email send, preview, configuration
 - [ ] **Phase 10: History & Polish** - RFP history, search, re-download, final polish
+- [ ] **Phase 10.1: RFP Upload Polish** - INSERTED: Multi-upload, multi-user, KPI fixes, sorting fix
 
 ## Phase Details
 
@@ -192,6 +193,27 @@ Plans:
 - [ ] 10-02: Match history view and re-download
 - [ ] 10-03: Final UI polish and consistency pass
 
+### Phase 10.1: RFP Upload Polish (INSERTED)
+**Goal**: Fix critical bugs, enable multi-user collaboration, and enhance RFP upload with multi-file support
+**Depends on**: Phase 7 (can run before Phase 8/9/10)
+**Requirements**: Derived from user feedback and bug reports
+**Success Criteria** (what must be TRUE):
+  1. Match review table sorting works correctly (clicking headers refreshes data)
+  2. KPIs show 3 states: "Por Rever", "Revistos", "Confirmados"
+  3. User can upload up to 10 RFPs concurrently with individual progress tracking
+  4. All users can see, edit, and delete all RFPs (multi-user visibility)
+  5. Uploader and last editor displayed on each RFP
+  6. Changes sync in real-time across all users
+  7. Inventory table matches review table design
+**Plans**: TBD
+
+Plans:
+- [ ] 10.1-01: Fix match review table sorting
+- [ ] 10.1-02: KPI calculations and 3-state model with confirmation workflow
+- [ ] 10.1-03: Multi-upload support with progress UI
+- [ ] 10.1-04: Multi-user permissions and real-time sync
+- [ ] 10.1-05: Uploader/editor display and table design alignment
+
 ## Progress
 
 **Execution Order:**
@@ -209,6 +231,7 @@ Phases execute in numeric order: 1 -> 2 -> 3 -> ... -> 10
 | 8. Bulk Operations | 0/2 | Not started | - |
 | 9. Export & Email | 0/3 | Not started | - |
 | 10. History & Polish | 0/3 | Not started | - |
+| 10.1 RFP Upload Polish | 0/5 | Not started | - |
 
 ---
 *Created: 2025-01-21*
