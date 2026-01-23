@@ -8,6 +8,9 @@ import { HeaderExportButton } from '@/app/(dashboard)/rfps/components/header-exp
 import { autoAcceptExactMatches } from './actions'
 import type { RFPItemWithMatches, MatchSuggestion } from '@/types/rfp'
 
+// Force dynamic rendering to ensure sorting params are always fresh
+export const dynamic = 'force-dynamic'
+
 interface PageProps {
   params: Promise<{ id: string }>
   searchParams: Promise<Record<string, string | string[] | undefined>>

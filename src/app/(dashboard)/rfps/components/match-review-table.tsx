@@ -183,7 +183,7 @@ export function MatchReviewTable({ jobId, items, totalCount, initialState }: Mat
                   <TableHead className="whitespace-nowrap text-xs font-medium text-slate-700 tracking-wide bg-slate-100/70 py-2 px-3">
                     <SortableHeader
                       column="pos"
-                      label="Pos"
+                      label="Posição"
                       sortBy={sortBy}
                       sortDir={sortDir}
                       onSort={handleSortChange}
