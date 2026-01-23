@@ -39,16 +39,13 @@ const dateFormatter = new Intl.DateTimeFormat('pt-PT', {
 interface InventoryTableProps {
   data: Artigo[]
   totalCount: number
-  categories: string[]
   columnConfig: InventoryColumnConfig[]
-  categoryColumnName?: string
   initialState: {
     page: number
     pageSize: number
     search: string
     sortBy: string
     sortOrder: string
-    category: string | null
   }
 }
 
@@ -117,9 +114,7 @@ function createColumns(config: InventoryColumnConfig[]): ColumnDef<Artigo>[] {
 export function InventoryTable({
   data,
   totalCount,
-  categories,
   columnConfig,
-  categoryColumnName,
   initialState,
 }: InventoryTableProps) {
   const [isPending, startTransition] = useTransition()
@@ -127,7 +122,7 @@ export function InventoryTable({
   // Generate columns from config
   const columns = useMemo(() => createColumns(columnConfig), [columnConfig])
 
-  const [{ page, pageSize, search, sortBy, sortOrder, category }, setParams] =
+  const [{ page, pageSize, search, sortBy, sortOrder }, setParams] =
     useQueryStates(
       {
         page: parseAsInteger.withDefault(initialState.page),
@@ -135,7 +130,6 @@ export function InventoryTable({
         search: parseAsString.withDefault(initialState.search),
         sortBy: parseAsString.withDefault(initialState.sortBy),
         sortOrder: parseAsString.withDefault(initialState.sortOrder),
-        category: parseAsString,
       },
       { shallow: false }
     )
@@ -190,23 +184,11 @@ export function InventoryTable({
     })
   }
 
-  const handleCategoryChange = (value: string | null) => {
-    startTransition(() => {
-      setParams({ category: value, page: 1 })
-    })
-  }
-
-  // Only show category filter if we have a category column configured
-  const showCategoryFilter = !!categoryColumnName && categories.length > 0
-
   return (
     <div className="space-y-4">
       <TableToolbar
         search={search}
         onSearchChange={handleSearchChange}
-        category={category}
-        onCategoryChange={handleCategoryChange}
-        categories={showCategoryFilter ? categories : []}
         isPending={isPending}
       />
       <div className="rounded-lg border border-slate-200 shadow-xs overflow-hidden bg-white p-2">

@@ -14,15 +14,12 @@ import { Search, X, Loader2 } from 'lucide-react'
 import { useRef } from 'react'
 
 type StatusFilter = 'all' | 'pending' | 'matched' | 'no_match'
-type SortOption = 'position' | 'status'
 
 interface MatchReviewToolbarProps {
   search: string
   onSearchChange: (value: string) => void
   status: StatusFilter
   onStatusChange: (status: StatusFilter) => void
-  sortBy: SortOption
-  onSortChange: (sortBy: SortOption) => void
   isPending: boolean
 }
 
@@ -33,18 +30,11 @@ const statusOptions: { value: StatusFilter; label: string }[] = [
   { value: 'no_match', label: 'Sem correspondência' },
 ]
 
-const sortOptions: { value: SortOption; label: string }[] = [
-  { value: 'position', label: 'Lote/Posição' },
-  { value: 'status', label: 'Pendentes primeiro' },
-]
-
 export function MatchReviewToolbar({
   search,
   onSearchChange,
   status,
   onStatusChange,
-  sortBy,
-  onSortChange,
   isPending,
 }: MatchReviewToolbarProps) {
   const inputRef = useRef<HTMLInputElement>(null)
@@ -96,23 +86,6 @@ export function MatchReviewToolbar({
         </SelectTrigger>
         <SelectContent>
           {statusOptions.map((option) => (
-            <SelectItem key={option.value} value={option.value}>
-              {option.label}
-            </SelectItem>
-          ))}
-        </SelectContent>
-      </Select>
-
-      <Select
-        value={sortBy}
-        onValueChange={(value) => onSortChange(value as SortOption)}
-        disabled={isPending}
-      >
-        <SelectTrigger className="w-[180px]">
-          <SelectValue placeholder="Ordenar por" />
-        </SelectTrigger>
-        <SelectContent>
-          {sortOptions.map((option) => (
             <SelectItem key={option.value} value={option.value}>
               {option.label}
             </SelectItem>

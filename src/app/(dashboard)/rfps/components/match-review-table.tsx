@@ -2,7 +2,7 @@
 
 import { useState, useTransition } from 'react'
 import { useQueryStates, parseAsInteger, parseAsString } from 'nuqs'
-import { Check, X, Loader2, SearchX } from 'lucide-react'
+import { Check, X, Loader2, SearchX, ArrowUpDown, ArrowUp, ArrowDown } from 'lucide-react'
 import {
   Table,
   TableBody,
@@ -105,8 +105,6 @@ export function MatchReviewTable({ jobId, items, totalCount, initialState }: Mat
         onSearchChange={handleSearchChange}
         status={(status as StatusFilter) || 'all'}
         onStatusChange={handleStatusChange}
-        sortBy={(sortBy as SortOption) || 'position'}
-        onSortChange={handleSortChange}
         isPending={isPending}
       />
 
@@ -133,14 +131,42 @@ export function MatchReviewTable({ jobId, items, totalCount, initialState }: Mat
             <Table className="[&_thead_tr]:border-0">
               <TableHeader>
                 <TableRow className="hover:bg-transparent border-0">
-                  <TableHead className="pl-4 whitespace-nowrap text-xs font-medium text-slate-700 uppercase tracking-wide bg-slate-100/70 py-2 rounded-l-md">Lote</TableHead>
+                  <TableHead className="pl-4 whitespace-nowrap text-xs font-medium text-slate-700 uppercase tracking-wide bg-slate-100/70 py-2 rounded-l-md">
+                    <Button
+                      variant="ghost"
+                      size="sm"
+                      onClick={() => handleSortChange(sortBy === 'position' ? 'status' : 'position')}
+                      className="h-auto p-0 hover:bg-transparent font-medium"
+                    >
+                      Lote
+                      {sortBy === 'position' ? (
+                        <ArrowDown className="ml-1 h-3 w-3" />
+                      ) : (
+                        <ArrowUpDown className="ml-1 h-3 w-3 text-muted-foreground" />
+                      )}
+                    </Button>
+                  </TableHead>
                   <TableHead className="whitespace-nowrap text-xs font-medium text-slate-700 uppercase tracking-wide bg-slate-100/70 py-2 px-3">Pos</TableHead>
                   <TableHead className="whitespace-nowrap text-xs font-medium text-slate-700 uppercase tracking-wide bg-slate-100/70 py-2 px-3">Artigo</TableHead>
                   <TableHead className="text-xs font-medium text-slate-700 uppercase tracking-wide bg-slate-100/70 py-2 px-3">Descrição</TableHead>
                   <TableHead className="whitespace-nowrap text-xs font-medium text-slate-700 uppercase tracking-wide bg-slate-100/70 py-2 px-3">Cód. SPMS</TableHead>
                   <TableHead className="whitespace-nowrap text-xs font-medium text-slate-700 uppercase tracking-wide bg-slate-100/70 py-2 px-3">Artigo</TableHead>
                   <TableHead className="text-xs font-medium text-slate-700 uppercase tracking-wide bg-slate-100/70 py-2 px-3">Descrição</TableHead>
-                  <TableHead className="whitespace-nowrap pr-4 text-xs font-medium text-slate-700 uppercase tracking-wide bg-slate-100/70 py-2 text-right rounded-r-md">Estado</TableHead>
+                  <TableHead className="whitespace-nowrap pr-4 text-xs font-medium text-slate-700 uppercase tracking-wide bg-slate-100/70 py-2 text-right rounded-r-md">
+                    <Button
+                      variant="ghost"
+                      size="sm"
+                      onClick={() => handleSortChange(sortBy === 'status' ? 'position' : 'status')}
+                      className="h-auto p-0 hover:bg-transparent font-medium"
+                    >
+                      Estado
+                      {sortBy === 'status' ? (
+                        <ArrowDown className="ml-1 h-3 w-3" />
+                      ) : (
+                        <ArrowUpDown className="ml-1 h-3 w-3 text-muted-foreground" />
+                      )}
+                    </Button>
+                  </TableHead>
                 </TableRow>
               </TableHeader>
               <TableBody>

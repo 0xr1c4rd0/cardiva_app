@@ -22,7 +22,6 @@ export default async function InventoryPage({
   const search = String(params.search || '').slice(0, 200)
   const sortBy = String(params.sortBy || '')
   const sortOrder = params.sortOrder === 'desc' ? 'desc' : 'asc'
-  const category = params.category ? String(params.category) : undefined
 
   const supabase = await createClient()
 
@@ -66,15 +65,6 @@ export default async function InventoryPage({
     query = query.or(searchConditions)
   }
 
-  // Apply category filter if there's a category column configured
-  const categoryColumn = columns.find(c =>
-    c.column_name.toLowerCase().includes('categ') ||
-    c.column_name.toLowerCase().includes('category')
-  )
-  if (category && categoryColumn) {
-    query = query.eq(categoryColumn.column_name, category)
-  }
-
   // Apply sorting
   query = query.order(actualSortBy, { ascending: sortOrder === 'asc' })
 
@@ -91,34 +81,13 @@ export default async function InventoryPage({
     throw new Error(`Failed to fetch inventory: ${error.message}`)
   }
 
-  // Fetch distinct categories for the filter dropdown (if category column exists)
-  let categories: string[] = []
-  if (categoryColumn) {
-    const { data: categoryData } = await supabase
-      .from('artigos')
-      .select(categoryColumn.column_name)
-      .not(categoryColumn.column_name, 'is', null)
-      .order(categoryColumn.column_name)
-
-    if (categoryData && Array.isArray(categoryData)) {
-      categories = [
-        ...new Set(
-          // eslint-disable-next-line @typescript-eslint/no-explicit-any
-          (categoryData as any[])
-            .map((item) => item[categoryColumn.column_name])
-            .filter((v): v is string => typeof v === 'string' && v.length > 0)
-        ),
-      ]
-    }
-  }
-
   return (
-    <div className="flex flex-1 flex-col gap-4 p-4">
+    <div className="flex flex-1 flex-col gap-6">
       <div className="flex items-center justify-between">
         <div>
-          <h1 className="text-2xl font-semibold">Inventory</h1>
+          <h1 className="text-2xl font-semibold">Inventário</h1>
           <p className="text-muted-foreground">
-            Browse and manage your product catalog
+            Consultar e gerir o catálogo de produtos
           </p>
         </div>
 
@@ -138,16 +107,13 @@ export default async function InventoryPage({
       <InventoryTable
         data={data ?? []}
         totalCount={count ?? 0}
-        categories={categories}
         columnConfig={visibleColumns}
-        categoryColumnName={categoryColumn?.column_name}
         initialState={{
           page,
           pageSize,
           search,
           sortBy: actualSortBy,
           sortOrder,
-          category: category ?? null,
         }}
       />
     </div>
