@@ -59,19 +59,18 @@ function SortableHeader({ column, label, sortBy, sortDir, onSort, className = ''
   const isAsc = sortDir === 'asc'
 
   return (
-    <Button
-      variant="ghost"
-      size="sm"
+    <button
+      type="button"
       onClick={() => onSort(column)}
-      className={cn("h-auto p-0 hover:bg-transparent font-medium", className)}
+      className={cn("inline-flex items-center hover:text-slate-900 transition-colors", className)}
     >
       {label}
       {isActive ? (
         isAsc ? <ArrowUp className="ml-1 h-3 w-3" /> : <ArrowDown className="ml-1 h-3 w-3" />
       ) : (
-        <ArrowUpDown className="ml-1 h-3 w-3 text-muted-foreground" />
+        <ArrowUpDown className="ml-1 h-3 w-3 text-slate-400" />
       )}
-    </Button>
+    </button>
   )
 }
 
@@ -208,9 +207,15 @@ export function MatchReviewTable({ jobId, items, totalCount, initialState }: Mat
                       onSort={handleSortChange}
                     />
                   </TableHead>
-                  <TableHead className="whitespace-nowrap text-xs font-medium text-slate-700 uppercase tracking-wide bg-slate-100/70 py-2 px-3">Cód. SPMS</TableHead>
-                  <TableHead className="whitespace-nowrap text-xs font-medium text-slate-700 uppercase tracking-wide bg-slate-100/70 py-2 px-3">Artigo</TableHead>
-                  <TableHead className="text-xs font-medium text-slate-700 uppercase tracking-wide bg-slate-100/70 py-2 px-3">Descrição</TableHead>
+                  <TableHead className="whitespace-nowrap text-xs font-medium text-slate-700 uppercase tracking-wide bg-slate-100/70 py-2 px-3">
+                    <span className="inline-flex items-center">Cód. SPMS</span>
+                  </TableHead>
+                  <TableHead className="whitespace-nowrap text-xs font-medium text-slate-700 uppercase tracking-wide bg-slate-100/70 py-2 px-3">
+                    <span className="inline-flex items-center">Artigo</span>
+                  </TableHead>
+                  <TableHead className="text-xs font-medium text-slate-700 uppercase tracking-wide bg-slate-100/70 py-2 px-3">
+                    <span className="inline-flex items-center">Descrição</span>
+                  </TableHead>
                   <TableHead className="whitespace-nowrap pr-4 text-xs font-medium text-slate-700 uppercase tracking-wide bg-slate-100/70 py-2 text-right rounded-r-md">
                     <SortableHeader
                       column="status"
