@@ -26,7 +26,7 @@ export default function UpdatePasswordPage() {
     const confirm = formData.get('confirmPassword') as string
 
     if (pwd !== confirm) {
-      setClientError('Passwords do not match')
+      setClientError('As palavras-passe não coincidem')
       return
     }
 
@@ -38,9 +38,9 @@ export default function UpdatePasswordPage() {
     <div className="flex min-h-screen items-center justify-center">
       <Card className="w-full max-w-md">
         <CardHeader>
-          <CardTitle>Update Password</CardTitle>
+          <CardTitle>Atualizar Palavra-passe</CardTitle>
           <CardDescription>
-            Enter your new password below
+            Introduza a sua nova palavra-passe abaixo
           </CardDescription>
         </CardHeader>
         <form action={handleSubmit}>
@@ -53,7 +53,7 @@ export default function UpdatePasswordPage() {
               </Alert>
             )}
             <div className="space-y-2">
-              <Label htmlFor="password">New Password</Label>
+              <Label htmlFor="password">Nova Palavra-passe</Label>
               <Input
                 id="password"
                 name="password"
@@ -65,11 +65,11 @@ export default function UpdatePasswordPage() {
                 minLength={8}
               />
               <p className="text-xs text-muted-foreground">
-                At least 8 characters with uppercase, lowercase, and number
+                Mínimo 8 caracteres com maiúscula, minúscula e número
               </p>
             </div>
             <div className="space-y-2">
-              <Label htmlFor="confirmPassword">Confirm New Password</Label>
+              <Label htmlFor="confirmPassword">Confirmar Nova Palavra-passe</Label>
               <Input
                 id="confirmPassword"
                 name="confirmPassword"
@@ -83,7 +83,7 @@ export default function UpdatePasswordPage() {
           </CardContent>
           <div className="px-6 pb-6">
             <Button type="submit" className="w-full" disabled={isPending}>
-              {isPending ? 'Updating...' : 'Update Password'}
+              {isPending ? 'A atualizar...' : 'Atualizar Palavra-passe'}
             </Button>
           </div>
         </form>

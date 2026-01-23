@@ -89,7 +89,8 @@ export async function acceptMatch(
 
 /**
  * Unselect (toggle off) an accepted match suggestion.
- * - Sets the match's status back to 'pending'
+ * - For manual matches: DELETE the match (it was user-created and might be an error)
+ * - For regular matches: Sets the match's status back to 'pending'
  * - Restores all other matches to 'pending' as well
  * - Resets the RFP item's review_status to 'pending' and clears selected_match_id
  */
@@ -109,14 +110,46 @@ export async function unselectMatch(
       return { success: false, error: 'Not authenticated' }
     }
 
-    // Step 1: Reset all matches for this RFP item to 'pending'
-    const { error: matchError } = await supabase
+    // Step 0: Check if this is a manual match
+    const { data: matchData } = await supabase
       .from('rfp_match_suggestions')
-      .update({ status: 'pending' })
-      .eq('rfp_item_id', rfpItemId)
+      .select('match_type')
+      .eq('id', matchId)
+      .single()
 
-    if (matchError) {
-      return { success: false, error: matchError.message }
+    const isManualMatch = matchData?.match_type === 'Manual'
+
+    if (isManualMatch) {
+      // For manual matches: DELETE the match entirely (user-created, might be an error)
+      const { error: deleteError } = await supabase
+        .from('rfp_match_suggestions')
+        .delete()
+        .eq('id', matchId)
+
+      if (deleteError) {
+        return { success: false, error: deleteError.message }
+      }
+
+      // Restore other matches to pending
+      const { error: restoreError } = await supabase
+        .from('rfp_match_suggestions')
+        .update({ status: 'pending' })
+        .eq('rfp_item_id', rfpItemId)
+
+      if (restoreError) {
+        console.error('Failed to restore other matches:', restoreError)
+        // Non-fatal: continue
+      }
+    } else {
+      // For regular matches: Reset all matches for this RFP item to 'pending'
+      const { error: matchError } = await supabase
+        .from('rfp_match_suggestions')
+        .update({ status: 'pending' })
+        .eq('rfp_item_id', rfpItemId)
+
+      if (matchError) {
+        return { success: false, error: matchError.message }
+      }
     }
 
     // Step 2: Reset the RFP item's review_status and clear selected_match_id
@@ -275,6 +308,94 @@ export async function searchInventory(
   } catch (error) {
     console.error('searchInventory error:', error)
     return []
+  }
+}
+
+/**
+ * Auto-accept exact matches (100% similarity) for all pending items in a job.
+ * Called on page load to pre-confirm obvious matches.
+ * Returns the count of auto-accepted items.
+ */
+export async function autoAcceptExactMatches(
+  jobId: string
+): Promise<{ accepted: number; error?: string }> {
+  try {
+    const supabase = await createClient()
+
+    // Verify user is authenticated
+    const {
+      data: { user },
+    } = await supabase.auth.getUser()
+    if (!user) {
+      return { accepted: 0, error: 'Not authenticated' }
+    }
+
+    // Find all pending RFP items for this job
+    const { data: items, error: fetchError } = await supabase
+      .from('rfp_items')
+      .select(
+        `
+        id,
+        rfp_match_suggestions!rfp_match_suggestions_rfp_item_id_fkey (
+          id,
+          similarity_score
+        )
+      `
+      )
+      .eq('job_id', jobId)
+      .eq('review_status', 'pending')
+
+    if (fetchError) {
+      console.error('autoAcceptExactMatches fetch error:', fetchError)
+      return { accepted: 0, error: fetchError.message }
+    }
+
+    let accepted = 0
+
+    for (const item of items ?? []) {
+      // Find a match with 100% similarity (>= 0.9999 to handle floating point)
+      const exactMatch = (
+        item.rfp_match_suggestions as { id: string; similarity_score: number }[]
+      )?.find((m) => m.similarity_score >= 0.9999)
+
+      if (exactMatch) {
+        // Accept the exact match using the same logic as acceptMatch
+        // Step 1: Accept the selected match
+        await supabase
+          .from('rfp_match_suggestions')
+          .update({ status: 'accepted' })
+          .eq('id', exactMatch.id)
+
+        // Step 2: Reject all other matches for this RFP item
+        await supabase
+          .from('rfp_match_suggestions')
+          .update({ status: 'rejected' })
+          .eq('rfp_item_id', item.id)
+          .neq('id', exactMatch.id)
+
+        // Step 3: Update the RFP item's review_status and selected_match_id
+        await supabase
+          .from('rfp_items')
+          .update({
+            review_status: 'accepted',
+            selected_match_id: exactMatch.id,
+          })
+          .eq('id', item.id)
+
+        accepted++
+      }
+    }
+
+    // Note: No revalidatePath here since this function is called during server component render.
+    // The page will display fresh data after this function returns since it fetches data afterward.
+
+    return { accepted }
+  } catch (error) {
+    console.error('autoAcceptExactMatches error:', error)
+    return {
+      accepted: 0,
+      error: error instanceof Error ? error.message : 'Unknown error',
+    }
   }
 }
 

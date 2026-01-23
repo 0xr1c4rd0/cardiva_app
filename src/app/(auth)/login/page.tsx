@@ -27,9 +27,9 @@ function LoginForm() {
   return (
     <Card className="w-full max-w-md">
       <CardHeader>
-        <CardTitle>Log in</CardTitle>
+        <CardTitle>Iniciar Sessão</CardTitle>
         <CardDescription>
-          Enter your credentials to access your account
+          Introduza as suas credenciais para aceder à sua conta
         </CardDescription>
       </CardHeader>
       <form action={formAction}>
@@ -50,13 +50,13 @@ function LoginForm() {
               id="email"
               name="email"
               type="email"
-              placeholder="you@example.com"
+              placeholder="exemplo@email.com"
               required
               disabled={isPending}
             />
           </div>
           <div className="space-y-2">
-            <Label htmlFor="password">Password</Label>
+            <Label htmlFor="password">Palavra-passe</Label>
             <Input
               id="password"
               name="password"
@@ -70,21 +70,21 @@ function LoginForm() {
               href="/reset-password"
               className="text-sm text-muted-foreground hover:text-foreground"
             >
-              Forgot password?
+              Esqueceu a palavra-passe?
             </Link>
           </div>
         </CardContent>
         <CardFooter className="flex flex-col space-y-4">
           <Button type="submit" className="w-full" disabled={isPending}>
-            {isPending ? 'Logging in...' : 'Log in'}
+            {isPending ? 'A entrar...' : 'Entrar'}
           </Button>
           <p className="text-center text-sm text-muted-foreground">
-            Don&apos;t have an account?{' '}
+            Não tem conta?{' '}
             <Link
               href="/register"
               className="font-medium text-primary hover:underline"
             >
-              Sign up
+              Criar conta
             </Link>
           </p>
         </CardFooter>
@@ -97,24 +97,24 @@ function LoginFormFallback() {
   return (
     <Card className="w-full max-w-md">
       <CardHeader>
-        <CardTitle>Log in</CardTitle>
+        <CardTitle>Iniciar Sessão</CardTitle>
         <CardDescription>
-          Enter your credentials to access your account
+          Introduza as suas credenciais para aceder à sua conta
         </CardDescription>
       </CardHeader>
       <CardContent className="space-y-4">
         <div className="space-y-2">
           <Label htmlFor="email">Email</Label>
-          <Input id="email" type="email" placeholder="you@example.com" disabled />
+          <Input id="email" type="email" placeholder="exemplo@email.com" disabled />
         </div>
         <div className="space-y-2">
-          <Label htmlFor="password">Password</Label>
+          <Label htmlFor="password">Palavra-passe</Label>
           <Input id="password" type="password" disabled />
         </div>
       </CardContent>
       <CardFooter>
         <Button className="w-full" disabled>
-          Loading...
+          A carregar...
         </Button>
       </CardFooter>
     </Card>

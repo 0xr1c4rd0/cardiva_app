@@ -21,7 +21,7 @@ export function ApproveButton({ userId }: { userId: string }) {
         className="mr-2"
         disabled={isPending}
       >
-        {isPending ? 'Approving...' : 'Approve'}
+        {isPending ? 'A aprovar...' : 'Aprovar'}
       </Button>
     </form>
   )
@@ -43,7 +43,7 @@ export function RejectButton({ userId }: { userId: string }) {
         variant="destructive"
         disabled={isPending}
       >
-        {isPending ? 'Rejecting...' : 'Reject'}
+        {isPending ? 'A rejeitar...' : 'Rejeitar'}
       </Button>
     </form>
   )

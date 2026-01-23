@@ -12,23 +12,29 @@ interface MatchSuggestionRowProps {
   jobId: string
   rfpItemId: string
   match: MatchSuggestion
+  isPerfectMatch?: boolean
 }
 
 /**
  * Single match suggestion row with Accept/Reject buttons and loading state.
- * Per CONTEXT.md:
  * - Accepting a match auto-rejects all other matches for that item
- * - Visual states: default, accepted (highlighted), rejected (faded), pending (disabled)
+ * - Visual states: default, accepted/perfect (highlighted), rejected (slightly faded)
+ * - Perfect matches (100%) appear pre-selected before user action
  */
 export function MatchSuggestionRow({
   jobId,
   rfpItemId,
   match,
+  isPerfectMatch = false,
 }: MatchSuggestionRowProps) {
   const [isPending, startTransition] = useTransition()
 
   const isAccepted = match.status === 'accepted'
   const isRejected = match.status === 'rejected'
+  const isPendingStatus = match.status === 'pending'
+
+  // Show as highlighted if accepted OR if it's a perfect match that hasn't been reviewed yet
+  const showAsSelected = isAccepted || (isPerfectMatch && isPendingStatus)
 
   const handleAccept = () => {
     startTransition(async () => {
@@ -46,8 +52,8 @@ export function MatchSuggestionRow({
     <div
       className={cn(
         'flex items-center gap-4 rounded-md border p-3 transition-all',
-        isAccepted && 'border-primary/30 bg-primary/5',
-        isRejected && 'opacity-50',
+        showAsSelected && 'border-primary/30 bg-primary/5',
+        isRejected && 'opacity-60',
         isPending && 'pointer-events-none opacity-70'
       )}
     >
@@ -76,7 +82,7 @@ export function MatchSuggestionRow({
           <>
             <Button
               size="sm"
-              variant={isAccepted ? 'default' : 'outline'}
+              variant={showAsSelected ? 'default' : 'outline'}
               onClick={handleAccept}
               disabled={isAccepted}
               aria-label="Accept this match"

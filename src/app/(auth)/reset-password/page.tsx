@@ -26,10 +26,10 @@ export default function ResetPasswordPage() {
     <div className="flex min-h-screen items-center justify-center">
       <Card className="w-full max-w-md">
         <CardHeader>
-          <CardTitle>Reset Password</CardTitle>
+          <CardTitle>Recuperar Palavra-passe</CardTitle>
           <CardDescription>
-            Enter your email address and we&apos;ll send you a link to reset
-            your password
+            Introduza o seu endereço de email e enviaremos um link para
+            recuperar a sua palavra-passe
           </CardDescription>
         </CardHeader>
         <form action={formAction}>
@@ -50,7 +50,7 @@ export default function ResetPasswordPage() {
                 id="email"
                 name="email"
                 type="email"
-                placeholder="you@example.com"
+                placeholder="exemplo@email.com"
                 required
                 disabled={isPending}
               />
@@ -58,15 +58,15 @@ export default function ResetPasswordPage() {
           </CardContent>
           <CardFooter className="flex flex-col space-y-4">
             <Button type="submit" className="w-full" disabled={isPending}>
-              {isPending ? 'Sending...' : 'Send Reset Link'}
+              {isPending ? 'A enviar...' : 'Enviar Link de Recuperação'}
             </Button>
             <p className="text-center text-sm text-muted-foreground">
-              Remember your password?{' '}
+              Lembra-se da palavra-passe?{' '}
               <Link
                 href="/login"
                 className="font-medium text-primary hover:underline"
               >
-                Log in
+                Iniciar sessão
               </Link>
             </p>
           </CardFooter>

@@ -1,6 +1,7 @@
 'use client'
 
 import { useState, useTransition } from 'react'
+import { useRouter } from 'next/navigation'
 import { useDebouncedCallback } from 'use-debounce'
 import {
   Dialog,
@@ -75,6 +76,7 @@ export function ManualMatchDialog({
   rfpItemId,
   rfpItemDescription,
 }: ManualMatchDialogProps) {
+  const router = useRouter()
   const [query, setQuery] = useState('')
   const [results, setResults] = useState<InventorySearchResult[]>([])
   const [isSearching, setIsSearching] = useState(false)
@@ -118,6 +120,8 @@ export function ManualMatchDialog({
         setQuery('')
         setResults([])
         setSelectedItemId(null)
+        // Explicitly refresh the page to show updated match data
+        router.refresh()
       } else {
         console.error('Failed to set manual match:', result.error)
         setSelectedItemId(null)

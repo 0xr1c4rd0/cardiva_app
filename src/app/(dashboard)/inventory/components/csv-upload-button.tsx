@@ -20,13 +20,13 @@ export function CSVUploadButton() {
     const result = await triggerInventoryUpload(formData)
 
     if (result.success) {
-      toast.success('Upload started', {
-        description: `Processing ${rowCount} rows in background. You'll be notified when complete.`,
+      toast.success('Carregamento iniciado', {
+        description: `A processar ${rowCount} linhas em segundo plano. Será notificado quando concluir.`,
       })
       // Refresh upload status to track the new job
       refetch()
     } else {
-      toast.error('Upload failed', {
+      toast.error('Carregamento falhou', {
         description: result.error,
       })
     }
@@ -44,18 +44,18 @@ export function CSVUploadButton() {
         {isProcessing ? (
           <>
             <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-            Processing...
+            A processar...
           </>
         ) : (
           <>
             <Upload className="mr-2 h-4 w-4" />
-            Upload CSV
+            Carregar CSV
           </>
         )}
       </Button>
       {isProcessing && activeJob && (
         <span className="sr-only">
-          Processing {activeJob.file_name}
+          A processar {activeJob.file_name}
         </span>
       )}
       <CSVUploadDialog

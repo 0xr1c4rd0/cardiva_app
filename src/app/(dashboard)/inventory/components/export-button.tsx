@@ -30,7 +30,7 @@ export function ExportButton({ data, columnConfig, disabled }: ExportButtonProps
 
   const handleExportExcel = () => {
     if (data.length === 0) {
-      toast.error('No data to export')
+      toast.error('Sem dados para exportar')
       return
     }
 
@@ -39,13 +39,13 @@ export function ExportButton({ data, columnConfig, disabled }: ExportButtonProps
     setTimeout(() => {
       try {
         exportToExcel(data, columns, {
-          filename: 'inventory',
-          sheetName: 'Inventory',
+          filename: 'inventario',
+          sheetName: 'Inventário',
         })
-        toast.success('Excel file downloaded')
+        toast.success('Ficheiro Excel transferido')
       } catch (error) {
         console.error('Export failed:', error)
-        toast.error('Export failed')
+        toast.error('Exportação falhou')
       } finally {
         setIsExporting(false)
       }
@@ -54,18 +54,18 @@ export function ExportButton({ data, columnConfig, disabled }: ExportButtonProps
 
   const handleExportCSV = () => {
     if (data.length === 0) {
-      toast.error('No data to export')
+      toast.error('Sem dados para exportar')
       return
     }
 
     setIsExporting(true)
     setTimeout(() => {
       try {
-        exportToCSV(data, columns, 'inventory')
-        toast.success('CSV file downloaded')
+        exportToCSV(data, columns, 'inventario')
+        toast.success('Ficheiro CSV transferido')
       } catch (error) {
         console.error('Export failed:', error)
-        toast.error('Export failed')
+        toast.error('Exportação falhou')
       } finally {
         setIsExporting(false)
       }
@@ -77,18 +77,18 @@ export function ExportButton({ data, columnConfig, disabled }: ExportButtonProps
       <DropdownMenuTrigger asChild>
         <Button variant="outline" disabled={disabled || isExporting || data.length === 0}>
           <Download className="mr-2 h-4 w-4" />
-          {isExporting ? 'Exporting...' : 'Export'}
+          {isExporting ? 'A exportar...' : 'Exportar'}
           <ChevronDown className="ml-2 h-4 w-4" />
         </Button>
       </DropdownMenuTrigger>
       <DropdownMenuContent align="end">
         <DropdownMenuItem onClick={handleExportExcel} disabled={isExporting}>
           <FileSpreadsheet className="mr-2 h-4 w-4" />
-          Export as Excel (.xlsx)
+          Exportar como Excel (.xlsx)
         </DropdownMenuItem>
         <DropdownMenuItem onClick={handleExportCSV} disabled={isExporting}>
           <FileText className="mr-2 h-4 w-4" />
-          Export as CSV (.csv)
+          Exportar como CSV (.csv)
         </DropdownMenuItem>
       </DropdownMenuContent>
     </DropdownMenu>

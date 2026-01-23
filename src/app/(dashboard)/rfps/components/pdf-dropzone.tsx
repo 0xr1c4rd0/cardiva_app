@@ -2,16 +2,16 @@
 
 import { useCallback } from 'react'
 import { useDropzone, FileRejection } from 'react-dropzone'
-import { Upload, FileSpreadsheet } from 'lucide-react'
+import { Upload, FileText } from 'lucide-react'
 import { cn } from '@/lib/utils'
 
-interface CSVDropzoneProps {
+interface PDFDropzoneProps {
   onFileSelect: (file: File) => void
   file: File | null
   disabled?: boolean
 }
 
-export function CSVDropzone({ onFileSelect, file, disabled }: CSVDropzoneProps) {
+export function PDFDropzone({ onFileSelect, file, disabled }: PDFDropzoneProps) {
   const onDrop = useCallback(
     (acceptedFiles: File[], rejectedFiles: FileRejection[]) => {
       if (rejectedFiles.length > 0) {
@@ -31,11 +31,10 @@ export function CSVDropzone({ onFileSelect, file, disabled }: CSVDropzoneProps) 
   const { getRootProps, getInputProps, isDragActive, isDragReject } = useDropzone({
     onDrop,
     accept: {
-      'text/csv': ['.csv'],
-      'application/vnd.ms-excel': ['.csv'],
+      'application/pdf': ['.pdf'],
     },
     maxFiles: 1,
-    maxSize: 10 * 1024 * 1024, // 10MB
+    maxSize: 50 * 1024 * 1024, // 50MB max for PDFs
     disabled,
   })
 
@@ -54,24 +53,24 @@ export function CSVDropzone({ onFileSelect, file, disabled }: CSVDropzoneProps) 
       <input {...getInputProps()} />
       {file ? (
         <div className="flex items-center justify-center gap-2">
-          <FileSpreadsheet className="h-8 w-8 text-green-600 dark:text-green-400" />
+          <FileText className="h-8 w-8 text-green-600 dark:text-green-400" />
           <div className="text-left">
             <p className="font-medium">{file.name}</p>
             <p className="text-sm text-muted-foreground">
-              {(file.size / 1024).toFixed(1)} KB
+              {(file.size / 1024 / 1024).toFixed(2)} MB
             </p>
           </div>
         </div>
       ) : isDragActive ? (
         <div className="space-y-2">
           <Upload className="h-8 w-8 mx-auto text-primary" />
-          <p className="text-primary font-medium">Largue o ficheiro CSV aqui...</p>
+          <p className="text-primary font-medium">Largue o ficheiro PDF aqui...</p>
         </div>
       ) : (
         <div className="space-y-2">
           <Upload className="h-8 w-8 mx-auto text-muted-foreground" />
-          <p>Arraste e largue um ficheiro CSV, ou clique para selecionar</p>
-          <p className="text-sm text-muted-foreground">Tamanho máximo: 10MB</p>
+          <p>Arraste e largue um ficheiro PDF, ou clique para selecionar</p>
+          <p className="text-sm text-muted-foreground">Tamanho máximo: 50MB</p>
         </div>
       )}
     </div>

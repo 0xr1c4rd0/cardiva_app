@@ -23,9 +23,9 @@ function RegisterForm() {
   return (
     <Card className="w-full max-w-md">
       <CardHeader>
-        <CardTitle>Create Account</CardTitle>
+        <CardTitle>Criar Conta</CardTitle>
         <CardDescription>
-          Register for a new account. Your account will be pending admin approval before you can log in.
+          Registe uma nova conta. A sua conta ficará pendente de aprovação do administrador antes de poder iniciar sessão.
         </CardDescription>
       </CardHeader>
       <CardContent>
@@ -53,7 +53,7 @@ function RegisterForm() {
               id="email"
               name="email"
               type="email"
-              placeholder="you@example.com"
+              placeholder="exemplo@email.com"
               required
               autoComplete="email"
               disabled={isPending}
@@ -65,7 +65,7 @@ function RegisterForm() {
               htmlFor="password"
               className="text-sm font-medium leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70"
             >
-              Password
+              Palavra-passe
             </label>
             <Input
               id="password"
@@ -77,7 +77,7 @@ function RegisterForm() {
               disabled={isPending}
             />
             <p className="text-xs text-muted-foreground">
-              Must be at least 8 characters with uppercase, lowercase, and number
+              Mínimo 8 caracteres com maiúscula, minúscula e número
             </p>
           </div>
 
@@ -86,7 +86,7 @@ function RegisterForm() {
               htmlFor="confirmPassword"
               className="text-sm font-medium leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70"
             >
-              Confirm Password
+              Confirmar Palavra-passe
             </label>
             <Input
               id="confirmPassword"
@@ -100,14 +100,14 @@ function RegisterForm() {
           </div>
 
           <Button type="submit" className="w-full" disabled={isPending}>
-            {isPending ? 'Creating account...' : 'Create Account'}
+            {isPending ? 'A criar conta...' : 'Criar Conta'}
           </Button>
         </form>
 
         <div className="mt-4 text-center text-sm text-muted-foreground">
-          Already have an account?{' '}
+          Já tem conta?{' '}
           <Link href="/login" className="text-primary hover:underline">
-            Log in
+            Iniciar sessão
           </Link>
         </div>
       </CardContent>
@@ -119,27 +119,27 @@ function RegisterFormFallback() {
   return (
     <Card className="w-full max-w-md">
       <CardHeader>
-        <CardTitle>Create Account</CardTitle>
+        <CardTitle>Criar Conta</CardTitle>
         <CardDescription>
-          Register for a new account. Your account will be pending admin approval before you can log in.
+          Registe uma nova conta. A sua conta ficará pendente de aprovação do administrador antes de poder iniciar sessão.
         </CardDescription>
       </CardHeader>
       <CardContent>
         <div className="space-y-4">
           <div className="space-y-2">
             <label className="text-sm font-medium">Email</label>
-            <Input type="email" placeholder="you@example.com" disabled />
+            <Input type="email" placeholder="exemplo@email.com" disabled />
           </div>
           <div className="space-y-2">
-            <label className="text-sm font-medium">Password</label>
+            <label className="text-sm font-medium">Palavra-passe</label>
             <Input type="password" placeholder="••••••••" disabled />
           </div>
           <div className="space-y-2">
-            <label className="text-sm font-medium">Confirm Password</label>
+            <label className="text-sm font-medium">Confirmar Palavra-passe</label>
             <Input type="password" placeholder="••••••••" disabled />
           </div>
           <Button className="w-full" disabled>
-            Loading...
+            A carregar...
           </Button>
         </div>
       </CardContent>

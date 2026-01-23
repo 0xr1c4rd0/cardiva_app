@@ -91,7 +91,7 @@
     {
       "parameters": {
         "content": "## Pesquisa por correspondencia + pesquisa semântica vectorial",
-        "height": 864,
+        "height": 816,
         "width": 3696,
         "color": 4
       },
@@ -99,7 +99,7 @@
       "typeVersion": 1,
       "position": [
         544,
-        -272
+        -224
       ],
       "id": "d46ba57f-efc0-474a-ab6d-09481c2c7ee3",
       "name": "Sticky Note1"
@@ -678,11 +678,12 @@
       "type": "n8n-nodes-base.merge",
       "typeVersion": 3.2,
       "position": [
-        1280,
-        -688
+        1392,
+        -832
       ],
       "id": "80e3b342-1d84-41a0-942c-d007476a3908",
-      "name": "Exist in DB but not in file - Delete"
+      "name": "Exist in DB but not in file - Delete",
+      "alwaysOutputData": false
     },
     {
       "parameters": {
@@ -695,8 +696,8 @@
       "type": "n8n-nodes-base.merge",
       "typeVersion": 3.2,
       "position": [
-        1280,
-        -512
+        1392,
+        -656
       ],
       "id": "a474acfb-4c2e-4374-9253-d90fd5f7c8bf",
       "name": "Exist in file but not in DB - Insert",
@@ -712,7 +713,7 @@
       "typeVersion": 2.6,
       "position": [
         688,
-        -704
+        -832
       ],
       "id": "a91925d6-db84-499b-b42c-1bc724c3467f",
       "name": "Select all artigos from DB",
@@ -734,7 +735,7 @@
       "typeVersion": 1.1,
       "position": [
         688,
-        -512
+        -656
       ],
       "id": "8b27e8ba-2b29-4a2b-81f3-8abc42e9a684",
       "name": "Extract from CSV"
@@ -767,8 +768,8 @@
       "type": "n8n-nodes-base.filter",
       "typeVersion": 2.3,
       "position": [
-        960,
-        -512
+        912,
+        -656
       ],
       "id": "ce756909-3dcf-45da-847e-84115b980df2",
       "name": "Delete empty rows from CSV"
@@ -906,11 +907,12 @@
       "type": "n8n-nodes-base.postgres",
       "typeVersion": 2.6,
       "position": [
-        1520,
-        -512
+        1648,
+        -656
       ],
       "id": "524792d4-a504-4c02-ad21-334f7582f476",
       "name": "Insert into DB",
+      "alwaysOutputData": false,
       "credentials": {
         "postgres": {
           "id": "qdwvjO0qEjit6Vuu",
@@ -927,8 +929,8 @@
       "type": "@n8n/n8n-nodes-langchain.vectorStorePGVector",
       "typeVersion": 1,
       "position": [
-        2784,
-        -864
+        3824,
+        -880
       ],
       "id": "3992a520-d5e0-484d-94e5-7125bbe34dfb",
       "name": "Postgres PGVector Store - Insert (Setup)1",
@@ -947,8 +949,8 @@
       "type": "@n8n/n8n-nodes-langchain.textSplitterCharacterTextSplitter",
       "typeVersion": 1,
       "position": [
-        2912,
-        -512
+        3952,
+        -528
       ],
       "id": "14c71909-3355-4f01-b0a5-89f798a390e2",
       "name": "Character Text Splitter1"
@@ -956,15 +958,15 @@
     {
       "parameters": {
         "content": "## Update stock (Insert new / Delete removed)\n",
-        "height": 656,
-        "width": 1216,
+        "height": 800,
+        "width": 2128,
         "color": 5
       },
       "type": "n8n-nodes-base.stickyNote",
       "typeVersion": 1,
       "position": [
         544,
-        -976
+        -1056
       ],
       "id": "f83c3a9b-3114-4dce-aaf4-a47aad5e1cac",
       "name": "Sticky Note2"
@@ -988,8 +990,8 @@
       "type": "n8n-nodes-base.postgresTrigger",
       "typeVersion": 1,
       "position": [
-        1872,
-        -864
+        2704,
+        -880
       ],
       "id": "f032419a-f89b-40eb-ba1b-2da6707d7ec7",
       "name": "Postgres Trigger",
@@ -1007,8 +1009,8 @@
       "type": "n8n-nodes-base.wait",
       "typeVersion": 1.1,
       "position": [
-        2080,
-        -864
+        2912,
+        -880
       ],
       "id": "3bdeab0b-2175-4dc8-829e-265d2222ca49",
       "name": "Wait",
@@ -1042,8 +1044,8 @@
       "type": "n8n-nodes-base.postgres",
       "typeVersion": 2.6,
       "position": [
-        2304,
-        -864
+        3344,
+        -880
       ],
       "id": "58afd8c9-20d7-492c-913b-8da76ee11bab",
       "name": "Select rows from a table",
@@ -1061,8 +1063,8 @@
       "type": "@n8n/n8n-nodes-langchain.embeddingsOpenAi",
       "typeVersion": 1.1,
       "position": [
-        2784,
-        -688
+        3824,
+        -704
       ],
       "id": "a7368660-19dc-47d2-b78a-ab7c5ba589ed",
       "name": "Embeddings OpenAI1",
@@ -1115,8 +1117,8 @@
       "type": "@n8n/n8n-nodes-langchain.documentDefaultDataLoader",
       "typeVersion": 1,
       "position": [
-        2912,
-        -688
+        3952,
+        -704
       ],
       "id": "c3d21d16-0b96-4cc8-b53e-d2ced5941b4a",
       "name": "Default Data Loader"
@@ -1139,8 +1141,8 @@
       "type": "n8n-nodes-base.set",
       "typeVersion": 3.4,
       "position": [
-        2544,
-        -864
+        3584,
+        -880
       ],
       "id": "f957708e-728f-42d8-bbf5-b0bd3ccd49ba",
       "name": "Add embedding field"
@@ -1277,8 +1279,8 @@
       "type": "n8n-nodes-base.postgres",
       "typeVersion": 2.6,
       "position": [
-        3152,
-        -864
+        4192,
+        -880
       ],
       "id": "742c591b-7079-4a97-b7bd-11738dffe7fe",
       "name": "Update Flg_embedded",
@@ -1299,8 +1301,8 @@
       "type": "n8n-nodes-base.stickyNote",
       "typeVersion": 1,
       "position": [
-        1808,
-        -976
+        2848,
+        -992
       ],
       "id": "dc4a614f-9760-4849-b6f2-64ec81266ebe",
       "name": "Sticky Note3"
@@ -1333,11 +1335,12 @@
       "type": "n8n-nodes-base.postgres",
       "typeVersion": 2.6,
       "position": [
-        1520,
-        -864
+        1648,
+        -1024
       ],
       "id": "75ae5f61-bed3-463f-83ca-4fa04971f567",
       "name": "Delete from DB",
+      "alwaysOutputData": false,
       "credentials": {
         "postgres": {
           "id": "qdwvjO0qEjit6Vuu",
@@ -1354,11 +1357,12 @@
       "type": "n8n-nodes-base.postgres",
       "typeVersion": 2.6,
       "position": [
-        1520,
-        -688
+        1648,
+        -832
       ],
       "id": "1efd223a-ef61-45df-8667-b3a99a192e5b",
       "name": "Delete from Vector Store",
+      "alwaysOutputData": false,
       "credentials": {
         "postgres": {
           "id": "qdwvjO0qEjit6Vuu",
@@ -1371,8 +1375,8 @@
       "type": "n8n-nodes-base.manualTrigger",
       "typeVersion": 1,
       "position": [
-        2080,
-        -656
+        3120,
+        -672
       ],
       "id": "b564babd-3ac2-4ea9-9c16-31d78e316547",
       "name": "When clicking ‘Execute workflow’",
@@ -1516,83 +1520,210 @@
         640
       ],
       "disabled": true
+    },
+    {
+      "parameters": {
+        "operation": "update",
+        "schema": {
+          "__rl": true,
+          "mode": "list",
+          "value": "public"
+        },
+        "table": {
+          "__rl": true,
+          "value": "inventory_upload_jobs",
+          "mode": "list",
+          "cachedResultName": "inventory_upload_jobs"
+        },
+        "columns": {
+          "mappingMode": "defineBelow",
+          "value": {
+            "id": "={{ $('Webhook Update Inventory').first().json.body.jobId }}",
+            "completed_at": "={{ $now }}",
+            "status": "completed",
+            "processed_rows": "={{ $json.processed_rows }}"
+          },
+          "matchingColumns": [
+            "id"
+          ],
+          "schema": [
+            {
+              "id": "id",
+              "displayName": "id",
+              "required": false,
+              "defaultMatch": true,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            },
+            {
+              "id": "user_id",
+              "displayName": "user_id",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": true
+            },
+            {
+              "id": "file_name",
+              "displayName": "file_name",
+              "required": true,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": true
+            },
+            {
+              "id": "row_count",
+              "displayName": "row_count",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "number",
+              "canBeUsedToMatch": true,
+              "removed": true
+            },
+            {
+              "id": "status",
+              "displayName": "status",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "error_message",
+              "displayName": "error_message",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": true
+            },
+            {
+              "id": "processed_rows",
+              "displayName": "processed_rows",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "number",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "created_at",
+              "displayName": "created_at",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "dateTime",
+              "canBeUsedToMatch": true,
+              "removed": true
+            },
+            {
+              "id": "updated_at",
+              "displayName": "updated_at",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "dateTime",
+              "canBeUsedToMatch": true,
+              "removed": true
+            },
+            {
+              "id": "completed_at",
+              "displayName": "completed_at",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "dateTime",
+              "canBeUsedToMatch": true
+            }
+          ],
+          "attemptToConvertTypes": false,
+          "convertFieldsToString": false
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.postgres",
+      "typeVersion": 2.6,
+      "position": [
+        1872,
+        -464
+      ],
+      "id": "31ba4006-84fe-4835-9ca5-dcfa993ee670",
+      "name": "Update jobs",
+      "credentials": {
+        "postgres": {
+          "id": "qdwvjO0qEjit6Vuu",
+          "name": "Cardiva Supabase"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "jsCode": "let insertedCount = 0;\nlet deletedCount = 0;\nlet totalCsvRows = 0;\n\ntry {\n  insertedCount = $('Insert into DB').all().length;\n} catch (e) {\n  insertedCount = 0;\n}\n\ntry {\n  deletedCount = $('Delete from DB').all().length;\n} catch (e) {\n  deletedCount = 0;\n}\n\ntry {\n  totalCsvRows = $('Delete empty rows from CSV').all().length;\n} catch (e) {\n  totalCsvRows = 0;\n}\n\n// Get jobId from the Webhook node\n// Using .first() to avoid \"Can't determine which item to use\" error\nlet jobId = null;\ntry {\n  // Try Webhook node first\n  jobId = $('Webhook Update Inventory').first().json.body?.jobId;\n} catch (e) {\n  try {\n    // Fallback to Switch node\n    jobId = $('Switch').first().json.body?.jobId;\n  } catch (e2) {\n    jobId = null;\n  }\n}\n\nreturn [{\n  json: {\n    // Net change: inserted minus deleted\n    processed_rows: insertedCount - deletedCount,\n    inserted_rows: insertedCount,\n    deleted_rows: deletedCount,\n    total_csv_rows: totalCsvRows,\n    jobId: jobId,\n    status: 'completed'\n  }\n}];\n"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        1648,
+        -464
+      ],
+      "id": "2d5d5190-81a9-440a-ae91-b070dd50e6af",
+      "name": "Code in JavaScript"
+    },
+    {
+      "parameters": {},
+      "type": "n8n-nodes-base.noOp",
+      "typeVersion": 1,
+      "position": [
+        1392,
+        -464
+      ],
+      "id": "4f0b28cc-e189-4c38-97fe-2297d0c64be9",
+      "name": "No Operation, do nothing",
+      "alwaysOutputData": true
+    },
+    {
+      "parameters": {
+        "httpMethod": "POST",
+        "path": "updateInventory",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.webhook",
+      "typeVersion": 2.1,
+      "position": [
+        64,
+        -512
+      ],
+      "id": "48251ecf-024c-40e9-8bbf-6b2a618b4132",
+      "name": "Webhook Update Inventory",
+      "webhookId": "a862c67e-1d8f-40c6-8070-bdca2d7fd256"
+    },
+    {
+      "parameters": {
+        "httpMethod": "POST",
+        "path": "uploadRFP",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.webhook",
+      "typeVersion": 2.1,
+      "position": [
+        80,
+        48
+      ],
+      "id": "705894ef-3269-4e98-b0d4-b1f70b8d3f96",
+      "name": "Webhook Upload RFP",
+      "webhookId": "a862c67e-1d8f-40c6-8070-bdca2d7fd256"
     }
   ],
   "pinData": {
-    "Gmail Trigger": [
-      {
-        "json": {
-          "id": "19bd35b8e6d83d9c",
-          "threadId": "19bd35b8e6d83d9c",
-          "labelIds": [
-            "INBOX"
-          ],
-          "sizeEstimate": 1934449,
-          "headers": {
-            "delivered-to": "Delivered-To: cardiva.automation@gmail.com",
-            "received": "Received: from mail-sor-f41.google.com (mail-sor-f41.google.com. [209.85.220.41])\r\n        by mx.google.com with SMTPS id 41be03b00d2f7-c5edef7cfdfsor1446887a12.1.2026.01.18.15.05.51\r\n        for <cardiva.automation@gmail.com>\r\n        (Google Transport Security);\r\n        Sun, 18 Jan 2026 15:05:51 -0800 (PST)",
-            "x-received": "X-Received: by 2002:a17:90a:d40c:b0:341:88bc:7a54 with SMTP id\r\n 98e67ed59e1d1-35272fbfff0mr6788750a91.7.1768777549981; Sun, 18 Jan 2026\r\n 15:05:49 -0800 (PST)",
-            "arc-seal": "ARC-Seal: i=1; a=rsa-sha256; t=1768777551; cv=none;\r\n        d=google.com; s=arc-20240605;\r\n        b=Wi8UxZTCnBxR9eKGlC47VhXW0SrlBbbxlOS9XvMna4AzMnsXpQVaoFapiXjUEm0gcV\r\n         xGPn772Sn/5jUx7d2Z+v2l8xEWiqz3NCMdhMKU/u3PPZlI0SikGObQWzgBOew/ZB234K\r\n         Os1gTyRBQxd9ZRZ6Wf9tGXL3wbgLBgnwU0NxzegXIQPbw9zPa2jiDvoe5AdJs0Ph2RG5\r\n         Vzp/Z7zGTV28SaP9rzfvd/SV75VLdHdjAWMZsJYanz8vbPKJY0j5/Lht59R28uqvZwtU\r\n         SmctN1AjC/GjobFKmb2tgsMN0EH4jPTo+xcvv1YZyzVkwqk/G8JEjn6aedT/Z7Ya/+3o\r\n         tawQ==",
-            "arc-message-signature": "ARC-Message-Signature: i=1; a=rsa-sha256; c=relaxed/relaxed; d=google.com; s=arc-20240605;\r\n        h=to:subject:message-id:date:from:mime-version:dkim-signature;\r\n        bh=HAJTLOEMzMdqJzTp+Bm/wtJbJ6xK6HRJUb00SHFnwDo=;\r\n        fh=6YIt0UH138+zyGZKmF43mJgRAmemXQQ/YF1n29+AVMs=;\r\n        b=Murtr9xcZU5WZsgyaM2iZsfiHOnfzZIgigNLQwpeXA0dLirbBEWroTF651pIdNkhMJ\r\n         fHOSnDBbd23ye8mARpzzE4j9+m6Fbi7E+Pxy2ej4GwQPUHgtapJ1sVO4QF7Vv+DNPEvv\r\n         +twvRV7gXek+4obmCalcX1MLEH76LW3sRiVd4EZRYWny55Sn5f5b9wOOXcE4Obnsaq6n\r\n         ZFNWROPiZXaT5j5y4iZ98u7KonrlatWCZ5ynjXiK0rMIQesX3ahGagggpfROCFPMyZOL\r\n         uCnGtOnpsAVzUGn0mp3HoYd1wBqr7dVO108ocLFp+oblP/4DQ1vouGmeoq5gFWJftEHl\r\n         eDdw==;\r\n        dara=google.com",
-            "arc-authentication-results": "ARC-Authentication-Results: i=1; mx.google.com; arc=none",
-            "return-path": "Return-Path: <rfcd17@gmail.com>",
-            "received-spf": "Received-SPF: pass (google.com: domain of rfcd17@gmail.com designates 209.85.220.41 as permitted sender) client-ip=209.85.220.41;",
-            "authentication-results": "Authentication-Results: mx.google.com;\r\n       dkim=pass header.i=@gmail.com header.s=20230601 header.b=LKdKbEJC;\r\n       arc=pass (i=1);\r\n       spf=pass (google.com: domain of rfcd17@gmail.com designates 209.85.220.41 as permitted sender) smtp.mailfrom=rfcd17@gmail.com;\r\n       dmarc=pass (p=NONE sp=QUARANTINE dis=NONE) header.from=gmail.com;\r\n       dara=pass header.i=@gmail.com",
-            "dkim-signature": "DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;\r\n        d=gmail.com; s=20230601; t=1768777551; x=1769382351; dara=google.com;\r\n        h=to:subject:message-id:date:from:mime-version:from:to:cc:subject\r\n         :date:message-id:reply-to;\r\n        bh=HAJTLOEMzMdqJzTp+Bm/wtJbJ6xK6HRJUb00SHFnwDo=;\r\n        b=LKdKbEJCxhnQ5CDswa6+8IJ6V/PgwaV0pUTNqiCLcQYjliLUUbu9u0zFP99FE/blGY\r\n         qpKuiWkS+kzh+R4pJWrvEjTQKgaTtDRTW8t5YLuHUa7h5kxm/pf41d2Y7yaPPQBgxwn2\r\n         8NanVPPHXutUpocEA5otYjFhUioQD2GWPCyEEioYr7/5udqanPGv40c8Nx2cpzUVNxS6\r\n         9COFN65sAzFosjU3E79LJdp9qHxdxS1rV8yibBbaVLAZJUi7m+/xE/Yo7SJw/3xUKC19\r\n         g3bGtHOgB/YdCf6uzI24ZgGkdLEbwaQTM/7yUgwLjpcJOkDafPGMeOfBkj2pTrupyqJ2\r\n         jsuA==",
-            "x-google-dkim-signature": "X-Google-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;\r\n        d=1e100.net; s=20230601; t=1768777551; x=1769382351;\r\n        h=to:subject:message-id:date:from:mime-version:x-gm-gg\r\n         :x-gm-message-state:from:to:cc:subject:date:message-id:reply-to;\r\n        bh=HAJTLOEMzMdqJzTp+Bm/wtJbJ6xK6HRJUb00SHFnwDo=;\r\n        b=j9SWdxigcTtG06gI94lupV76548i4ZgSvQkq69HBeALNK0o6xUJ5H1o4/jijzlJi0j\r\n         TodNYplWxMmvgj8EMj04t18uu6bQhKCu1Xy78ariZTFE5UtFcqPDenjeiBsnog2wns2W\r\n         4YAQGU374NYSKWC2zFs3vY189FZM0KGeJWilBe7bRfHBm/8q/VkCaxXrkQ/Oiezlr3aW\r\n         KPq1kbiMsVeLvSUvJGM4g9T1FKA8GKk0n9fU0CSkCjWqRAl8sG4x7toQGZgH8euyhyi2\r\n         2MtC5kcM8tlWegZ71QRjxOIdfXkdnhOmFutvFuzH2k7V0dODhnCDwftrNDDg/wBPd9rD\r\n         dqpQ==",
-            "x-gm-message-state": "X-Gm-Message-State: AOJu0Yx6nEOiLUGEmQizZLELVRlSw5Idy6FALg+9J8KGx8lYe7Y7TZGF\r\n\taXXysGprN9XkuSFOWRsx6lAzLF/uGNQPCjKyCtCUUzVsBI3fmOiINOyAYdY3bCuDAn06ld4r8dT\r\n\trqIb7KGfOs6iWcKr/hK1G/TOcTlLazH0B7f2P",
-            "x-gm-gg": "X-Gm-Gg: AY/fxX6oT71g3br1A0v7QD4F0qjNbZmILuAdbnxKdrpTYZGhC4D573AKDhzZCZd04Dt\r\n\teKzE1utFCXFo0mQlZS2LulBAMeYeAxQANvGQpgAv7e+C2HaxAZrHWvhIH2oDuE8WSvNclq0mAV0\r\n\twzyu9P+HYWg22OaML9duJmx3tzwh5m9dc9txU70E5cQMVzXVDqvREypVh74uoECuX0Ir+dE96Ax\r\n\truljQi9VfyDmrTf1wIiYEpr43MFQm4R5ux6J7M+HBuICJc24dmJTUe9qHTgbBnVr82+zyIJAx/j\r\n\trPyeaADY1jn5Wm1Szb7iN0jwGkc=",
-            "mime-version": "MIME-Version: 1.0",
-            "from": "From: Ricardo Dias <rfcd17@gmail.com>",
-            "date": "Date: Sun, 18 Jan 2026 23:05:12 +0000",
-            "x-gm-features": "X-Gm-Features: AZwV_QjwO6qJEhaRFmwtfIsmFq8d2cuflSZQuppNI5beLlEJEftowZdVIi1Qr10",
-            "message-id": "Message-ID: <CADFzjTTYJoT-g=AkMhcMwRTUz0y_B-Poybm-KNLLS7XVkxc4_A@mail.gmail.com>",
-            "subject": "Subject: ",
-            "to": "To: cardiva.automation@gmail.com",
-            "content-type": "Content-Type: multipart/mixed; boundary=\"0000000000008e22370648b19d34\""
-          },
-          "html": "<div dir=\"ltr\"><div class=\"gmail_default\" style=\"font-family:verdana,sans-serif\"><br></div></div>\n",
-          "text": "\n",
-          "textAsHtml": "<p></p>",
-          "date": "2026-01-18T23:05:12.000Z",
-          "to": {
-            "value": [
-              {
-                "address": "cardiva.automation@gmail.com",
-                "name": ""
-              }
-            ],
-            "html": "<span class=\"mp_address_group\"><a href=\"mailto:cardiva.automation@gmail.com\" class=\"mp_address_email\">cardiva.automation@gmail.com</a></span>",
-            "text": "cardiva.automation@gmail.com"
-          },
-          "from": {
-            "value": [
-              {
-                "address": "rfcd17@gmail.com",
-                "name": "Ricardo Dias"
-              }
-            ],
-            "html": "<span class=\"mp_address_group\"><span class=\"mp_address_name\">Ricardo Dias</span> &lt;<a href=\"mailto:rfcd17@gmail.com\" class=\"mp_address_email\">rfcd17@gmail.com</a>&gt;</span>",
-            "text": "\"Ricardo Dias\" <rfcd17@gmail.com>"
-          },
-          "messageId": "<CADFzjTTYJoT-g=AkMhcMwRTUz0y_B-Poybm-KNLLS7XVkxc4_A@mail.gmail.com>"
-        },
-        "binary": {
-          "attachment_0": {
-            "mimeType": "application/pdf",
-            "fileType": "pdf",
-            "fileExtension": "pdf",
-            "data": "filesystem-v2",
-            "fileName": "Convite e Caderno de Encargos_02000226-signed_Concurso com produtos Cardiva.pdf",
-            "id": "filesystem-v2:workflows/hGpWU-gMe0Cq2iH6-sx1z/executions/81/binary_data/52454195-f4c0-44dd-9656-832753aee423",
-            "fileSize": "1.41 MB"
-          }
-        },
-        "pairedItem": {
-          "item": 0
-        }
-      }
-    ],
     "Matching semântico3": [
       {
         "json": {
@@ -2027,12 +2158,17 @@
       "main": [
         [
           {
-            "node": "Exist in file but not in DB - Insert",
+            "node": "Exist in DB but not in file - Delete",
             "type": "main",
             "index": 1
           },
           {
-            "node": "Exist in DB but not in file - Delete",
+            "node": "No Operation, do nothing",
+            "type": "main",
+            "index": 0
+          },
+          {
+            "node": "Exist in file but not in DB - Insert",
             "type": "main",
             "index": 1
           }
@@ -2175,14 +2311,78 @@
           }
         ]
       ]
+    },
+    "Insert into DB": {
+      "main": [
+        []
+      ]
+    },
+    "Delete from Vector Store": {
+      "main": [
+        []
+      ]
+    },
+    "Code in JavaScript": {
+      "main": [
+        [
+          {
+            "node": "Update jobs",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Delete from DB": {
+      "main": [
+        []
+      ]
+    },
+    "No Operation, do nothing": {
+      "main": [
+        [
+          {
+            "node": "Code in JavaScript",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Webhook Update Inventory": {
+      "main": [
+        [
+          {
+            "node": "Extract from CSV",
+            "type": "main",
+            "index": 0
+          },
+          {
+            "node": "Select all artigos from DB",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Webhook Upload RFP": {
+      "main": [
+        [
+          {
+            "node": "Extrai conteúdo",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
     }
   },
-  "active": false,
+  "active": true,
   "settings": {
     "executionOrder": "v1",
     "availableInMCP": false
   },
-  "versionId": "66ea9922-90c1-44ca-96bc-46916c66485b",
+  "versionId": "16ccbece-4ce2-4563-900b-7c80507ba878",
   "meta": {
     "templateCredsSetupCompleted": true,
     "instanceId": "861ea1fddb22a0b9af16e6092c971643defa70631669089d78d9b90a1e47a91a"

@@ -105,9 +105,9 @@ export function CSVUploadDialog({ open, onOpenChange, onUpload }: CSVUploadDialo
     <Dialog open={open} onOpenChange={handleClose}>
       <DialogContent className="max-w-2xl">
         <DialogHeader>
-          <DialogTitle>Upload Inventory CSV</DialogTitle>
+          <DialogTitle>Carregar CSV de Inventário</DialogTitle>
           <DialogDescription>
-            Upload a CSV file to update your inventory. The file will be validated before processing.
+            Carregue um ficheiro CSV para atualizar o seu inventário. O ficheiro será validado antes do processamento.
           </DialogDescription>
         </DialogHeader>
 
@@ -132,13 +132,13 @@ export function CSVUploadDialog({ open, onOpenChange, onUpload }: CSVUploadDialo
               onClick={() => handleClose(false)}
               disabled={isUploading}
             >
-              Cancel
+              Cancelar
             </Button>
             <Button
               onClick={handleUpload}
               disabled={!validation?.valid || isUploading || isValidating}
             >
-              {isUploading ? 'Uploading...' : 'Upload'}
+              {isUploading ? 'A carregar...' : 'Carregar'}
             </Button>
           </div>
         </div>

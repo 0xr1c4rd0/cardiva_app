@@ -38,50 +38,49 @@ export default async function AdminUsersPage() {
     authUsers?.users.filter((user) => !user.banned_until) || []
 
   return (
-    <div className="space-y-6">
+    <div className="flex flex-1 flex-col gap-6">
       <div>
-        <h1 className="text-3xl font-bold tracking-tight">User Management</h1>
+        <h1 className="text-3xl font-bold tracking-tight">Gestão de Utilizadores</h1>
         <p className="text-muted-foreground">
-          Approve or reject pending user registrations
+          Aprovar ou rejeitar registos de utilizadores pendentes
         </p>
       </div>
 
       {/* Pending Users Section */}
       <Card>
         <CardHeader>
-          <CardTitle>Pending Approval</CardTitle>
+          <CardTitle>Pendentes de Aprovação</CardTitle>
           <CardDescription>
-            Users waiting for account approval
+            Utilizadores à espera de aprovação da conta
           </CardDescription>
         </CardHeader>
         <CardContent>
           {pendingUsers.length === 0 ? (
             <p className="text-sm text-muted-foreground">
-              No pending users at this time
+              Sem utilizadores pendentes de momento
             </p>
           ) : (
             <Table>
               <TableHeader>
                 <TableRow>
                   <TableHead>Email</TableHead>
-                  <TableHead>Status</TableHead>
-                  <TableHead>Registered</TableHead>
-                  <TableHead className="text-right">Actions</TableHead>
+                  <TableHead className="w-[1%]">Estado</TableHead>
+                  <TableHead className="w-[1%]">Registado</TableHead>
+                  <TableHead className="w-[1%] text-right">Ações</TableHead>
                 </TableRow>
               </TableHeader>
               <TableBody>
                 {pendingUsers.map((user) => {
-                  const profile = profilesMap.get(user.id)
                   return (
                     <TableRow key={user.id}>
                       <TableCell className="font-medium">
                         {user.email}
                       </TableCell>
                       <TableCell>
-                        <Badge variant="secondary">Pending</Badge>
+                        <Badge variant="secondary">Pendente</Badge>
                       </TableCell>
                       <TableCell>
-                        {new Date(user.created_at).toLocaleDateString()}
+                        {new Date(user.created_at).toLocaleDateString('pt-PT')}
                       </TableCell>
                       <TableCell className="text-right">
                         <ApproveButton userId={user.id} />
@@ -99,22 +98,22 @@ export default async function AdminUsersPage() {
       {/* Approved Users Section */}
       <Card>
         <CardHeader>
-          <CardTitle>Approved Users</CardTitle>
-          <CardDescription>Active users with approved accounts</CardDescription>
+          <CardTitle>Utilizadores Aprovados</CardTitle>
+          <CardDescription>Utilizadores ativos com contas aprovadas</CardDescription>
         </CardHeader>
         <CardContent>
           {approvedUsers.length === 0 ? (
             <p className="text-sm text-muted-foreground">
-              No approved users yet
+              Ainda não existem utilizadores aprovados
             </p>
           ) : (
             <Table>
               <TableHeader>
                 <TableRow>
                   <TableHead>Email</TableHead>
-                  <TableHead>Role</TableHead>
-                  <TableHead>Approved</TableHead>
-                  <TableHead>Registered</TableHead>
+                  <TableHead className="w-[1%]">Função</TableHead>
+                  <TableHead className="w-[1%]">Aprovado</TableHead>
+                  <TableHead className="w-[1%]">Registado</TableHead>
                 </TableRow>
               </TableHeader>
               <TableBody>
@@ -131,16 +130,16 @@ export default async function AdminUsersPage() {
                             profile?.role === 'admin' ? 'default' : 'secondary'
                           }
                         >
-                          {profile?.role || 'user'}
+                          {profile?.role === 'admin' ? 'admin' : 'utilizador'}
                         </Badge>
                       </TableCell>
                       <TableCell>
                         {profile?.approved_at
-                          ? new Date(profile.approved_at).toLocaleDateString()
+                          ? new Date(profile.approved_at).toLocaleDateString('pt-PT')
                           : '-'}
                       </TableCell>
                       <TableCell>
-                        {new Date(user.created_at).toLocaleDateString()}
+                        {new Date(user.created_at).toLocaleDateString('pt-PT')}
                       </TableCell>
                     </TableRow>
                   )

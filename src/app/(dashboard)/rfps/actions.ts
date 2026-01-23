@@ -4,6 +4,29 @@ import { createClient } from '@/lib/supabase/server'
 import { revalidatePath } from 'next/cache'
 import { triggerRFPWebhook } from '@/lib/n8n/rfp-webhook'
 
+/**
+ * Sanitize filename for Supabase Storage
+ * Removes accents, replaces spaces with underscores, removes special characters
+ */
+function sanitizeFilename(filename: string): string {
+  // Separate extension
+  const lastDot = filename.lastIndexOf('.')
+  const name = lastDot > 0 ? filename.slice(0, lastDot) : filename
+  const ext = lastDot > 0 ? filename.slice(lastDot) : ''
+
+  // Normalize to decompose accents, then remove combining diacritical marks
+  const normalized = name.normalize('NFD').replace(/[\u0300-\u036f]/g, '')
+
+  // Replace spaces and special characters with underscores
+  const sanitized = normalized
+    .replace(/\s+/g, '_') // spaces to underscores
+    .replace(/[^a-zA-Z0-9_\-\.]/g, '') // remove anything that's not alphanumeric, underscore, dash, or dot
+    .replace(/_+/g, '_') // collapse multiple underscores
+    .replace(/^_|_$/g, '') // trim leading/trailing underscores
+
+  return sanitized + ext.toLowerCase()
+}
+
 export interface RFPUploadResult {
   success: boolean
   error?: string
@@ -60,7 +83,9 @@ export async function triggerRFPUpload(
 
   // Read file buffer once - will be used for both Storage and n8n webhook
   const fileBuffer = await file.arrayBuffer()
-  const filePath = `${user.id}/${job.id}/${file.name}`
+  // Sanitize filename for storage (original name is kept in DB for display)
+  const sanitizedFilename = sanitizeFilename(file.name)
+  const filePath = `${user.id}/${job.id}/${sanitizedFilename}`
 
   // Upload file to Supabase Storage
   const { error: storageError } = await supabase.storage

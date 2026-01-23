@@ -64,7 +64,7 @@ export default async function DashboardLayout({
           <UserMenu />
         </header>
         <main className="flex-1 overflow-auto">
-          <div className="mx-auto max-w-[1200px] p-6 lg:p-10">
+          <div className="mx-auto max-w-[1600px] p-6 lg:p-8">
             {children}
           </div>
         </main>

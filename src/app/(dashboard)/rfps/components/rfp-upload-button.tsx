@@ -37,6 +37,7 @@ export function RFPUploadButton() {
         onClick={() => setOpen(true)}
         disabled={isProcessing}
         className="relative"
+        data-rfp-upload-trigger
       >
         {isProcessing ? (
           <>
