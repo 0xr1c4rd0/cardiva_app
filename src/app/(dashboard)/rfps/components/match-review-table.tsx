@@ -1,7 +1,8 @@
 'use client'
 
 import { useState, useTransition } from 'react'
-import { Check, X, Loader2 } from 'lucide-react'
+import { useQueryStates, parseAsInteger, parseAsString } from 'nuqs'
+import { Check, X, Loader2, SearchX } from 'lucide-react'
 import {
   Table,
   TableBody,
@@ -19,16 +20,116 @@ import {
 import { cn } from '@/lib/utils'
 import { acceptMatch, rejectMatch, unselectMatch } from '../[id]/matches/actions'
 import { ManualMatchDialog } from './manual-match-dialog'
+import { MatchReviewToolbar } from './match-review-toolbar'
+import { MatchReviewPagination } from './match-review-pagination'
 import type { RFPItemWithMatches, MatchSuggestion } from '@/types/rfp'
+
+type StatusFilter = 'all' | 'pending' | 'matched' | 'no_match'
+type SortOption = 'position' | 'status'
+
+interface MatchReviewState {
+  page: number
+  pageSize: number
+  search: string
+  status: StatusFilter
+  sortBy: SortOption
+}
 
 interface MatchReviewTableProps {
   jobId: string
   items: RFPItemWithMatches[]
+  totalCount: number
+  initialState: MatchReviewState
 }
 
-export function MatchReviewTable({ jobId, items }: MatchReviewTableProps) {
+export function MatchReviewTable({ jobId, items, totalCount, initialState }: MatchReviewTableProps) {
+  const [isPending, startTransition] = useTransition()
+
+  // URL state management
+  const [{ page, pageSize, search, status, sortBy }, setParams] = useQueryStates(
+    {
+      page: parseAsInteger.withDefault(initialState.page),
+      pageSize: parseAsInteger.withDefault(initialState.pageSize),
+      search: parseAsString.withDefault(initialState.search),
+      status: parseAsString.withDefault(initialState.status),
+      sortBy: parseAsString.withDefault(initialState.sortBy),
+    },
+    { shallow: false }
+  )
+
+  // URL state handlers
+  const handleSearchChange = (value: string) => {
+    startTransition(() => {
+      setParams({ search: value || null, page: 1 })
+    })
+  }
+
+  const handleStatusChange = (newStatus: StatusFilter) => {
+    startTransition(() => {
+      setParams({ status: newStatus === 'all' ? null : newStatus, page: 1 })
+    })
+  }
+
+  const handleSortChange = (newSortBy: SortOption) => {
+    startTransition(() => {
+      setParams({ sortBy: newSortBy === 'position' ? null : newSortBy, page: 1 })
+    })
+  }
+
+  const handlePageChange = (newPage: number) => {
+    startTransition(() => {
+      setParams({ page: newPage === 1 ? null : newPage })
+    })
+  }
+
+  const handlePageSizeChange = (newPageSize: number) => {
+    startTransition(() => {
+      setParams({ pageSize: newPageSize === 25 ? null : newPageSize, page: 1 })
+    })
+  }
+
+  const handleClearFilters = () => {
+    startTransition(() => {
+      setParams({ search: null, status: null, page: 1 })
+    })
+  }
+
+  // Empty state for search results
+  const isSearchEmpty = items.length === 0 && (search || status !== 'all')
+
   return (
-    <div className="rounded-lg border border-border/40 overflow-x-auto">
+    <div className="space-y-0">
+      {/* Toolbar */}
+      <MatchReviewToolbar
+        search={search}
+        onSearchChange={handleSearchChange}
+        status={(status as StatusFilter) || 'all'}
+        onStatusChange={handleStatusChange}
+        sortBy={(sortBy as SortOption) || 'position'}
+        onSortChange={handleSortChange}
+        isPending={isPending}
+      />
+
+      {isSearchEmpty ? (
+        // Search/filter empty state
+        <div className="flex flex-col items-center justify-center py-12 text-center border rounded-lg border-border/40">
+          <div className="mb-6 rounded-full bg-muted p-6">
+            <SearchX className="h-12 w-12 text-muted-foreground" />
+          </div>
+          <h3 className="mb-2 text-lg font-medium">Nenhum item encontrado</h3>
+          <p className="mb-6 max-w-sm text-muted-foreground">
+            {search
+              ? `Não foram encontrados itens para "${search}".`
+              : 'Não foram encontrados itens com o filtro selecionado.'}
+          </p>
+          <Button variant="outline" onClick={handleClearFilters}>
+            Limpar filtros
+          </Button>
+        </div>
+      ) : (
+        <>
+          {/* Table */}
+          <div className="rounded-lg border border-border/40 overflow-x-auto">
       <Table>
         <TableHeader>
           <TableRow className="hover:bg-transparent border-b border-border/40">
@@ -41,8 +142,8 @@ export function MatchReviewTable({ jobId, items }: MatchReviewTableProps) {
             <TableHead className="w-[1px] px-0"></TableHead>
             {/* Matched product columns */}
             <TableHead className="w-[1%] text-xs font-medium text-emerald-600/70 uppercase tracking-wider">Cód. SPMS</TableHead>
-            <TableHead className="w-[1%] text-xs font-medium text-emerald-600/70 uppercase tracking-wider">Artigo Match</TableHead>
-            <TableHead className="text-xs font-medium text-emerald-600/70 uppercase tracking-wider">Descrição Match</TableHead>
+            <TableHead className="w-[1%] text-xs font-medium text-emerald-600/70 uppercase tracking-wider">Artigo Cardiva</TableHead>
+            <TableHead className="text-xs font-medium text-emerald-600/70 uppercase tracking-wider">Descrição Cardiva</TableHead>
             {/* Status */}
             <TableHead className="w-[1%] pr-6 text-xs font-medium text-muted-foreground/70 uppercase tracking-wider text-right">Status</TableHead>
           </TableRow>
@@ -65,6 +166,21 @@ export function MatchReviewTable({ jobId, items }: MatchReviewTableProps) {
           )}
         </TableBody>
       </Table>
+          </div>
+
+          {/* Pagination */}
+          {totalCount > 0 && (
+            <MatchReviewPagination
+              page={page}
+              pageSize={pageSize}
+              totalCount={totalCount}
+              onPageChange={handlePageChange}
+              onPageSizeChange={handlePageSizeChange}
+              isPending={isPending}
+            />
+          )}
+        </>
+      )}
     </div>
   )
 }
@@ -97,7 +213,9 @@ function ItemRow({ jobId, item, isLast }: ItemRowProps) {
     item.rfp_match_suggestions.every(m => m.status === 'rejected')
 
   // Matched product data to display
-  const matchedCodigo = displayMatch?.codigo_spms ?? null
+  // For manual matches, hide codigo_spms (show "—") since it's user-selected, not system-matched
+  const isManualMatch = displayMatch?.match_type === 'Manual'
+  const matchedCodigo = (!isManualMatch && displayMatch?.codigo_spms) ? displayMatch.codigo_spms : null
   const matchedArtigo = displayMatch?.artigo ?? null
   const matchedDescricao = displayMatch?.descricao ?? null
 

@@ -10,11 +10,32 @@ import type { RFPItemWithMatches, MatchSuggestion } from '@/types/rfp'
 
 interface PageProps {
   params: Promise<{ id: string }>
+  searchParams: Promise<Record<string, string | string[] | undefined>>
 }
 
-export default async function MatchReviewPage({ params }: PageProps) {
+interface MatchReviewState {
+  page: number
+  pageSize: number
+  search: string
+  status: 'all' | 'pending' | 'matched' | 'no_match'
+  sortBy: 'position' | 'status'
+}
+
+export default async function MatchReviewPage({ params, searchParams }: PageProps) {
   const { id: jobId } = await params
+  const queryParams = await searchParams
   const supabase = await createClient()
+
+  // Parse params with defaults
+  const page = Math.max(1, parseInt(String(queryParams.page || '1'), 10) || 1)
+  const pageSize = Math.min(50, Math.max(10, parseInt(String(queryParams.pageSize || '25'), 10) || 25))
+  const search = String(queryParams.search || '').slice(0, 200)
+  const status = (['all', 'pending', 'matched', 'no_match'].includes(String(queryParams.status))
+    ? String(queryParams.status)
+    : 'all') as MatchReviewState['status']
+  const sortBy = (queryParams.sortBy === 'status' ? 'status' : 'position') as MatchReviewState['sortBy']
+
+  const initialState: MatchReviewState = { page, pageSize, search, status, sortBy }
 
   // Verify user is authenticated
   const {
@@ -41,21 +62,46 @@ export default async function MatchReviewPage({ params }: PageProps) {
   // This pre-confirms obvious matches before user reviews them
   await autoAcceptExactMatches(jobId)
 
-  // Fetch items with nested match suggestions
+  // Build base query for items with nested match suggestions
   // Use explicit FK name because there are two relationships:
   // 1. rfp_match_suggestions.rfp_item_id -> rfp_items.id (one-to-many, what we want)
   // 2. rfp_items.selected_match_id -> rfp_match_suggestions.id (many-to-one)
-  const { data: items, error: itemsError } = await supabase
+  let query = supabase
     .from('rfp_items')
     .select(
       `
       *,
       rfp_match_suggestions!rfp_match_suggestions_rfp_item_id_fkey (*)
-    `
+    `,
+      { count: 'exact' }
     )
     .eq('job_id', jobId)
-    .order('lote_pedido', { ascending: true })
-    .order('posicao_pedido', { ascending: true })
+
+  // Apply search filter (both RFP side and matched product side via text search)
+  if (search) {
+    // Search on RFP item fields
+    query = query.or(`artigo_pedido.ilike.%${search}%,descricao_pedido.ilike.%${search}%`)
+  }
+
+  // Apply sorting
+  if (sortBy === 'position') {
+    query = query
+      .order('lote_pedido', { ascending: true })
+      .order('posicao_pedido', { ascending: true })
+  } else {
+    // Sort by status: pending first, then matched, then no_match
+    query = query
+      .order('review_status', { ascending: true })
+      .order('lote_pedido', { ascending: true })
+      .order('posicao_pedido', { ascending: true })
+  }
+
+  // Apply pagination
+  const from = (page - 1) * pageSize
+  const to = from + pageSize - 1
+  query = query.range(from, to)
+
+  const { data: items, error: itemsError, count } = await query
 
   if (itemsError) {
     console.error('Failed to fetch items:', JSON.stringify(itemsError, null, 2))
@@ -69,12 +115,83 @@ export default async function MatchReviewPage({ params }: PageProps) {
   }
 
   // Sort each item's match suggestions by similarity_score DESC (client-side)
-  const itemsWithSortedMatches: RFPItemWithMatches[] = (items ?? []).map((item) => ({
+  let itemsWithSortedMatches: RFPItemWithMatches[] = (items ?? []).map((item) => ({
     ...item,
     rfp_match_suggestions: (item.rfp_match_suggestions || []).sort(
       (a: MatchSuggestion, b: MatchSuggestion) => b.similarity_score - a.similarity_score
     ),
   }))
+
+  // Apply status filter (client-side since it depends on suggestions)
+  if (status !== 'all') {
+    itemsWithSortedMatches = itemsWithSortedMatches.filter((item) => {
+      const hasSuggestions = item.rfp_match_suggestions.length > 0
+      const hasAccepted = item.rfp_match_suggestions.some((m) => m.status === 'accepted')
+      const hasPerfectMatch = item.rfp_match_suggestions.some((m) => m.similarity_score >= 0.9999)
+
+      switch (status) {
+        case 'pending':
+          // Pending items with suggestions to review
+          return item.review_status === 'pending' && hasSuggestions && !hasPerfectMatch
+        case 'matched':
+          // Items with accepted/manual match OR perfect match
+          return (
+            item.review_status === 'accepted' ||
+            item.review_status === 'manual' ||
+            (item.review_status === 'pending' && hasPerfectMatch)
+          )
+        case 'no_match':
+          // Rejected items OR pending items with no suggestions
+          return item.review_status === 'rejected' || (item.review_status === 'pending' && !hasSuggestions)
+        default:
+          return true
+      }
+    })
+  }
+
+  // Search on matched product side (client-side filtering)
+  // This adds items where the accepted match contains the search term
+  if (search) {
+    const searchLower = search.toLowerCase()
+    itemsWithSortedMatches = itemsWithSortedMatches.filter((item) => {
+      // Check RFP side
+      const rfpMatch =
+        item.artigo_pedido?.toLowerCase().includes(searchLower) ||
+        item.descricao_pedido?.toLowerCase().includes(searchLower)
+      if (rfpMatch) return true
+
+      // Check matched product side (accepted suggestions)
+      const acceptedMatch = item.rfp_match_suggestions.find((m) => m.status === 'accepted')
+      if (acceptedMatch) {
+        return (
+          acceptedMatch.artigo?.toLowerCase().includes(searchLower) ||
+          acceptedMatch.descricao?.toLowerCase().includes(searchLower)
+        )
+      }
+
+      return false
+    })
+  }
+
+  // Get total count for stats (unfiltered)
+  const { data: allItems } = await supabase
+    .from('rfp_items')
+    .select(
+      `
+      *,
+      rfp_match_suggestions!rfp_match_suggestions_rfp_item_id_fkey (*)
+    `
+    )
+    .eq('job_id', jobId)
+
+  const allItemsWithSortedMatches: RFPItemWithMatches[] = (allItems ?? []).map((item) => ({
+    ...item,
+    rfp_match_suggestions: (item.rfp_match_suggestions || []).sort(
+      (a: MatchSuggestion, b: MatchSuggestion) => b.similarity_score - a.similarity_score
+    ),
+  }))
+
+  const totalCount = count ?? 0
 
   return (
     <div className="flex flex-1 flex-col">
@@ -93,14 +210,19 @@ export default async function MatchReviewPage({ params }: PageProps) {
           {job.file_name}
         </h1>
         <div className="flex items-center gap-4 shrink-0">
-          <ReviewStatsChips items={itemsWithSortedMatches} />
-          <HeaderExportButton items={itemsWithSortedMatches} jobId={jobId} />
+          <ReviewStatsChips items={allItemsWithSortedMatches} />
+          <HeaderExportButton items={allItemsWithSortedMatches} jobId={jobId} />
         </div>
       </div>
 
       {/* Main content - full width table */}
       <div className="flex-1 min-w-0">
-        <MatchReviewTable jobId={jobId} items={itemsWithSortedMatches} />
+        <MatchReviewTable
+          jobId={jobId}
+          items={itemsWithSortedMatches}
+          totalCount={totalCount}
+          initialState={initialState}
+        />
       </div>
     </div>
   )
