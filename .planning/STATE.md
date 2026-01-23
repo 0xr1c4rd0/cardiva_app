@@ -104,7 +104,19 @@ Recent decisions affecting current work:
 
 ### Pending Todos
 
-None yet.
+7 todos captured for Phase 10 (RFP Upload Polish & History):
+
+| Priority | Title | Area |
+|----------|-------|------|
+| critical | Fix match review table sorting not applying | ui |
+| high | Fix "Por Rever" KPI calculation | ui |
+| high | Rename "Concluídos" to "Concursos Revistos" KPI | ui |
+| high | Support multiple concurrent RFP uploads | ui |
+| high | Make all RFPs visible to all users | database |
+| medium | Show uploader email on RFP list | ui |
+| medium | Align inventory table design with matches table | ui |
+
+See `.planning/todos/pending/` for full details.
 
 ### Blockers/Concerns
 
