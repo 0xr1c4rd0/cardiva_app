@@ -4,6 +4,7 @@ import { createClient } from '@/lib/supabase/server'
 import { SidebarProvider, SidebarInset, SidebarTrigger } from '@/components/ui/sidebar'
 import { AppSidebar } from '@/components/layout/app-sidebar'
 import { UserMenu } from '@/components/layout/user-menu'
+import { MotionProvider } from '@/components/ui/motion-provider'
 
 // Force dynamic rendering to prevent caching of auth state
 export const dynamic = 'force-dynamic'
@@ -65,7 +66,9 @@ export default async function DashboardLayout({
         </header>
         <main className="flex-1 overflow-auto">
           <div className="mx-auto max-w-[1600px] p-6 lg:p-8">
-            {children}
+            <MotionProvider>
+              {children}
+            </MotionProvider>
           </div>
         </main>
       </SidebarInset>

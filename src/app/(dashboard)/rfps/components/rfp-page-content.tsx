@@ -27,9 +27,10 @@ interface RFPPageContentProps {
   initialJobs: RFPJob[]
   totalCount: number
   initialState: RFPListState
+  stats?: React.ReactNode
 }
 
-export function RFPPageContent({ initialJobs, totalCount, initialState }: RFPPageContentProps) {
+export function RFPPageContent({ initialJobs, totalCount, initialState, stats }: RFPPageContentProps) {
   return (
     <RFPUploadStatusProvider>
       <div className="flex flex-1 flex-col gap-6">
@@ -43,6 +44,9 @@ export function RFPPageContent({ initialJobs, totalCount, initialState }: RFPPag
 
           <RFPUploadButton />
         </div>
+
+        {/* KPI Stats */}
+        {stats}
 
         {/* Processing status card - shows only when active job is processing */}
         <RFPProcessingCard />

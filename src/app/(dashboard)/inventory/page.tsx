@@ -5,6 +5,7 @@ import { PermissionGate } from './components/permission-gate'
 import { ExportButton } from './components/export-button'
 import { CSVUploadButton } from './components/csv-upload-button'
 import { InventoryColumnConfig } from '@/lib/supabase/types'
+import { InventoryStats } from './components/inventory-stats'
 
 // Force dynamic rendering
 export const dynamic = 'force-dynamic'
@@ -104,6 +105,7 @@ export default async function InventoryPage({
           </PermissionGate>
         </div>
       </div>
+      <InventoryStats />
       <InventoryTable
         data={data ?? []}
         totalCount={count ?? 0}
