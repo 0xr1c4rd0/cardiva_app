@@ -199,7 +199,7 @@ export function InventoryTable({
                 {headerGroup.headers.map((header, index) => (
                   <TableHead
                     key={header.id}
-                    className={`text-xs font-medium text-slate-700 uppercase tracking-wide bg-slate-100/70 py-2 px-3 ${
+                    className={`text-xs font-medium text-slate-700 tracking-wide bg-slate-100/70 py-2 px-3 ${
                       index === 0 ? 'pl-4 rounded-l-md' : ''
                     } ${
                       index === headerGroup.headers.length - 1 ? 'pr-4 rounded-r-md' : ''

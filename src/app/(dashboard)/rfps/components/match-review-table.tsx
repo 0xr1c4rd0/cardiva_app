@@ -171,7 +171,7 @@ export function MatchReviewTable({ jobId, items, totalCount, initialState }: Mat
             <Table className="[&_thead_tr]:border-0">
               <TableHeader>
                 <TableRow className="hover:bg-transparent border-0">
-                  <TableHead className="pl-4 whitespace-nowrap text-xs font-medium text-slate-700 uppercase tracking-wide bg-slate-100/70 py-2 rounded-l-md">
+                  <TableHead className="pl-4 whitespace-nowrap text-xs font-medium text-slate-700 tracking-wide bg-slate-100/70 py-2 rounded-l-md">
                     <SortableHeader
                       column="lote"
                       label="Lote"
@@ -180,7 +180,7 @@ export function MatchReviewTable({ jobId, items, totalCount, initialState }: Mat
                       onSort={handleSortChange}
                     />
                   </TableHead>
-                  <TableHead className="whitespace-nowrap text-xs font-medium text-slate-700 uppercase tracking-wide bg-slate-100/70 py-2 px-3">
+                  <TableHead className="whitespace-nowrap text-xs font-medium text-slate-700 tracking-wide bg-slate-100/70 py-2 px-3">
                     <SortableHeader
                       column="pos"
                       label="Pos"
@@ -189,7 +189,7 @@ export function MatchReviewTable({ jobId, items, totalCount, initialState }: Mat
                       onSort={handleSortChange}
                     />
                   </TableHead>
-                  <TableHead className="whitespace-nowrap text-xs font-medium text-slate-700 uppercase tracking-wide bg-slate-100/70 py-2 px-3">
+                  <TableHead className="whitespace-nowrap text-xs font-medium text-slate-700 tracking-wide bg-slate-100/70 py-2 px-3">
                     <SortableHeader
                       column="artigo"
                       label="Artigo"
@@ -198,7 +198,7 @@ export function MatchReviewTable({ jobId, items, totalCount, initialState }: Mat
                       onSort={handleSortChange}
                     />
                   </TableHead>
-                  <TableHead className="text-xs font-medium text-slate-700 uppercase tracking-wide bg-slate-100/70 py-2 px-3">
+                  <TableHead className="text-xs font-medium text-slate-700 tracking-wide bg-slate-100/70 py-2 px-3">
                     <SortableHeader
                       column="descricao"
                       label="Descrição"
@@ -207,16 +207,16 @@ export function MatchReviewTable({ jobId, items, totalCount, initialState }: Mat
                       onSort={handleSortChange}
                     />
                   </TableHead>
-                  <TableHead className="whitespace-nowrap text-xs font-medium text-slate-700 uppercase tracking-wide bg-slate-100/70 py-2 px-3">
+                  <TableHead className="whitespace-nowrap text-xs font-medium text-slate-700 tracking-wide bg-slate-100/70 py-2 px-3">
                     <span className="inline-flex items-center">Cód. SPMS</span>
                   </TableHead>
-                  <TableHead className="whitespace-nowrap text-xs font-medium text-slate-700 uppercase tracking-wide bg-slate-100/70 py-2 px-3">
+                  <TableHead className="whitespace-nowrap text-xs font-medium text-slate-700 tracking-wide bg-slate-100/70 py-2 px-3">
                     <span className="inline-flex items-center">Artigo</span>
                   </TableHead>
-                  <TableHead className="text-xs font-medium text-slate-700 uppercase tracking-wide bg-slate-100/70 py-2 px-3">
+                  <TableHead className="text-xs font-medium text-slate-700 tracking-wide bg-slate-100/70 py-2 px-3">
                     <span className="inline-flex items-center">Descrição</span>
                   </TableHead>
-                  <TableHead className="whitespace-nowrap pr-4 text-xs font-medium text-slate-700 uppercase tracking-wide bg-slate-100/70 py-2 text-right rounded-r-md">
+                  <TableHead className="whitespace-nowrap pr-4 text-xs font-medium text-slate-700 tracking-wide bg-slate-100/70 py-2 text-right rounded-r-md">
                     <SortableHeader
                       column="status"
                       label="Estado"
@@ -313,7 +313,7 @@ function ItemRow({ jobId, item }: ItemRowProps) {
       <TableCell className="py-2 px-3 whitespace-nowrap text-slate-700 text-sm">
         {item.artigo_pedido ?? <span className="text-slate-300 italic">—</span>}
       </TableCell>
-      <TableCell className="py-2 px-3 text-slate-600 text-sm">
+      <TableCell className="py-2 px-3 text-slate-600 text-xs">
         {item.descricao_pedido}
       </TableCell>
 
