@@ -78,14 +78,16 @@ export function MatchReviewTable({ jobId, items, totalCount, initialState }: Mat
   const [isPending, startTransition] = useTransition()
 
   // URL state management
+  // Use fixed defaults for sortBy/sortDir to ensure nuqs properly updates URL
+  // (dynamic defaults from initialState cause params to be stripped incorrectly)
   const [{ page, pageSize, search, status, sortBy, sortDir }, setParams] = useQueryStates(
     {
-      page: parseAsInteger.withDefault(initialState.page),
-      pageSize: parseAsInteger.withDefault(initialState.pageSize),
-      search: parseAsString.withDefault(initialState.search),
-      status: parseAsString.withDefault(initialState.status),
-      sortBy: parseAsString.withDefault(initialState.sortBy),
-      sortDir: parseAsString.withDefault(initialState.sortDir),
+      page: parseAsInteger.withDefault(1),
+      pageSize: parseAsInteger.withDefault(25),
+      search: parseAsString.withDefault(''),
+      status: parseAsString.withDefault('all'),
+      sortBy: parseAsString.withDefault('lote'),
+      sortDir: parseAsString.withDefault('asc'),
     },
     { shallow: false }
   )
@@ -104,23 +106,13 @@ export function MatchReviewTable({ jobId, items, totalCount, initialState }: Mat
   }
 
   const handleSortChange = (column: SortColumn) => {
-    startTransition(() => {
-      if (sortBy === column) {
-        // Toggle direction if same column
-        const newDir = sortDir === 'asc' ? 'desc' : 'asc'
-        setParams({
-          sortBy: column,
-          sortDir: newDir,
-          page: 1
-        })
-      } else {
-        // New column, reset to ascending
-        setParams({
-          sortBy: column,
-          sortDir: 'asc',
-          page: 1
-        })
-      }
+    const newDir = sortBy === column && sortDir === 'asc' ? 'desc' : 'asc'
+    // Update URL params - shallow: false triggers server-side navigation automatically
+    // Do NOT call router.refresh() as it overwrites the URL update
+    setParams({
+      sortBy: column,
+      sortDir: newDir,
+      page: null // Reset to first page (null = default = 1)
     })
   }
 
