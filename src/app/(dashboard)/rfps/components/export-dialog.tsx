@@ -12,15 +12,7 @@ import {
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
-import { Switch } from '@/components/ui/switch'
-import {
-  Table,
-  TableBody,
-  TableCell,
-  TableHead,
-  TableHeader,
-  TableRow,
-} from '@/components/ui/table'
+import { RadioGroup, RadioGroupItem } from '@/components/ui/radio-group'
 import { Download, Mail, Loader2, Check, AlertCircle } from 'lucide-react'
 import { toast } from 'sonner'
 import type { RFPItemWithMatches } from '@/types/rfp'
@@ -30,7 +22,6 @@ import {
   exportRFPToExcel,
   generateExcelBase64,
   generateExportFilename,
-  type RFPExportRow,
 } from '@/lib/export/rfp-export'
 import { sendExportEmail } from '@/app/(dashboard)/rfps/[id]/matches/export-actions'
 
@@ -41,24 +32,26 @@ interface ExportDialogProps {
   jobId: string
 }
 
-const PREVIEW_ROW_COUNT = 8
-
 export function ExportDialog({ open, onOpenChange, items, jobId }: ExportDialogProps) {
-  const [confirmedOnly, setConfirmedOnly] = useState(true)
+  const [exportMode, setExportMode] = useState<'matched' | 'all'>('matched')
   const [email, setEmail] = useState('')
   const [isExporting, setIsExporting] = useState(false)
   const [isSendingEmail, setIsSendingEmail] = useState(false)
 
-  // Calculate preview data and summary
-  const { previewRows, totalRows, summary } = useMemo(() => {
+  // Calculate summary and row counts
+  const { matchedCount, noMatchCount, totalRows } = useMemo(() => {
+    const summary = calculateExportSummary(items)
+    const matched = summary.confirmedCount + summary.manualCount
+    const noMatch = summary.rejectedCount + summary.noMatchCount
+    const confirmedOnly = exportMode === 'matched'
     const rows = transformToExportRows(items, confirmedOnly)
-    const summaryData = calculateExportSummary(items)
+
     return {
-      previewRows: rows.slice(0, PREVIEW_ROW_COUNT),
+      matchedCount: matched,
+      noMatchCount: noMatch,
       totalRows: rows.length,
-      summary: summaryData,
     }
-  }, [items, confirmedOnly])
+  }, [items, exportMode])
 
   const handleExport = async () => {
     if (totalRows === 0) {
@@ -67,9 +60,9 @@ export function ExportDialog({ open, onOpenChange, items, jobId }: ExportDialogP
     }
 
     setIsExporting(true)
-    // Use setTimeout to let React update UI before CPU-intensive export
     setTimeout(() => {
       try {
+        const confirmedOnly = exportMode === 'matched'
         exportRFPToExcel(items, confirmedOnly, 'RFP_Resultados')
         toast.success('Ficheiro Excel transferido')
       } catch (error) {
@@ -94,8 +87,10 @@ export function ExportDialog({ open, onOpenChange, items, jobId }: ExportDialogP
 
     setIsSendingEmail(true)
     try {
+      const confirmedOnly = exportMode === 'matched'
       const excelBase64 = generateExcelBase64(items, confirmedOnly)
       const fileName = generateExportFilename('RFP_Resultados')
+      const summary = calculateExportSummary(items)
 
       const result = await sendExportEmail({
         jobId,
@@ -131,117 +126,63 @@ export function ExportDialog({ open, onOpenChange, items, jobId }: ExportDialogP
     }
   }
 
-  const getStatusIcon = (status: string) => {
-    switch (status) {
-      case 'Selecionado':
-        return <Check className="h-3.5 w-3.5 text-emerald-600" />
-      case 'Sem correspondência':
-        return <AlertCircle className="h-3.5 w-3.5 text-gray-500" />
-      default:
-        return null
-    }
-  }
-
   return (
     <Dialog open={open} onOpenChange={handleClose}>
-      <DialogContent className="sm:max-w-[800px] max-h-[90vh] overflow-y-auto">
+      <DialogContent className="sm:max-w-[420px]">
         <DialogHeader>
           <DialogTitle>Exportar Resultados</DialogTitle>
           <DialogDescription>
-            Exporte os resultados da revisão para Excel ou envie por email.
+            Exporte os resultados da revisão para Excel.
           </DialogDescription>
         </DialogHeader>
 
-        {/* Summary stats - simplified to 2 categories */}
-        <div className="grid grid-cols-2 gap-4 py-2">
-          <div className="text-center p-3 bg-emerald-50 rounded-lg">
-            <div className="text-2xl font-semibold text-emerald-700">
-              {summary.confirmedCount + summary.manualCount}
-            </div>
-            <div className="text-xs text-emerald-600">Correspondências</div>
-          </div>
-          <div className="text-center p-3 bg-gray-100 rounded-lg">
-            <div className="text-2xl font-semibold text-gray-700">
-              {summary.rejectedCount + summary.noMatchCount}
-            </div>
-            <div className="text-xs text-gray-600">Sem correspondência</div>
-          </div>
-        </div>
-
-        {/* Filter toggle */}
-        <div className="flex items-center justify-between py-2 border-t border-b">
+        {/* Summary stats - compact inline */}
+        <div className="flex items-center justify-center gap-6 py-3">
           <div className="flex items-center gap-2">
-            <Switch
-              id="confirmed-only"
-              checked={confirmedOnly}
-              onCheckedChange={setConfirmedOnly}
-            />
-            <Label htmlFor="confirmed-only" className="cursor-pointer">
-              Apenas itens com correspondência
-            </Label>
+            <div className="flex items-center justify-center h-6 w-6 rounded-full bg-emerald-100">
+              <Check className="h-3.5 w-3.5 text-emerald-600" />
+            </div>
+            <span className="text-lg font-semibold text-emerald-700">{matchedCount}</span>
+            <span className="text-xs text-muted-foreground">Correspondências</span>
           </div>
-          <span className="text-sm text-muted-foreground">
-            {totalRows} {totalRows === 1 ? 'item' : 'itens'} a exportar
-          </span>
+          <div className="h-5 w-px bg-border" />
+          <div className="flex items-center gap-2">
+            <div className="flex items-center justify-center h-6 w-6 rounded-full bg-gray-100">
+              <AlertCircle className="h-3.5 w-3.5 text-gray-500" />
+            </div>
+            <span className="text-lg font-semibold text-gray-700">{noMatchCount}</span>
+            <span className="text-xs text-muted-foreground">Sem correspondência</span>
+          </div>
         </div>
 
-        {/* Preview table */}
-        <div className="border rounded-lg">
-          <Table>
-            <TableHeader>
-              <TableRow>
-                <TableHead className="w-[60px]">Lote</TableHead>
-                <TableHead className="w-[60px]">Pos.</TableHead>
-                <TableHead>Descrição Pedido</TableHead>
-                <TableHead>Descrição Match</TableHead>
-                <TableHead className="w-[80px]">Similar.</TableHead>
-                <TableHead className="w-[100px]">Status</TableHead>
-              </TableRow>
-            </TableHeader>
-            <TableBody>
-              {previewRows.length === 0 ? (
-                <TableRow>
-                  <TableCell colSpan={6} className="text-center py-8 text-muted-foreground">
-                    Sem itens para exportar
-                  </TableCell>
-                </TableRow>
-              ) : (
-                previewRows.map((row: RFPExportRow, index: number) => (
-                  <TableRow key={index}>
-                    <TableCell>{row.lote ?? '-'}</TableCell>
-                    <TableCell>{row.posicao ?? '-'}</TableCell>
-                    <TableCell className="max-w-[180px] truncate" title={row.descricao_pedido}>
-                      {row.descricao_pedido}
-                    </TableCell>
-                    <TableCell
-                      className="max-w-[180px] truncate"
-                      title={row.descricao_match || ''}
-                    >
-                      {row.descricao_match || '-'}
-                    </TableCell>
-                    <TableCell>{row.similaridade}</TableCell>
-                    <TableCell>
-                      <div className="flex items-center gap-1.5">
-                        {getStatusIcon(row.status)}
-                        <span className="text-xs">{row.status}</span>
-                      </div>
-                    </TableCell>
-                  </TableRow>
-                ))
-              )}
-            </TableBody>
-          </Table>
-          {totalRows > PREVIEW_ROW_COUNT && (
-            <div className="text-center py-2 text-sm text-muted-foreground border-t bg-muted/50">
-              ... e mais {totalRows - PREVIEW_ROW_COUNT}{' '}
-              {totalRows - PREVIEW_ROW_COUNT === 1 ? 'item' : 'itens'}
+        {/* Export mode selection */}
+        <div className="space-y-3 py-3 border-t">
+          <Label className="text-sm font-medium">Incluir na exportação</Label>
+          <RadioGroup
+            value={exportMode}
+            onValueChange={(value) => setExportMode(value as 'matched' | 'all')}
+            className="space-y-2"
+          >
+            <div className="flex items-center space-x-3">
+              <RadioGroupItem value="matched" id="matched" />
+              <Label htmlFor="matched" className="cursor-pointer font-normal">
+                Apenas correspondências ({matchedCount} {matchedCount === 1 ? 'item' : 'itens'})
+              </Label>
             </div>
-          )}
+            <div className="flex items-center space-x-3">
+              <RadioGroupItem value="all" id="all" />
+              <Label htmlFor="all" className="cursor-pointer font-normal">
+                Todos os itens ({items.length} {items.length === 1 ? 'item' : 'itens'})
+              </Label>
+            </div>
+          </RadioGroup>
         </div>
 
         {/* Email section */}
-        <div className="space-y-3 pt-2">
-          <Label htmlFor="email">Enviar por email (opcional)</Label>
+        <div className="space-y-3 py-3 border-t">
+          <Label htmlFor="email" className="text-sm font-medium">
+            Enviar por email (opcional)
+          </Label>
           <div className="flex gap-2">
             <Input
               id="email"
@@ -254,28 +195,20 @@ export function ExportDialog({ open, onOpenChange, items, jobId }: ExportDialogP
             />
             <Button
               variant="outline"
+              size="sm"
               onClick={handleSendEmail}
               disabled={!email || isSendingEmail || totalRows === 0}
             >
               {isSendingEmail ? (
-                <>
-                  <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                  A enviar...
-                </>
+                <Loader2 className="h-4 w-4 animate-spin" />
               ) : (
-                <>
-                  <Mail className="mr-2 h-4 w-4" />
-                  Enviar
-                </>
+                <Mail className="h-4 w-4" />
               )}
             </Button>
           </div>
-          <p className="text-xs text-muted-foreground">
-            O ficheiro Excel será enviado como anexo para o email indicado.
-          </p>
         </div>
 
-        <DialogFooter className="gap-2 sm:gap-0">
+        <DialogFooter className="gap-3 pt-2">
           <Button variant="outline" onClick={handleClose} disabled={isExporting || isSendingEmail}>
             Fechar
           </Button>
