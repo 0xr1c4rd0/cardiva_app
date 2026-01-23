@@ -129,30 +129,26 @@ export function MatchReviewTable({ jobId, items, totalCount, initialState }: Mat
       ) : (
         <>
           {/* Table */}
-          <div className="rounded-lg border border-slate-200 shadow-xs overflow-hidden">
-            <Table>
+          <div className="rounded-lg border border-slate-200 shadow-xs overflow-hidden bg-white p-2">
+            <Table className="[&_thead_tr]:border-0">
               <TableHeader>
-                <TableRow className="hover:bg-transparent bg-white border-b-2 border-slate-200">
-                  {/* RFP Item columns */}
-                  <TableHead className="pl-6 whitespace-nowrap text-xs font-semibold text-slate-700 uppercase tracking-wide">Lote</TableHead>
-                  <TableHead className="whitespace-nowrap text-xs font-semibold text-slate-700 uppercase tracking-wide">Pos</TableHead>
-                  <TableHead className="whitespace-nowrap text-xs font-semibold text-slate-700 uppercase tracking-wide">Artigo</TableHead>
-                  <TableHead className="text-xs font-semibold text-slate-700 uppercase tracking-wide">Descrição</TableHead>
-                  {/* Matched product columns - Cardiva zone with tinted background */}
-                  <TableHead className="whitespace-nowrap text-xs font-semibold text-emerald-700 uppercase tracking-wide bg-emerald-50/20">Cód. SPMS</TableHead>
-                  <TableHead className="whitespace-nowrap text-xs font-semibold text-emerald-700 uppercase tracking-wide bg-emerald-50/20">Artigo</TableHead>
-                  <TableHead className="text-xs font-semibold text-emerald-700 uppercase tracking-wide bg-emerald-50/20">Descrição</TableHead>
-                  {/* Status */}
-                  <TableHead className="whitespace-nowrap pr-6 text-xs font-semibold text-slate-700 uppercase tracking-wide text-right">Estado</TableHead>
+                <TableRow className="hover:bg-transparent border-0">
+                  <TableHead className="pl-4 whitespace-nowrap text-xs font-medium text-slate-700 uppercase tracking-wide bg-slate-100/70 py-2 rounded-l-md">Lote</TableHead>
+                  <TableHead className="whitespace-nowrap text-xs font-medium text-slate-700 uppercase tracking-wide bg-slate-100/70 py-2 px-3">Pos</TableHead>
+                  <TableHead className="whitespace-nowrap text-xs font-medium text-slate-700 uppercase tracking-wide bg-slate-100/70 py-2 px-3">Artigo</TableHead>
+                  <TableHead className="text-xs font-medium text-slate-700 uppercase tracking-wide bg-slate-100/70 py-2 px-3">Descrição</TableHead>
+                  <TableHead className="whitespace-nowrap text-xs font-medium text-slate-700 uppercase tracking-wide bg-slate-100/70 py-2 px-3">Cód. SPMS</TableHead>
+                  <TableHead className="whitespace-nowrap text-xs font-medium text-slate-700 uppercase tracking-wide bg-slate-100/70 py-2 px-3">Artigo</TableHead>
+                  <TableHead className="text-xs font-medium text-slate-700 uppercase tracking-wide bg-slate-100/70 py-2 px-3">Descrição</TableHead>
+                  <TableHead className="whitespace-nowrap pr-4 text-xs font-medium text-slate-700 uppercase tracking-wide bg-slate-100/70 py-2 text-right rounded-r-md">Estado</TableHead>
                 </TableRow>
               </TableHeader>
               <TableBody>
-                {items.map((item, index) => (
+                {items.map((item) => (
                   <ItemRow
                     key={item.id}
                     jobId={jobId}
                     item={item}
-                    isLast={index === items.length - 1}
                   />
                 ))}
                 {items.length === 0 && (
@@ -186,10 +182,9 @@ export function MatchReviewTable({ jobId, items, totalCount, initialState }: Mat
 interface ItemRowProps {
   jobId: string
   item: RFPItemWithMatches
-  isLast: boolean
 }
 
-function ItemRow({ jobId, item, isLast }: ItemRowProps) {
+function ItemRow({ jobId, item }: ItemRowProps) {
   const [isPopoverOpen, setIsPopoverOpen] = useState(false)
   const [showManualDialog, setShowManualDialog] = useState(false)
 
@@ -221,50 +216,48 @@ function ItemRow({ jobId, item, isLast }: ItemRowProps) {
     <TableRow
       className={cn(
         'transition-all duration-100',
-        'hover:bg-emerald-50/20 hover:border-l-2 hover:border-l-emerald-400',
-        'border-l-2 border-l-transparent',
-        !isLast && 'border-b border-slate-100'
+        'hover:bg-slate-50'
       )}
     >
       {/* RFP Item columns */}
-      <TableCell className="pl-6 whitespace-nowrap font-mono text-slate-700">
-        {item.lote_pedido ?? <span className="text-slate-300 italic text-sm">—</span>}
+      <TableCell className="pl-4 py-2 whitespace-nowrap font-mono text-slate-700 text-sm">
+        {item.lote_pedido ?? <span className="text-slate-300 italic">—</span>}
       </TableCell>
-      <TableCell className="whitespace-nowrap font-mono text-slate-700">
-        {item.posicao_pedido ?? <span className="text-slate-300 italic text-sm">—</span>}
+      <TableCell className="py-2 px-3 whitespace-nowrap font-mono text-slate-700 text-sm">
+        {item.posicao_pedido ?? <span className="text-slate-300 italic">—</span>}
       </TableCell>
-      <TableCell className="whitespace-nowrap text-slate-700">
-        {item.artigo_pedido ?? <span className="text-slate-300 italic text-sm">—</span>}
+      <TableCell className="py-2 px-3 whitespace-nowrap text-slate-700 text-sm">
+        {item.artigo_pedido ?? <span className="text-slate-300 italic">—</span>}
       </TableCell>
-      <TableCell className="text-slate-600">
+      <TableCell className="py-2 px-3 text-slate-600 text-sm">
         {item.descricao_pedido}
       </TableCell>
 
       {/* Matched product columns - Cardiva zone */}
-      <TableCell className="whitespace-nowrap font-mono bg-emerald-50/20">
+      <TableCell className="py-2 px-3 whitespace-nowrap font-mono text-sm">
         {matchedCodigo ? (
           <span className="text-emerald-700 font-medium">{matchedCodigo}</span>
         ) : (
-          <span className="text-slate-300 italic text-sm">—</span>
+          <span className="text-slate-300 italic">—</span>
         )}
       </TableCell>
-      <TableCell className="whitespace-nowrap bg-emerald-50/20">
+      <TableCell className="py-2 px-3 whitespace-nowrap text-sm">
         {matchedArtigo ? (
           <span className="text-emerald-700 font-medium">{matchedArtigo}</span>
         ) : (
-          <span className="text-slate-300 italic text-sm">—</span>
+          <span className="text-slate-300 italic">—</span>
         )}
       </TableCell>
-      <TableCell className="bg-emerald-50/20">
+      <TableCell className="py-2 px-3 text-sm">
         {matchedDescricao ? (
           <span className="text-emerald-600">{matchedDescricao}</span>
         ) : (
-          <span className="text-slate-300 italic text-sm">—</span>
+          <span className="text-slate-300 italic">—</span>
         )}
       </TableCell>
 
       {/* Status / Action column */}
-      <TableCell className="whitespace-nowrap text-right pr-6">
+      <TableCell className="py-2 whitespace-nowrap text-right pr-4">
         <div className="flex items-center justify-end gap-2">
           {/* Status button / Popover */}
           {hasNoSuggestions ? (

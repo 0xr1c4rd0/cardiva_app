@@ -209,13 +209,20 @@ export function InventoryTable({
         categories={showCategoryFilter ? categories : []}
         isPending={isPending}
       />
-      <div className="rounded-md border">
-        <Table>
+      <div className="rounded-lg border border-slate-200 shadow-xs overflow-hidden bg-white p-2">
+        <Table className="[&_thead_tr]:border-0">
           <TableHeader>
             {table.getHeaderGroups().map((headerGroup) => (
-              <TableRow key={headerGroup.id}>
-                {headerGroup.headers.map((header) => (
-                  <TableHead key={header.id}>
+              <TableRow key={headerGroup.id} className="hover:bg-transparent border-0">
+                {headerGroup.headers.map((header, index) => (
+                  <TableHead
+                    key={header.id}
+                    className={`text-xs font-medium text-slate-700 uppercase tracking-wide bg-slate-100/70 py-2 px-3 ${
+                      index === 0 ? 'pl-4 rounded-l-md' : ''
+                    } ${
+                      index === headerGroup.headers.length - 1 ? 'pr-4 rounded-r-md' : ''
+                    }`}
+                  >
                     {header.isPlaceholder
                       ? null
                       : flexRender(
@@ -230,9 +237,12 @@ export function InventoryTable({
           <TableBody>
             {isPending ? (
               Array.from({ length: 5 }).map((_, i) => (
-                <TableRow key={`skeleton-${i}`}>
+                <TableRow key={`skeleton-${i}`} className="hover:bg-slate-50 border-0">
                   {columns.map((_, j) => (
-                    <TableCell key={`skeleton-cell-${i}-${j}`}>
+                    <TableCell
+                      key={`skeleton-cell-${i}-${j}`}
+                      className={`py-2 px-3 ${j === 0 ? 'pl-4' : ''} ${j === columns.length - 1 ? 'pr-4' : ''}`}
+                    >
                       <Skeleton className="h-4 w-full" />
                     </TableCell>
                   ))}
@@ -240,9 +250,16 @@ export function InventoryTable({
               ))
             ) : table.getRowModel().rows?.length ? (
               table.getRowModel().rows.map((row) => (
-                <TableRow key={row.id}>
-                  {row.getVisibleCells().map((cell) => (
-                    <TableCell key={cell.id}>
+                <TableRow key={row.id} className="hover:bg-slate-50 border-0">
+                  {row.getVisibleCells().map((cell, index) => (
+                    <TableCell
+                      key={cell.id}
+                      className={`py-2 px-3 text-slate-700 text-sm ${
+                        index === 0 ? 'pl-4' : ''
+                      } ${
+                        index === row.getVisibleCells().length - 1 ? 'pr-4' : ''
+                      }`}
+                    >
                       {flexRender(
                         cell.column.columnDef.cell,
                         cell.getContext()
@@ -252,7 +269,7 @@ export function InventoryTable({
                 </TableRow>
               ))
             ) : (
-              <TableRow>
+              <TableRow className="border-0">
                 <TableCell
                   colSpan={columns.length}
                   className="h-48 text-center"
