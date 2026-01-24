@@ -45,8 +45,10 @@ interface RFPUploadStatusContextValue {
   processingCount: number
   queuedCount: number
 
-  // Refresh trigger - increments when data should be refreshed (e.g., job completed)
+  // Refresh trigger - increments when data should be refreshed (e.g., job completed, deleted)
   refreshTrigger: number
+  // Manual trigger for KPI refresh (call after delete, confirm, etc.)
+  triggerKPIRefresh: () => void
 }
 
 const RFPUploadStatusContext = createContext<RFPUploadStatusContextValue | null>(null)
@@ -341,6 +343,11 @@ export function RFPUploadStatusProvider({ children }: RFPUploadStatusProviderPro
 
   const queuedCount = uploadQueue.filter(q => q.status === 'queued').length
 
+  // Manual trigger for KPI refresh (call after delete, confirm, etc.)
+  const triggerKPIRefresh = useCallback(() => {
+    setRefreshTrigger(prev => prev + 1)
+  }, [])
+
   const value: RFPUploadStatusContextValue = {
     activeJob,
     lastCompletedJob,
@@ -353,6 +360,7 @@ export function RFPUploadStatusProvider({ children }: RFPUploadStatusProviderPro
     queuedCount,
     // Refresh trigger for KPIs
     refreshTrigger,
+    triggerKPIRefresh,
   }
 
   return (

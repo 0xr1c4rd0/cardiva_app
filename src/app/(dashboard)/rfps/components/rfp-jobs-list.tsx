@@ -142,7 +142,7 @@ export function RFPJobsList({ initialJobs, totalCount, initialState }: RFPJobsLi
   const router = useRouter()
   const [jobs, setJobs] = useState<RFPJob[]>(initialJobs)
   const [currentTotalCount, setCurrentTotalCount] = useState(totalCount)
-  const { activeJob, lastCompletedJob } = useRFPUploadStatus()
+  const { activeJob, lastCompletedJob, triggerKPIRefresh } = useRFPUploadStatus()
   const [deleteDialogOpen, setDeleteDialogOpen] = useState(false)
   const [jobToDelete, setJobToDelete] = useState<{ id: string; name: string } | null>(null)
   const [isPending, startTransition] = useTransition()
@@ -244,10 +244,8 @@ export function RFPJobsList({ initialJobs, totalCount, initialState }: RFPJobsLi
       setJobs((prev) => prev.filter((j) => j.id !== jobToDelete.id))
       setCurrentTotalCount((prev) => Math.max(0, prev - 1))
       setJobToDelete(null)
-      // Refresh to update KPIs (small delay to ensure server has processed)
-      setTimeout(() => {
-        router.refresh()
-      }, 100)
+      // Trigger KPI refresh
+      triggerKPIRefresh()
     }
   }
 
