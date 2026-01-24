@@ -3,6 +3,7 @@
 import { createContext, useContext, useEffect, useState, useCallback, useRef, type ReactNode } from 'react'
 import { createClient } from '@/lib/supabase/client'
 import { toast } from 'sonner'
+import { triggerRFPUpload } from '@/app/(dashboard)/rfps/actions'
 
 export interface RFPUploadJob {
   id: string
@@ -17,11 +18,28 @@ export interface RFPUploadJob {
   completed_at: string | null
 }
 
+// Multi-upload queue types
+export interface QueuedUpload {
+  id: string              // Temporary ID until job created
+  file: File
+  status: 'queued' | 'uploading' | 'processing' | 'completed' | 'failed'
+  jobId?: string          // Set after job created in DB
+  startedAt?: Date
+  error?: string
+}
+
 interface RFPUploadStatusContextValue {
+  // Existing (keep for backward compat with single-job display)
   activeJob: RFPUploadJob | null
   lastCompletedJob: RFPUploadJob | null
   isProcessing: boolean
   refetch: () => Promise<void>
+
+  // New for multi-upload
+  uploadQueue: QueuedUpload[]
+  queueFiles: (files: File[]) => void
+  processingCount: number
+  queuedCount: number
 }
 
 const RFPUploadStatusContext = createContext<RFPUploadStatusContextValue | null>(null)
@@ -30,17 +48,25 @@ interface RFPUploadStatusProviderProps {
   children: ReactNode
 }
 
+// Multi-upload constants
+const MAX_CONCURRENT = 10
+const WEBHOOK_DELAY_MS = 2500 // 2.5s between n8n triggers
+const COMPLETED_CLEANUP_DELAY_MS = 5000 // Remove completed items after 5s
+
 /**
  * Provider that manages RFP upload job status via Supabase Realtime
  * Shares state across all consuming components
+ * Supports multi-file upload queue with sequential processing
  */
 export function RFPUploadStatusProvider({ children }: RFPUploadStatusProviderProps) {
   const [activeJob, setActiveJob] = useState<RFPUploadJob | null>(null)
   const [lastCompletedJob, setLastCompletedJob] = useState<RFPUploadJob | null>(null)
+  const [uploadQueue, setUploadQueue] = useState<QueuedUpload[]>([])
   const supabase = createClient()
   const channelRef = useRef<ReturnType<typeof supabase.channel> | null>(null)
   const userIdRef = useRef<string | null>(null)
   const completionTimeoutRef = useRef<NodeJS.Timeout | null>(null)
+  const isProcessingQueueRef = useRef(false)
 
   // Fetch any pending/processing jobs (all users can see all jobs)
   const fetchActiveJob = useCallback(async () => {
@@ -72,6 +98,27 @@ export function RFPUploadStatusProvider({ children }: RFPUploadStatusProviderPro
     if (completionTimeoutRef.current) {
       clearTimeout(completionTimeoutRef.current)
       completionTimeoutRef.current = null
+    }
+
+    // Update queue item if this job matches one in the queue
+    setUploadQueue(prev => prev.map(q => {
+      if (q.jobId === newJob.id) {
+        if (newJob.status === 'completed') {
+          return { ...q, status: 'completed' as const }
+        } else if (newJob.status === 'failed') {
+          return { ...q, status: 'failed' as const, error: newJob.error_message || 'Processing failed' }
+        } else if (newJob.status === 'processing') {
+          return { ...q, status: 'processing' as const }
+        }
+      }
+      return q
+    }))
+
+    // Schedule cleanup of completed/failed items
+    if (newJob.status === 'completed' || newJob.status === 'failed') {
+      setTimeout(() => {
+        setUploadQueue(prev => prev.filter(q => q.jobId !== newJob.id))
+      }, COMPLETED_CLEANUP_DELAY_MS)
     }
 
     // Update local state
@@ -141,6 +188,91 @@ export function RFPUploadStatusProvider({ children }: RFPUploadStatusProviderPro
       }
     }
   }, [])
+
+  // Queue files for upload (max 10 total active)
+  const queueFiles = useCallback((files: File[]) => {
+    setUploadQueue(prev => {
+      // Count current active uploads (queued + uploading + processing)
+      const currentCount = prev.filter(
+        q => q.status === 'queued' || q.status === 'uploading' || q.status === 'processing'
+      ).length
+      const available = MAX_CONCURRENT - currentCount
+      const filesToQueue = files.slice(0, Math.max(0, available))
+
+      if (filesToQueue.length < files.length) {
+        toast.warning('Limite de ficheiros', {
+          description: `Apenas ${filesToQueue.length} de ${files.length} ficheiros foram adicionados. Maximo de ${MAX_CONCURRENT} em processamento simultaneo.`,
+        })
+      }
+
+      const newItems: QueuedUpload[] = filesToQueue.map(file => ({
+        id: crypto.randomUUID(),
+        file,
+        status: 'queued' as const
+      }))
+
+      return [...prev, ...newItems]
+    })
+  }, [])
+
+  // Process queue - triggered when queue changes
+  useEffect(() => {
+    const processNext = async () => {
+      // Prevent concurrent processing
+      if (isProcessingQueueRef.current) return
+
+      const nextQueued = uploadQueue.find(q => q.status === 'queued')
+      if (!nextQueued) return
+
+      // Check if there's already an upload in progress
+      const isUploading = uploadQueue.some(q => q.status === 'uploading')
+      if (isUploading) return
+
+      isProcessingQueueRef.current = true
+
+      // Mark as uploading
+      setUploadQueue(prev => prev.map(q =>
+        q.id === nextQueued.id ? { ...q, status: 'uploading' as const, startedAt: new Date() } : q
+      ))
+
+      try {
+        // 1. Upload file and create job (existing triggerRFPUpload action)
+        const formData = new FormData()
+        formData.append('file', nextQueued.file)
+        const result = await triggerRFPUpload(formData)
+
+        if (result.success && result.jobId) {
+          // 2. Update queue with job ID and mark as processing
+          setUploadQueue(prev => prev.map(q =>
+            q.id === nextQueued.id ? { ...q, jobId: result.jobId, status: 'processing' as const } : q
+          ))
+
+          // 3. Wait before processing next (webhook delay)
+          await new Promise(resolve => setTimeout(resolve, WEBHOOK_DELAY_MS))
+        } else {
+          setUploadQueue(prev => prev.map(q =>
+            q.id === nextQueued.id ? { ...q, status: 'failed' as const, error: result.error || 'Upload failed' } : q
+          ))
+          // Schedule cleanup of failed item
+          setTimeout(() => {
+            setUploadQueue(prev => prev.filter(q => q.id !== nextQueued.id))
+          }, COMPLETED_CLEANUP_DELAY_MS)
+        }
+      } catch (error) {
+        setUploadQueue(prev => prev.map(q =>
+          q.id === nextQueued.id ? { ...q, status: 'failed' as const, error: 'Upload failed' } : q
+        ))
+        // Schedule cleanup of failed item
+        setTimeout(() => {
+          setUploadQueue(prev => prev.filter(q => q.id !== nextQueued.id))
+        }, COMPLETED_CLEANUP_DELAY_MS)
+      } finally {
+        isProcessingQueueRef.current = false
+      }
+    }
+
+    processNext()
+  }, [uploadQueue])
 
   useEffect(() => {
     let isMounted = true
@@ -212,11 +344,23 @@ export function RFPUploadStatusProvider({ children }: RFPUploadStatusProviderPro
     }
   }, [supabase, fetchActiveJob, handleJobUpdate, handleJobInsert])
 
+  // Compute derived values
+  const processingCount = uploadQueue.filter(
+    q => q.status === 'uploading' || q.status === 'processing'
+  ).length
+
+  const queuedCount = uploadQueue.filter(q => q.status === 'queued').length
+
   const value: RFPUploadStatusContextValue = {
     activeJob,
     lastCompletedJob,
     isProcessing: activeJob?.status === 'pending' || activeJob?.status === 'processing',
     refetch: fetchActiveJob,
+    // Multi-upload
+    uploadQueue,
+    queueFiles,
+    processingCount,
+    queuedCount,
   }
 
   return (
