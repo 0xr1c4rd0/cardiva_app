@@ -108,6 +108,10 @@ Recent decisions affecting current work:
 - [10.1-04]: INSERT policy still requires user_id = auth.uid() (uploader tracking)
 - [10.1-04]: Toast notifications only for user's own uploads (avoid spam)
 - [10.1-04]: Realtime channel rfp_jobs_all instead of rfp_jobs_${user.id}
+- [10.1-03]: Sequential processing with 2.5s delay prevents n8n overload
+- [10.1-03]: Upload button never disabled - users can always queue more files
+- [10.1-03]: Max 3 visible progress bars to avoid UI clutter
+- [10.1-03]: Dialog closes immediately after queueing, no wait for completion
 - [10.1-04]: updateLastEditedBy helper function for tracking changes
 
 ### Pending Todos
@@ -119,7 +123,7 @@ Recent decisions affecting current work:
 | critical | Fix match review table sorting not applying | ui | DONE (10.1-01) |
 | high | Fix "Por Rever" KPI calculation | ui | DONE (10.1-02) |
 | high | Rename "Concluídos" to "Concursos Revistos" KPI | ui | DONE (10.1-02) |
-| high | Support multiple concurrent RFP uploads | ui | DONE (10.1-03) |
+| high | Support multiple concurrent RFP uploads | ui | DONE (10.1-03) - executed 2026-01-24 |
 | high | Make all RFPs visible to all users | database | DONE (10.1-04) |
 | medium | Show uploader email on RFP list | ui | Pending |
 | medium | Align inventory table design with matches table | ui | Pending |
