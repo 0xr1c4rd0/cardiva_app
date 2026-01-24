@@ -1,80 +1,121 @@
 import { createClient } from '@/lib/supabase/server'
 import { KPIStatsCard } from '@/components/dashboard/kpi-stats-card'
-import { FileText, Loader2, CheckCircle2, AlertCircle } from 'lucide-react'
+import { Clock, CheckCircle2, BadgeCheck } from 'lucide-react'
+
+/**
+ * 3-State KPI Model for RFP workflow:
+ *
+ * 1. Por Rever (amber): Jobs with pending items that need human decision
+ *    - Has at least 1 rfp_item where:
+ *      - review_status = 'pending'
+ *      - has rfp_match_suggestions with status = 'pending'
+ *      - NO suggestion has 100% similarity (auto-accepted)
+ *
+ * 2. Revistos (blue): Jobs where all items addressed but not confirmed
+ *    - status = 'completed'
+ *    - confirmed_at IS NULL
+ *    - No pending items needing decision
+ *
+ * 3. Confirmados (emerald): Jobs where user clicked Confirm button
+ *    - confirmed_at IS NOT NULL
+ */
 
 export async function RFPStats() {
     const supabase = await createClient()
-    const { data: { user } } = await supabase.auth.getUser()
 
-    if (!user) return null
-
-    // Fetch jobs stats (id and status)
-    const { data: jobStats } = await supabase
+    // Fetch all completed jobs with confirmation status
+    const { data: completedJobs } = await supabase
         .from('rfp_upload_jobs')
-        .select('id, status')
-        .eq('user_id', user.id)
+        .select('id, confirmed_at')
+        .eq('status', 'completed')
 
-    if (!jobStats) return null
+    if (!completedJobs) return null
 
-    // Get list of user's job IDs to filter items
-    const userJobIds = jobStats.map(job => job.id)
+    // Count Confirmados: jobs with confirmed_at set
+    const confirmedCount = completedJobs.filter(j => j.confirmed_at !== null).length
 
-    // Query for unique jobs that have pending items
-    // "Pending matches to be confirmed" -> items with review_status = 'pending'
-    // We filter by userJobIds to ensure we only count this user's jobs
-    let pendingReviewCount = 0
+    // Get unconfirmed jobs to check for pending decisions
+    const unconfirmedJobs = completedJobs.filter(j => j.confirmed_at === null)
+    const unconfirmedJobIds = unconfirmedJobs.map(j => j.id)
 
-    if (userJobIds.length > 0) {
+    let porReverCount = 0
+
+    if (unconfirmedJobIds.length > 0) {
+        // For each unconfirmed job, check if it has pending items needing decision
+        // A job is "Por Rever" if ANY item has:
+        // - review_status = 'pending'
+        // - at least 1 suggestion with status = 'pending'
+        // - does NOT have a 100% match (auto-accepted)
+
+        // First, get items with pending review status for unconfirmed jobs
         const { data: pendingItems } = await supabase
             .from('rfp_items')
-            .select('job_id')
+            .select(`
+                id,
+                job_id,
+                review_status,
+                rfp_match_suggestions!rfp_match_suggestions_rfp_item_id_fkey (
+                    status,
+                    similarity_score
+                )
+            `)
+            .in('job_id', unconfirmedJobIds)
             .eq('review_status', 'pending')
-            .in('job_id', userJobIds)
 
-        // Count unique job_ids from pending items
-        pendingReviewCount = new Set(pendingItems?.map(i => i.job_id)).size
+        // Group by job_id and determine which jobs need review
+        const jobsNeedingReview = new Set<string>()
+
+        for (const item of pendingItems ?? []) {
+            const suggestions = item.rfp_match_suggestions as Array<{
+                status: string
+                similarity_score: number
+            }>
+
+            if (!suggestions || suggestions.length === 0) continue
+
+            // Check if there are pending suggestions
+            const hasPendingSuggestion = suggestions.some(s => s.status === 'pending')
+            // Check if there's a 100% match (auto-accepted)
+            const hasExactMatch = suggestions.some(s => s.similarity_score >= 0.9999)
+
+            // Item needs decision if it has pending suggestions but no 100% match
+            if (hasPendingSuggestion && !hasExactMatch) {
+                jobsNeedingReview.add(item.job_id)
+            }
+        }
+
+        porReverCount = jobsNeedingReview.size
     }
 
-    const total = jobStats.length
-    const completed = jobStats.filter(s => s.status === 'completed').length
-    const failed = jobStats.filter(s => s.status === 'failed').length
+    // Revistos: unconfirmed jobs that don't need review
+    const revistosCount = unconfirmedJobs.length - porReverCount
 
     return (
-        <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
-            <KPIStatsCard
-                label="Total Concursos"
-                value={total}
-                icon={FileText}
-                description="Documentos carregados"
-                iconContainerClassName="bg-slate-100 text-slate-600"
-            />
-
-            <KPIStatsCard
-                label="Concluídos"
-                value={completed}
-                icon={CheckCircle2}
-                description="Processados com sucesso"
-                iconContainerClassName="bg-emerald-100 text-emerald-600"
-            />
-
+        <div className="grid gap-4 md:grid-cols-3">
             <KPIStatsCard
                 label="Por Rever"
-                value={pendingReviewCount}
-                icon={Loader2}
-                description="Concursos com itens pendentes"
+                value={porReverCount}
+                icon={Clock}
+                description="Concursos com decisoes pendentes"
                 iconContainerClassName="bg-amber-100 text-amber-600"
-                iconClassName={pendingReviewCount > 0 ? "animate-pulse" : ""}
+                iconClassName={porReverCount > 0 ? "animate-pulse" : ""}
             />
 
-            {failed > 0 && (
-                <KPIStatsCard
-                    label="Falhas"
-                    value={failed}
-                    icon={AlertCircle}
-                    description="Erros no processamento"
-                    iconContainerClassName="bg-red-100 text-red-600"
-                />
-            )}
+            <KPIStatsCard
+                label="Revistos"
+                value={revistosCount}
+                icon={CheckCircle2}
+                description="Revistos, por confirmar"
+                iconContainerClassName="bg-blue-100 text-blue-600"
+            />
+
+            <KPIStatsCard
+                label="Confirmados"
+                value={confirmedCount}
+                icon={BadgeCheck}
+                description="Prontos para exportacao"
+                iconContainerClassName="bg-emerald-100 text-emerald-600"
+            />
         </div>
     )
 }

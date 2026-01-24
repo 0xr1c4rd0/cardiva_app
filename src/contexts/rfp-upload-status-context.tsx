@@ -16,6 +16,7 @@ export interface RFPUploadJob {
   created_at: string
   updated_at: string
   completed_at: string | null
+  last_edited_by: string | null
 }
 
 // Multi-upload queue types
