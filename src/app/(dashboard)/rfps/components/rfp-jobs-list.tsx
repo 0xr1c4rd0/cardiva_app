@@ -2,7 +2,6 @@
 
 import { useState, useEffect, useTransition } from 'react'
 import Link from 'next/link'
-import { useRouter } from 'next/navigation'
 import { formatDistanceToNow } from 'date-fns'
 import { pt } from 'date-fns/locale'
 import { useQueryStates, parseAsInteger, parseAsString } from 'nuqs'
@@ -139,7 +138,6 @@ const reviewStatusConfig = {
 }
 
 export function RFPJobsList({ initialJobs, totalCount, initialState }: RFPJobsListProps) {
-  const router = useRouter()
   const [jobs, setJobs] = useState<RFPJob[]>(initialJobs)
   const [currentTotalCount, setCurrentTotalCount] = useState(totalCount)
   const { activeJob, lastCompletedJob, triggerKPIRefresh } = useRFPUploadStatus()
@@ -148,6 +146,7 @@ export function RFPJobsList({ initialJobs, totalCount, initialState }: RFPJobsLi
   const [isPending, startTransition] = useTransition()
 
   // URL state management
+  // shallow: false means setParams updates URL via Next.js router and triggers server re-render
   const [{ page, pageSize, search, sortBy, sortOrder }, setParams] = useQueryStates(
     {
       page: parseAsInteger.withDefault(initialState.page),
@@ -160,13 +159,14 @@ export function RFPJobsList({ initialJobs, totalCount, initialState }: RFPJobsLi
   )
 
   // Update local state when props change (server data refresh)
+  // Include initialState params to ensure sync when URL params change
   useEffect(() => {
     setJobs(initialJobs)
     setCurrentTotalCount(totalCount)
-  }, [initialJobs, totalCount])
+  }, [initialJobs, totalCount, initialState.search, initialState.sortBy, initialState.sortOrder, initialState.page])
 
-  // Helper to sort jobs: processing/pending at top, then by created_at descending
-  const sortJobs = (jobsList: RFPJob[]): RFPJob[] => {
+  // Helper to sort jobs: processing/pending at top, then by specified field/order
+  const sortJobs = (jobsList: RFPJob[], field: 'file_name' | 'created_at' = 'created_at', order: 'asc' | 'desc' = 'desc'): RFPJob[] => {
     return [...jobsList].sort((a, b) => {
       // Processing/pending jobs go to top
       const aIsProcessing = a.status === 'processing' || a.status === 'pending'
@@ -175,8 +175,15 @@ export function RFPJobsList({ initialJobs, totalCount, initialState }: RFPJobsLi
       if (aIsProcessing && !bIsProcessing) return -1
       if (!aIsProcessing && bIsProcessing) return 1
 
-      // Within same category, sort by created_at descending
-      return new Date(b.created_at).getTime() - new Date(a.created_at).getTime()
+      // Within same category, sort by specified field
+      let comparison: number
+      if (field === 'file_name') {
+        comparison = a.file_name.localeCompare(b.file_name, 'pt')
+      } else {
+        comparison = new Date(a.created_at).getTime() - new Date(b.created_at).getTime()
+      }
+
+      return order === 'asc' ? comparison : -comparison
     })
   }
 
@@ -203,8 +210,8 @@ export function RFPJobsList({ initialJobs, totalCount, initialState }: RFPJobsLi
         return prev
       }
 
-      // Sort to keep processing jobs at top
-      return sortJobs(updated)
+      // Sort to keep processing jobs at top, respecting current sort settings
+      return sortJobs(updated, sortBy as 'file_name' | 'created_at', sortOrder as 'asc' | 'desc')
     })
   }
 
@@ -249,14 +256,37 @@ export function RFPJobsList({ initialJobs, totalCount, initialState }: RFPJobsLi
     }
   }
 
-  // URL state handlers
+  // Store original jobs for filtering (reset when initialJobs changes)
+  const [originalJobs, setOriginalJobs] = useState<RFPJob[]>(initialJobs)
+
+  // Update original jobs when server data arrives
+  useEffect(() => {
+    setOriginalJobs(initialJobs)
+  }, [initialJobs])
+
+  // URL state handlers - shallow: false automatically triggers server re-render
   const handleSearchChange = (value: string) => {
+    // Filter immediately for instant feedback
+    if (value) {
+      const searchLower = value.toLowerCase()
+      const filtered = originalJobs.filter(job =>
+        job.file_name.toLowerCase().includes(searchLower)
+      )
+      setJobs(sortJobs(filtered, sortBy as 'file_name' | 'created_at', sortOrder as 'asc' | 'desc'))
+    } else {
+      // Clear filter - restore original jobs
+      setJobs(sortJobs(originalJobs, sortBy as 'file_name' | 'created_at', sortOrder as 'asc' | 'desc'))
+    }
+    // Update URL (server will refetch with full results across all pages)
     startTransition(() => {
       setParams({ search: value || null, page: 1 })
     })
   }
 
   const handleSortChange = (newSortBy: 'file_name' | 'created_at', newSortOrder: 'asc' | 'desc') => {
+    // Sort immediately for instant feedback
+    setJobs(prev => sortJobs(prev, newSortBy, newSortOrder))
+    // Update URL (will also trigger server refresh for pagination correctness)
     startTransition(() => {
       setParams({ sortBy: newSortBy, sortOrder: newSortOrder, page: 1 })
     })
@@ -275,6 +305,9 @@ export function RFPJobsList({ initialJobs, totalCount, initialState }: RFPJobsLi
   }
 
   const handleClearSearch = () => {
+    // Restore original jobs immediately
+    setJobs(sortJobs(originalJobs, sortBy as 'file_name' | 'created_at', sortOrder as 'asc' | 'desc'))
+    // Update URL
     startTransition(() => {
       setParams({ search: null, page: 1 })
     })
