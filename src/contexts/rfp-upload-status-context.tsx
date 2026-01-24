@@ -238,30 +238,32 @@ export function RFPUploadStatusProvider({ children }: RFPUploadStatusProviderPro
 
       isProcessingQueueRef.current = true
 
+      // Mark as uploading FIRST (before stagger delay)
+      setUploadQueue(prev => prev.map(q =>
+        q.id === nextQueued.id ? { ...q, status: 'uploading' as const, startedAt: new Date() } : q
+      ))
+
       // Stagger uploads - wait if there are other active uploads
       if (activeCount > 0) {
         await new Promise(resolve => setTimeout(resolve, UPLOAD_STAGGER_MS))
       }
 
-      // Mark as uploading
-      setUploadQueue(prev => prev.map(q =>
-        q.id === nextQueued.id ? { ...q, status: 'uploading' as const, startedAt: new Date() } : q
-      ))
+      // RELEASE LOCK before the actual upload call
+      // This allows next queued item to start processing while this one uploads
+      // The item is already marked 'uploading' so it won't be picked up again
+      isProcessingQueueRef.current = false
 
+      // Now do the actual upload (without holding the lock)
       try {
-        // 1. Upload file and create job (existing triggerRFPUpload action)
         const formData = new FormData()
         formData.append('file', nextQueued.file)
         const result = await triggerRFPUpload(formData)
 
         if (result.success && result.jobId) {
-          // 2. Update queue with job ID and mark as processing
+          // Update queue with job ID and mark as processing
           setUploadQueue(prev => prev.map(q =>
             q.id === nextQueued.id ? { ...q, jobId: result.jobId, status: 'processing' as const } : q
           ))
-
-          // 3. Wait before processing next (webhook delay)
-          await new Promise(resolve => setTimeout(resolve, WEBHOOK_DELAY_MS))
         } else {
           setUploadQueue(prev => prev.map(q =>
             q.id === nextQueued.id ? { ...q, status: 'failed' as const, error: result.error || 'Upload failed' } : q
@@ -279,8 +281,6 @@ export function RFPUploadStatusProvider({ children }: RFPUploadStatusProviderPro
         setTimeout(() => {
           setUploadQueue(prev => prev.filter(q => q.id !== nextQueued.id))
         }, COMPLETED_CLEANUP_DELAY_MS)
-      } finally {
-        isProcessingQueueRef.current = false
       }
     }
 

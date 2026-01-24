@@ -33,6 +33,7 @@ interface RFPJob {
   status: 'pending' | 'processing' | 'completed' | 'failed'
   error_message: string | null
   created_at: string
+  updated_at: string
   completed_at: string | null
   confirmed_at?: string | null
   review_status?: ReviewStatus
@@ -71,6 +72,13 @@ function formatUserEmail(profile: { email: string } | null | undefined): string 
     .split(/[._-]/)
     .map(part => part.charAt(0).toUpperCase() + part.slice(1))
     .join(' ')
+}
+
+// Helper to format relative time without "aproximadamente"
+function formatRelativeTime(date: Date): string {
+  const result = formatDistanceToNow(date, { addSuffix: true, locale: pt })
+  // Remove "aproximadamente " or "cerca de " prefixes
+  return result.replace(/aproximadamente |cerca de /gi, '')
 }
 
 // Processing status config (for pending/processing/failed jobs)
@@ -360,23 +368,17 @@ export function RFPJobsList({ initialJobs, totalCount, initialState }: RFPJobsLi
                     <div>
                       <p className="font-medium">{job.file_name}</p>
                       <div className="flex items-center gap-2 text-sm text-muted-foreground">
-                        {job.file_size && (
-                          <span>{(job.file_size / 1024 / 1024).toFixed(2)} MB</span>
-                        )}
-                        <span className="text-muted-foreground/40">•</span>
                         <span>
-                          {formatDistanceToNow(new Date(job.created_at), { addSuffix: true, locale: pt })}
+                          Criado {formatRelativeTime(new Date(job.created_at))}
+                          {job.uploader && ` por ${formatUserEmail(job.uploader)}`}
                         </span>
-                        {job.uploader && (
-                          <>
-                            <span className="text-muted-foreground/40">•</span>
-                            <span>Criado por {formatUserEmail(job.uploader)}</span>
-                          </>
-                        )}
                         {job.last_editor && job.last_edited_by && (
                           <>
                             <span className="text-muted-foreground/40">•</span>
-                            <span>Atualizado por {formatUserEmail(job.last_editor)}</span>
+                            <span>
+                              Editado {formatRelativeTime(new Date(job.updated_at))}
+                              {` por ${formatUserEmail(job.last_editor)}`}
+                            </span>
                           </>
                         )}
                       </div>

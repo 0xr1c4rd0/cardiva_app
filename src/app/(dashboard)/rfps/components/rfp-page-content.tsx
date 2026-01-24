@@ -12,7 +12,14 @@ interface RFPJob {
   status: 'pending' | 'processing' | 'completed' | 'failed'
   error_message: string | null
   created_at: string
+  updated_at: string
   completed_at: string | null
+  confirmed_at?: string | null
+  review_status?: 'por_rever' | 'revisto' | 'confirmado' | null
+  user_id?: string
+  last_edited_by?: string | null
+  uploader?: { email: string } | null
+  last_editor?: { email: string } | null
 }
 
 interface RFPListState {
