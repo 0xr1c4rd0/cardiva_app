@@ -1,9 +1,9 @@
 'use client'
 
-import { useState, useEffect, useRef } from 'react'
+import { useState, useEffect, useMemo } from 'react'
 import { formatDistanceToNow } from 'date-fns'
 import { pt } from 'date-fns/locale'
-import { Loader2, Clock, FileText, CheckCircle2 } from 'lucide-react'
+import { Loader2, Clock, FileText, ChevronDown, ChevronUp, Upload } from 'lucide-react'
 import {
   Card,
   CardContent,
@@ -12,28 +12,28 @@ import {
   CardTitle,
 } from '@/components/ui/card'
 import { Progress } from '@/components/ui/progress'
+import { Button } from '@/components/ui/button'
 import { cn } from '@/lib/utils'
-import { useRFPUploadStatus } from '@/contexts/rfp-upload-status-context'
+import { useRFPUploadStatus, type QueuedUpload } from '@/contexts/rfp-upload-status-context'
 
 // Estimated processing time: 3 minutes
 const ESTIMATED_TIME_MS = 3 * 60 * 1000
+const MAX_VISIBLE_PROGRESS = 3
 
-export function RFPProcessingCard() {
-  const { activeJob, lastCompletedJob, isProcessing } = useRFPUploadStatus()
+interface UploadProgressItemProps {
+  upload: QueuedUpload
+}
+
+function UploadProgressItem({ upload }: UploadProgressItemProps) {
   const [elapsedTime, setElapsedTime] = useState(0)
-  const [isCompleting, setIsCompleting] = useState(false)
-  const [isFadingOut, setIsFadingOut] = useState(false)
-  const completionTimerRef = useRef<NodeJS.Timeout | null>(null)
 
   // Update elapsed time every second when processing
   useEffect(() => {
-    if (!isProcessing || !activeJob) {
-      setElapsedTime(0)
+    if (!upload.startedAt || upload.status === 'completed' || upload.status === 'failed') {
       return
     }
 
-    // Calculate initial elapsed time from job creation
-    const startTime = new Date(activeJob.created_at).getTime()
+    const startTime = upload.startedAt.getTime()
     const initialElapsed = Date.now() - startTime
     setElapsedTime(initialElapsed)
 
@@ -42,126 +42,157 @@ export function RFPProcessingCard() {
     }, 1000)
 
     return () => clearInterval(interval)
-  }, [isProcessing, activeJob])
+  }, [upload.startedAt, upload.status])
 
-  // Detect completion and trigger smooth animation
-  useEffect(() => {
-    if (lastCompletedJob && activeJob && lastCompletedJob.id === activeJob.id) {
-      // Start the completion animation
-      setIsCompleting(true)
+  // Calculate time-based progress (capped at 98%)
+  const progressPercent = Math.min(98, (elapsedTime / ESTIMATED_TIME_MS) * 100)
 
-      // After animation to 100%, start fade out
-      completionTimerRef.current = setTimeout(() => {
-        setIsFadingOut(true)
-      }, 1000) // 1s for progress to reach 100%
-    }
+  // Determine status text and icon behavior
+  const isUploading = upload.status === 'uploading'
+  const isProcessing = upload.status === 'processing'
+  const isQueued = upload.status === 'queued'
 
-    return () => {
-      if (completionTimerRef.current) {
-        clearTimeout(completionTimerRef.current)
-      }
-    }
-  }, [lastCompletedJob, activeJob])
+  return (
+    <div className="space-y-2 py-2 border-b last:border-b-0">
+      {/* File info row */}
+      <div className="flex items-center gap-2">
+        {isQueued ? (
+          <Clock className="h-4 w-4 text-muted-foreground" />
+        ) : isUploading ? (
+          <Upload className="h-4 w-4 text-blue-500 animate-pulse" />
+        ) : (
+          <Loader2 className="h-4 w-4 text-green-600 animate-spin" />
+        )}
+        <span className="font-medium text-sm truncate flex-1" title={upload.file.name}>
+          {upload.file.name}
+        </span>
+        {upload.startedAt && (
+          <span className="text-xs text-muted-foreground whitespace-nowrap">
+            ha {formatDistanceToNow(upload.startedAt, { locale: pt })}
+          </span>
+        )}
+      </div>
 
-  // Reset states when no longer processing
-  useEffect(() => {
-    if (!isProcessing && !activeJob) {
-      setIsCompleting(false)
-      setIsFadingOut(false)
-    }
-  }, [isProcessing, activeJob])
+      {/* Progress bar */}
+      {isQueued ? (
+        <div className="flex items-center gap-2 text-xs text-muted-foreground">
+          <span>Em fila...</span>
+        </div>
+      ) : isUploading ? (
+        <div className="relative h-1.5 w-full overflow-hidden rounded-full bg-blue-100">
+          <div
+            className="bg-blue-500 h-full w-1/3"
+            style={{
+              animation: 'indeterminate 1.5s ease-in-out infinite',
+            }}
+          />
+        </div>
+      ) : (
+        <div className="space-y-0.5">
+          <Progress
+            value={progressPercent}
+            className="h-1.5"
+          />
+          <div className="flex justify-between text-xs text-muted-foreground">
+            <span>{Math.round(progressPercent)}%</span>
+            <span>~2-3 min</span>
+          </div>
+        </div>
+      )}
+    </div>
+  )
+}
 
-  // Don't render if no active job or not processing (unless completing)
-  if ((!isProcessing || !activeJob) && !isCompleting) {
+export function RFPProcessingCard() {
+  const { uploadQueue, queuedCount } = useRFPUploadStatus()
+  const [showOverflow, setShowOverflow] = useState(false)
+
+  // Filter to active uploads (uploading or processing)
+  const activeUploads = useMemo(() =>
+    uploadQueue.filter(q => q.status === 'uploading' || q.status === 'processing'),
+    [uploadQueue]
+  )
+
+  // Queued uploads (waiting to start)
+  const queuedUploads = useMemo(() =>
+    uploadQueue.filter(q => q.status === 'queued'),
+    [uploadQueue]
+  )
+
+  // Split visible vs overflow
+  const visibleUploads = activeUploads.slice(0, MAX_VISIBLE_PROGRESS)
+  const overflowActiveCount = activeUploads.length - MAX_VISIBLE_PROGRESS
+  const overflowCount = Math.max(0, overflowActiveCount) + queuedUploads.length
+
+  // Don't render if nothing to show
+  if (activeUploads.length === 0 && queuedUploads.length === 0) {
     return null
   }
 
-  // Calculate time-based progress (capped at 98% to indicate ongoing work)
-  const timeBasedProgress = Math.min(98, (elapsedTime / ESTIMATED_TIME_MS) * 100)
-
-  // Use 100% when completing, otherwise use time-based progress
-  const progressPercent = isCompleting ? 100 : timeBasedProgress
-
-  // Determine description based on status
-  const description = isCompleting
-    ? 'Processamento concluído!'
-    : activeJob?.status === 'pending'
-      ? 'Em fila para processamento...'
-      : 'A analisar documento e a comparar com o inventário...'
+  const totalCount = activeUploads.length + queuedUploads.length
+  const description = totalCount === 1
+    ? 'A processar 1 concurso...'
+    : `A processar ${totalCount} concursos...`
 
   return (
-    <Card
-      className={cn(
-        'border-green-200 bg-green-50/50 transition-all duration-500',
-        isFadingOut && 'opacity-0'
-      )}
-    >
+    <Card className="border-green-200 bg-green-50/50">
       <CardHeader className="pb-2">
         <div className="flex items-center gap-2">
-          {isCompleting ? (
-            <CheckCircle2 className="h-5 w-5 text-green-600" />
-          ) : (
-            <Loader2 className="h-5 w-5 text-green-600 animate-spin" />
-          )}
-          <CardTitle className="text-lg">
-            {isCompleting ? 'Concurso Processado' : 'A Processar Concurso'}
-          </CardTitle>
+          <Loader2 className="h-5 w-5 text-green-600 animate-spin" />
+          <CardTitle className="text-lg">A Processar Concursos</CardTitle>
         </div>
         <CardDescription>{description}</CardDescription>
       </CardHeader>
-      <CardContent className="space-y-4">
-        {/* File info */}
-        <div className="flex items-center gap-3">
-          <FileText className="h-5 w-5 text-muted-foreground" />
-          <span className="font-medium">{activeJob?.file_name}</span>
-        </div>
+      <CardContent className="space-y-2">
+        {/* Visible progress bars (max 3) */}
+        {visibleUploads.map((upload) => (
+          <UploadProgressItem key={upload.id} upload={upload} />
+        ))}
 
-        {/* Progress bar */}
-        {activeJob?.status === 'pending' && !isCompleting ? (
-          // Indeterminate progress for pending status
-          <div className="relative h-2 w-full overflow-hidden rounded-full bg-primary/20">
-            <div
-              className="bg-primary h-full w-1/4"
-              style={{
-                animation: 'indeterminate 1.5s ease-in-out infinite',
-              }}
-            />
-          </div>
-        ) : (
-          // Time-based progress for processing status (with smooth transition)
-          <div className="space-y-1">
-            <Progress
-              value={progressPercent}
-              className={cn(
-                'h-2 transition-all duration-1000',
-                isCompleting && '[&>div]:bg-green-600'
+        {/* Overflow section */}
+        {overflowCount > 0 && (
+          <div className="pt-2">
+            <Button
+              variant="ghost"
+              size="sm"
+              className="w-full justify-between text-muted-foreground hover:text-foreground"
+              onClick={() => setShowOverflow(!showOverflow)}
+            >
+              <span>
+                Mais {overflowCount} em fila
+              </span>
+              {showOverflow ? (
+                <ChevronUp className="h-4 w-4" />
+              ) : (
+                <ChevronDown className="h-4 w-4" />
               )}
-            />
-            <div className="flex justify-between text-xs text-muted-foreground">
-              <span>{Math.round(progressPercent)}%</span>
-              <span>{isCompleting ? 'Concluído' : '~2-3 minutos no total'}</span>
-            </div>
-          </div>
-        )}
+            </Button>
 
-        {/* Time started */}
-        {activeJob && (
-          <div className="flex items-center gap-2 text-sm text-muted-foreground">
-            <Clock className="h-4 w-4" />
-            <span>
-              Iniciado há{' '}
-              {formatDistanceToNow(new Date(activeJob.created_at), { locale: pt })}
-            </span>
+            {showOverflow && (
+              <div className="mt-2 space-y-1 max-h-40 overflow-auto">
+                {/* Overflow active uploads */}
+                {activeUploads.slice(MAX_VISIBLE_PROGRESS).map((upload) => (
+                  <div key={upload.id} className="flex items-center gap-2 text-sm py-1">
+                    <Loader2 className="h-3 w-3 text-green-600 animate-spin" />
+                    <span className="truncate">{upload.file.name}</span>
+                  </div>
+                ))}
+                {/* Queued uploads */}
+                {queuedUploads.map((upload) => (
+                  <div key={upload.id} className="flex items-center gap-2 text-sm py-1 text-muted-foreground">
+                    <Clock className="h-3 w-3" />
+                    <span className="truncate">{upload.file.name}</span>
+                  </div>
+                ))}
+              </div>
+            )}
           </div>
         )}
 
         {/* Navigation info */}
-        {!isCompleting && (
-          <p className="text-xs text-muted-foreground border-t pt-3">
-            Pode navegar para outra página. Receberá uma notificação quando o processamento
-            terminar.
-          </p>
-        )}
+        <p className="text-xs text-muted-foreground border-t pt-3 mt-2">
+          Pode navegar para outra pagina. Recebera uma notificacao quando o processamento terminar.
+        </p>
       </CardContent>
     </Card>
   )
