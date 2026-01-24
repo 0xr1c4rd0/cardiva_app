@@ -10,18 +10,18 @@ See: .planning/PROJECT.md (updated 2025-01-21)
 ## Current Position
 
 Phase: 10.1 (RFP Upload Polish)
-Plan: 1 of 5 in current phase
+Plan: 4 of 5 in current phase
 Status: In progress
-Last activity: 2026-01-24 - Completed 10.1-01-PLAN.md (Fix match review sorting)
+Last activity: 2026-01-24 - Completed 10.1-04-PLAN.md (Multi-user RFP access)
 
-Progress: [========----] 75%
+Progress: [=========---] 80%
 
 ## Performance Metrics
 
 **Velocity:**
-- Total plans completed: 15
-- Average duration: 8.3 min
-- Total execution time: 2.1 hours
+- Total plans completed: 18
+- Average duration: 8.0 min
+- Total execution time: 2.4 hours
 
 **By Phase:**
 
@@ -33,11 +33,11 @@ Progress: [========----] 75%
 | 04-inventory-management | 3 | 24min | 8min |
 | 06-processing-status | 1 | 6min | 6min |
 | 07-match-review | 2 | 10min | 5min |
-| 10.1-rfp-upload-polish | 1 | 4min | 4min |
+| 10.1-rfp-upload-polish | 4 | 22min | 6min |
 
 **Recent Trend:**
-- Last 5 plans: 06-01 (6min), 07-01 (5min), 07-02 (5min), 10.1-01 (4min)
-- Trend: Small focused fixes executing quickly (4min)
+- Last 5 plans: 07-02 (5min), 10.1-01 (4min), 10.1-02 (5min), 10.1-03 (4min), 10.1-04 (9min)
+- Trend: Phase 10.1 polish plans executing efficiently
 
 *Updated after each plan completion*
 
@@ -104,20 +104,25 @@ Recent decisions affecting current work:
 - [07-02]: Collapsed summary shows accepted match info inline
 - [10.1-01]: nuqs v2+ requires startTransition with shallow: false for server re-render
 - [10.1-01]: useTransition provides isPending instead of manual isNavigating state
+- [10.1-04]: All authenticated users can view/edit/delete any RFP (team collaboration)
+- [10.1-04]: INSERT policy still requires user_id = auth.uid() (uploader tracking)
+- [10.1-04]: Toast notifications only for user's own uploads (avoid spam)
+- [10.1-04]: Realtime channel rfp_jobs_all instead of rfp_jobs_${user.id}
+- [10.1-04]: updateLastEditedBy helper function for tracking changes
 
 ### Pending Todos
 
-6 todos remaining for Phase 10.1 (RFP Upload Polish):
+3 todos remaining for Phase 10.1 (RFP Upload Polish):
 
 | Priority | Title | Area | Status |
 |----------|-------|------|--------|
 | critical | Fix match review table sorting not applying | ui | DONE (10.1-01) |
-| high | Fix "Por Rever" KPI calculation | ui |
-| high | Rename "Concluídos" to "Concursos Revistos" KPI | ui |
-| high | Support multiple concurrent RFP uploads | ui |
-| high | Make all RFPs visible to all users | database |
-| medium | Show uploader email on RFP list | ui |
-| medium | Align inventory table design with matches table | ui |
+| high | Fix "Por Rever" KPI calculation | ui | DONE (10.1-02) |
+| high | Rename "Concluídos" to "Concursos Revistos" KPI | ui | DONE (10.1-02) |
+| high | Support multiple concurrent RFP uploads | ui | DONE (10.1-03) |
+| high | Make all RFPs visible to all users | database | DONE (10.1-04) |
+| medium | Show uploader email on RFP list | ui | Pending |
+| medium | Align inventory table design with matches table | ui | Pending |
 
 See `.planning/todos/pending/` for full details.
 
@@ -134,11 +139,12 @@ See `.planning/todos/pending/` for full details.
 - User must run inventory_upload_jobs migration (see supabase/migrations/20260121_inventory_upload_jobs.sql)
 - User must configure N8N_INVENTORY_WEBHOOK_URL in .env.local
 - User must run rfp_match_results migration (see supabase/migrations/20260122_rfp_match_results.sql)
+- User must run multi-user RFP access migration (see supabase/migrations/20260124_multi_user_rfp_access.sql)
 
 ## Session Continuity
 
 Last session: 2026-01-24
-Stopped at: Completed 10.1-01-PLAN.md
+Stopped at: Completed 10.1-04-PLAN.md
 Resume file: None
 
 ## Phase 1 Plans
@@ -239,12 +245,12 @@ Resume file: None
 | Plan | Wave | Objective | Status |
 |------|------|-----------|--------|
 | 10.1-01 | 1 | Fix match review table sorting | Complete |
-| 10.1-02 | 1 | Fix KPI calculations | Pending |
-| 10.1-03 | 1 | Support multiple concurrent RFP uploads | Pending |
-| 10.1-04 | 1 | Make all RFPs visible to all users | Pending |
+| 10.1-02 | 1 | Fix KPI calculations | Complete |
+| 10.1-03 | 1 | Support multiple concurrent RFP uploads | Complete |
+| 10.1-04 | 1 | Make all RFPs visible to all users | Complete |
 | 10.1-05 | 1 | Show uploader email and align inventory table | Pending |
 
 **Wave execution:**
-- Wave 1: 10.1-01 - COMPLETE
+- Wave 1: 10.1-01, 10.1-02, 10.1-03, 10.1-04 - COMPLETE
 
-**Phase 10.1 in progress.** Fixing critical bugs and polish items from user testing.
+**Phase 10.1 in progress.** 4 of 5 plans complete. Remaining: uploader email display and inventory table alignment.
