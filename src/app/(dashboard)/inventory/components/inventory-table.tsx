@@ -18,7 +18,7 @@ import {
   TableHeader,
   TableRow,
 } from '@/components/ui/table'
-import { Button } from '@/components/ui/button'
+import { cn } from '@/lib/utils'
 import { Skeleton } from '@/components/ui/skeleton'
 import { PackageOpen } from 'lucide-react'
 import { DataTablePagination } from './data-table-pagination'
@@ -57,20 +57,20 @@ function createColumns(config: InventoryColumnConfig[]): ColumnDef<Artigo>[] {
       enableSorting: col.sortable,
       header: col.sortable
         ? ({ column }) => (
-            <Button
-              variant="ghost"
+            <button
+              type="button"
               onClick={() => column.toggleSorting(column.getIsSorted() === 'asc')}
-              className="-ml-4"
+              className="inline-flex items-center hover:text-slate-900 transition-colors"
             >
               {col.display_name}
               {column.getIsSorted() === 'asc' ? (
-                <ArrowUp className="ml-2 h-4 w-4" />
+                <ArrowUp className="ml-1 h-3 w-3" />
               ) : column.getIsSorted() === 'desc' ? (
-                <ArrowDown className="ml-2 h-4 w-4" />
+                <ArrowDown className="ml-1 h-3 w-3" />
               ) : (
-                <ArrowUpDown className="ml-2 h-4 w-4 text-muted-foreground" />
+                <ArrowUpDown className="ml-1 h-3 w-3 text-slate-400" />
               )}
-            </Button>
+            </button>
           )
         : col.display_name,
     }
@@ -258,7 +258,7 @@ export function InventoryTable({
                 >
                   <div className="flex flex-col items-center gap-2 text-muted-foreground">
                     <PackageOpen className="h-10 w-10" />
-                    <p>No products found</p>
+                    <p>Nenhum produto encontrado</p>
                   </div>
                 </TableCell>
               </TableRow>
