@@ -98,9 +98,9 @@ export function PDFDropzone({ onFilesSelect, files, disabled }: PDFDropzoneProps
       ) : (
         <div className="space-y-2">
           <Upload className="h-8 w-8 mx-auto text-muted-foreground" />
-          <p>Arraste e largue ficheiros PDF, ou clique para selecionar</p>
+          <p>Arraste ficheiros PDF, ou clique para selecionar</p>
           <p className="text-sm text-muted-foreground">
-            Ate {MAX_FILES} ficheiros, 50MB max cada
+            Até {MAX_FILES} ficheiros, 50MB max cada
           </p>
         </div>
       )}

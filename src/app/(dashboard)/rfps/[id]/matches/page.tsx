@@ -4,8 +4,8 @@ import Link from 'next/link'
 import { ChevronRight } from 'lucide-react'
 import { MatchReviewTable } from '@/app/(dashboard)/rfps/components/match-review-table'
 import { ReviewStatsChips } from '@/app/(dashboard)/rfps/components/review-stats-chips'
-import { HeaderExportButton } from '@/app/(dashboard)/rfps/components/header-export-button'
-import { ConfirmRFPButton } from '@/app/(dashboard)/rfps/components/confirm-rfp-button'
+import { RFPActionButton } from '@/app/(dashboard)/rfps/components/rfp-action-button'
+import { RFPStatusBadge } from '@/app/(dashboard)/rfps/components/rfp-status-badge'
 import { autoAcceptExactMatches } from './actions'
 import type { RFPItemWithMatches, MatchSuggestion } from '@/types/rfp'
 
@@ -232,15 +232,21 @@ export default async function MatchReviewPage({ params, searchParams }: PageProp
         <span className="text-foreground font-medium">Rever Correspondências</span>
       </nav>
 
-      {/* Header with document name, stats, and export */}
+      {/* Header with document name, status badge, stats, and action button */}
       <div className="flex items-center justify-between gap-4 mt-1 mb-6">
-        <h1 className="text-2xl font-semibold truncate" title={job.file_name}>
-          {job.file_name}
-        </h1>
+        <div className="flex items-center min-w-0">
+          <h1 className="text-2xl font-semibold truncate" title={job.file_name}>
+            {job.file_name}
+          </h1>
+          <RFPStatusBadge jobId={jobId} isConfirmed={!!job.confirmed_at} items={allItemsWithSortedMatches} />
+        </div>
         <div className="flex items-center gap-4 shrink-0">
           <ReviewStatsChips items={allItemsWithSortedMatches} />
-          <ConfirmRFPButton jobId={jobId} isConfirmed={!!job.confirmed_at} />
-          <HeaderExportButton items={allItemsWithSortedMatches} jobId={jobId} />
+          <RFPActionButton
+            jobId={jobId}
+            isConfirmed={!!job.confirmed_at}
+            items={allItemsWithSortedMatches}
+          />
         </div>
       </div>
 

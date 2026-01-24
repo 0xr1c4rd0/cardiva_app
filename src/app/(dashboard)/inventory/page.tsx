@@ -93,11 +93,8 @@ export default async function InventoryPage({
         </div>
 
         <div className="flex items-center gap-2">
-          {/* Export available to all authenticated users */}
-          <ExportButton
-            data={data ?? []}
-            columnConfig={visibleColumns}
-          />
+          {/* Export hidden for now - functionality preserved in export-button.tsx */}
+          {/* <ExportButton data={data ?? []} columnConfig={visibleColumns} /> */}
 
           {/* Upload only for admin users */}
           <PermissionGate requiredRole="admin" userRole={userRole}>

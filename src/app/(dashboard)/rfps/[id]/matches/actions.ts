@@ -551,3 +551,45 @@ export async function confirmRFP(jobId: string): Promise<ActionResult> {
     }
   }
 }
+
+/**
+ * Revert confirmation of an RFP job.
+ * Clears the confirmed_at timestamp to allow further editing.
+ */
+export async function revertConfirmation(jobId: string): Promise<ActionResult> {
+  try {
+    const supabase = await createClient()
+
+    // Verify user is authenticated
+    const {
+      data: { user },
+    } = await supabase.auth.getUser()
+    if (!user) {
+      return { success: false, error: 'Not authenticated' }
+    }
+
+    const { error } = await supabase
+      .from('rfp_upload_jobs')
+      .update({
+        confirmed_at: null,
+        last_edited_by: user.id,
+      })
+      .eq('id', jobId)
+
+    if (error) {
+      return { success: false, error: error.message }
+    }
+
+    // Invalidate cache to refresh page data
+    revalidatePath('/rfps')
+    revalidatePath(`/rfps/${jobId}/matches`)
+
+    return { success: true }
+  } catch (error) {
+    console.error('revertConfirmation error:', error)
+    return {
+      success: false,
+      error: error instanceof Error ? error.message : 'Unknown error',
+    }
+  }
+}
