@@ -23,6 +23,8 @@ import { RFPListPagination } from './rfp-list-pagination'
 import { RFPListSkeleton } from './rfp-list-skeleton'
 import { getRFPFileUrl } from '../actions'
 
+import type { ReviewStatus } from '../page'
+
 interface RFPJob {
   id: string
   file_name: string
@@ -31,6 +33,8 @@ interface RFPJob {
   error_message: string | null
   created_at: string
   completed_at: string | null
+  confirmed_at?: string | null
+  review_status?: ReviewStatus
   // Optional fields for uploader/editor tracking (joined from profiles)
   user_id?: string
   last_edited_by?: string | null
@@ -68,30 +72,60 @@ function formatUserEmail(profile: { email: string } | null | undefined): string 
     .join(' ')
 }
 
+// Processing status config (for pending/processing/failed jobs)
 const statusConfig = {
   pending: {
     label: 'Pendente',
     icon: Clock,
     variant: 'secondary' as const,
     className: 'text-muted-foreground',
+    badgeClassName: '',
   },
   processing: {
     label: 'A processar',
     icon: Loader2,
     variant: 'default' as const,
     className: 'text-white animate-spin',
+    badgeClassName: '',
   },
   completed: {
     label: 'Concluído',
     icon: CheckCircle2,
     variant: 'default' as const,
     className: 'text-green-600',
+    badgeClassName: '',
   },
   failed: {
     label: 'Falhou',
     icon: XCircle,
     variant: 'destructive' as const,
     className: 'text-destructive',
+    badgeClassName: '',
+  },
+}
+
+// Review status config (for completed jobs - 3-state model)
+const reviewStatusConfig = {
+  por_rever: {
+    label: 'Por Rever',
+    icon: Clock,
+    variant: 'secondary' as const,
+    className: 'text-amber-600',
+    badgeClassName: 'bg-amber-100 text-amber-700 border-amber-200 hover:bg-amber-100',
+  },
+  revisto: {
+    label: 'Revisto',
+    icon: CheckCircle2,
+    variant: 'secondary' as const,
+    className: 'text-blue-600',
+    badgeClassName: 'bg-blue-100 text-blue-700 border-blue-200 hover:bg-blue-100',
+  },
+  confirmado: {
+    label: 'Confirmado',
+    icon: CheckCircle2,
+    variant: 'secondary' as const,
+    className: 'text-emerald-600',
+    badgeClassName: 'bg-emerald-100 text-emerald-700 border-emerald-200 hover:bg-emerald-100',
   },
 }
 
@@ -283,8 +317,14 @@ export function RFPJobsList({ initialJobs, totalCount, initialState }: RFPJobsLi
           // Jobs list
           <div className="flex flex-col gap-2">
             {jobs.map((job) => {
-              const status = statusConfig[job.status]
-              const StatusIcon = status.icon
+              // For completed jobs, use review status; otherwise use processing status
+              const isCompleted = job.status === 'completed'
+              const reviewStatus = job.review_status && reviewStatusConfig[job.review_status]
+              const processingStatus = statusConfig[job.status]
+
+              // Use review status for completed jobs, processing status otherwise
+              const displayStatus = isCompleted && reviewStatus ? reviewStatus : processingStatus
+              const StatusIcon = displayStatus.icon
               const isClickable = job.status === 'completed'
               const showActions = job.status === 'completed' || job.status === 'failed'
 
@@ -329,9 +369,12 @@ export function RFPJobsList({ initialJobs, totalCount, initialState }: RFPJobsLi
                   </div>
 
                   <div className="flex items-center gap-2">
-                    <Badge variant={status.variant} className="flex items-center gap-1">
-                      <StatusIcon className={cn('h-3 w-3', status.className)} />
-                      {status.label}
+                    <Badge
+                      variant={displayStatus.variant}
+                      className={cn("flex items-center gap-1", displayStatus.badgeClassName)}
+                    >
+                      <StatusIcon className={cn('h-3 w-3', displayStatus.className)} />
+                      {displayStatus.label}
                     </Badge>
 
                     {showActions && (

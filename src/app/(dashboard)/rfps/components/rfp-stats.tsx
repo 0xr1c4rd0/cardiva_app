@@ -1,6 +1,6 @@
 import { createClient } from '@/lib/supabase/server'
 import { KPIStatsCard } from '@/components/dashboard/kpi-stats-card'
-import { Clock, CheckCircle2, BadgeCheck } from 'lucide-react'
+import { Clock, CheckCircle2, BadgeCheck, FileText } from 'lucide-react'
 
 /**
  * 3-State KPI Model for RFP workflow:
@@ -22,6 +22,11 @@ import { Clock, CheckCircle2, BadgeCheck } from 'lucide-react'
 
 export async function RFPStats() {
     const supabase = await createClient()
+
+    // Fetch total count of all RFP jobs
+    const { count: totalCount } = await supabase
+        .from('rfp_upload_jobs')
+        .select('*', { count: 'exact', head: true })
 
     // Fetch all completed jobs with confirmation status
     const { data: completedJobs } = await supabase
@@ -91,7 +96,15 @@ export async function RFPStats() {
     const revistosCount = unconfirmedJobs.length - porReverCount
 
     return (
-        <div className="grid gap-4 md:grid-cols-3">
+        <div className="grid gap-4 md:grid-cols-4">
+            <KPIStatsCard
+                label="Total"
+                value={totalCount ?? 0}
+                icon={FileText}
+                description="Total de concursos"
+                iconContainerClassName="bg-slate-100 text-slate-600"
+            />
+
             <KPIStatsCard
                 label="Por Rever"
                 value={porReverCount}

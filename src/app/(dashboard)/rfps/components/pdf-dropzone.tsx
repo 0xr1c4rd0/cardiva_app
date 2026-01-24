@@ -32,7 +32,7 @@ export function PDFDropzone({ onFilesSelect, files, disabled }: PDFDropzoneProps
     [onFilesSelect, files]
   )
 
-  const { getRootProps, getInputProps, isDragActive, isDragReject } = useDropzone({
+  const { getRootProps, getInputProps, isDragActive, isDragReject, open } = useDropzone({
     onDrop,
     accept: {
       'application/pdf': ['.pdf'],
@@ -41,13 +41,21 @@ export function PDFDropzone({ onFilesSelect, files, disabled }: PDFDropzoneProps
     maxFiles: MAX_FILES,
     maxSize: 50 * 1024 * 1024, // 50MB max per PDF
     disabled,
+    noClick: true, // Disable default click, we'll handle it manually
   })
+
+  const handleClick = useCallback(() => {
+    if (!disabled) {
+      open()
+    }
+  }, [disabled, open])
 
   const totalSize = files.reduce((acc, f) => acc + f.size, 0)
 
   return (
     <div
       {...getRootProps()}
+      onClick={handleClick}
       className={cn(
         'border-2 border-dashed rounded-lg p-8 text-center cursor-pointer transition-colors',
         isDragActive && !isDragReject && 'border-primary bg-primary/5',
