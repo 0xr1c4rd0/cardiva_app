@@ -42,7 +42,7 @@ export function RFPUploadStatusProvider({ children }: RFPUploadStatusProviderPro
   const userIdRef = useRef<string | null>(null)
   const completionTimeoutRef = useRef<NodeJS.Timeout | null>(null)
 
-  // Fetch any pending/processing jobs for current user
+  // Fetch any pending/processing jobs (all users can see all jobs)
   const fetchActiveJob = useCallback(async () => {
     const { data: { user } } = await supabase.auth.getUser()
     if (!user) return
@@ -52,7 +52,6 @@ export function RFPUploadStatusProvider({ children }: RFPUploadStatusProviderPro
     const { data, error } = await supabase
       .from('rfp_upload_jobs')
       .select('*')
-      .eq('user_id', user.id)
       .in('status', ['pending', 'processing'])
       .order('created_at', { ascending: false })
       .limit(1)
@@ -64,13 +63,10 @@ export function RFPUploadStatusProvider({ children }: RFPUploadStatusProviderPro
     }
   }, [supabase])
 
-  // Handle job status updates
+  // Handle job status updates (all jobs, not just user's own)
   const handleJobUpdate = useCallback((payload: { new: RFPUploadJob; old: RFPUploadJob }) => {
     const newJob = payload.new
     const oldJob = payload.old
-
-    // Only process if this is the user's job
-    if (userIdRef.current && newJob.user_id !== userIdRef.current) return
 
     // Clear any pending completion timeout
     if (completionTimeoutRef.current) {
@@ -128,20 +124,21 @@ export function RFPUploadStatusProvider({ children }: RFPUploadStatusProviderPro
   }, [])
 
   // Handle new job insertions (when upload is triggered)
+  // Show toasts only for user's own uploads, but track all jobs
   const handleJobInsert = useCallback((payload: { new: RFPUploadJob }) => {
     const newJob = payload.new
-
-    // Only process if this is the user's job
-    if (userIdRef.current && newJob.user_id !== userIdRef.current) return
+    const isOwnJob = userIdRef.current && newJob.user_id === userIdRef.current
 
     if (newJob.status === 'pending' || newJob.status === 'processing') {
       setActiveJob(newJob)
-      // Show initial upload confirmation toast
-      toast.loading('Concurso recebido', {
-        id: `rfp-job-${newJob.id}`,
-        description: `${newJob.file_name} em fila para processamento...`,
-        duration: 5000,
-      })
+      // Show initial upload confirmation toast only for user's own uploads
+      if (isOwnJob) {
+        toast.loading('Concurso recebido', {
+          id: `rfp-job-${newJob.id}`,
+          description: `${newJob.file_name} em fila para processamento...`,
+          duration: 5000,
+        })
+      }
     }
   }, [])
 
@@ -165,17 +162,16 @@ export function RFPUploadStatusProvider({ children }: RFPUploadStatusProviderPro
         supabase.removeChannel(channelRef.current)
       }
 
-      // Subscribe to realtime changes filtered by user_id
-      // Use a unique channel name to avoid conflicts
+      // Subscribe to realtime changes for all jobs (no user_id filter)
+      // This enables multi-user collaboration where all users see all job updates
       const channel = supabase
-        .channel(`rfp_jobs_${user.id}`)
+        .channel('rfp_jobs_all')
         .on(
           'postgres_changes',
           {
             event: 'UPDATE',
             schema: 'public',
             table: 'rfp_upload_jobs',
-            filter: `user_id=eq.${user.id}`,
           },
           (payload) => {
             if (isMounted) {
@@ -189,7 +185,6 @@ export function RFPUploadStatusProvider({ children }: RFPUploadStatusProviderPro
             event: 'INSERT',
             schema: 'public',
             table: 'rfp_upload_jobs',
-            filter: `user_id=eq.${user.id}`,
           },
           (payload) => {
             if (isMounted) {

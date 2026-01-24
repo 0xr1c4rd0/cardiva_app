@@ -57,12 +57,11 @@ export default async function MatchReviewPage({ params, searchParams }: PageProp
     redirect('/login')
   }
 
-  // Fetch job with ownership check
+  // Fetch job (all authenticated users can access any RFP)
   const { data: job, error: jobError } = await supabase
     .from('rfp_upload_jobs')
     .select('*')
     .eq('id', jobId)
-    .eq('user_id', user.id)
     .single()
 
   if (jobError || !job) {

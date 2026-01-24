@@ -29,10 +29,10 @@ export default async function RFPsPage({ searchParams }: RFPsPageProps) {
   }
 
   // Build query with search, sort, and pagination
+  // All authenticated users can see all RFPs (no user_id filter)
   let query = supabase
     .from('rfp_upload_jobs')
     .select('*', { count: 'exact' })
-    .eq('user_id', user.id)
 
   // Apply search filter on file_name
   if (search) {
