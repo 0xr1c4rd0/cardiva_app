@@ -205,14 +205,14 @@ Plans:
   5. Uploader and last editor displayed on each RFP
   6. Changes sync in real-time across all users
   7. Inventory table matches review table design
-**Plans**: TBD
+**Plans**: 5 plans in 2 waves
 
 Plans:
-- [ ] 10.1-01: Fix match review table sorting
-- [ ] 10.1-02: KPI calculations and 3-state model with confirmation workflow
-- [ ] 10.1-03: Multi-upload support with progress UI
-- [ ] 10.1-04: Multi-user permissions and real-time sync
-- [ ] 10.1-05: Uploader/editor display and table design alignment
+- [ ] 10.1-01-PLAN.md — Fix match review table sorting (add startTransition to nuqs)
+- [ ] 10.1-02-PLAN.md — KPI calculations and 3-state model with confirmation workflow
+- [ ] 10.1-03-PLAN.md — Multi-upload support with progress UI and queue management
+- [ ] 10.1-04-PLAN.md — Multi-user permissions and real-time sync (RLS updates)
+- [ ] 10.1-05-PLAN.md — Uploader/editor display and table design alignment
 
 ## Progress
 
@@ -235,4 +235,4 @@ Phases execute in numeric order: 1 -> 2 -> 3 -> ... -> 10
 
 ---
 *Created: 2025-01-21*
-*Last updated: 2026-01-22 after Phase 8 planning (modified scope)*
+*Last updated: 2026-01-24 after Phase 10.1 planning*
