@@ -113,6 +113,9 @@ Recent decisions affecting current work:
 - [10.1-03]: Max 3 visible progress bars to avoid UI clutter
 - [10.1-03]: Dialog closes immediately after queueing, no wait for completion
 - [10.1-04]: updateLastEditedBy helper function for tracking changes
+- [10.1-02]: 3-state KPI model: Por Rever (pending decisions), Revistos (addressed), Confirmados (confirmed_at set)
+- [10.1-02]: Confirmation is explicit user action before export readiness
+- [10.1-02]: Removed user_id filter from KPI queries for multi-user visibility
 - [10.1-05]: Use email only for user display (profiles table has no full_name column)
 - [10.1-05]: formatUserEmail helper: email -> readable name (joao.silva@example.com -> Joao Silva)
 - [10.1-05]: Inline button styling for sort headers (matching SortableHeader pattern)
@@ -147,6 +150,7 @@ See `.planning/todos/pending/` for full details.
 - User must configure N8N_INVENTORY_WEBHOOK_URL in .env.local
 - User must run rfp_match_results migration (see supabase/migrations/20260122_rfp_match_results.sql)
 - User must run multi-user RFP access migration (see supabase/migrations/20260124_multi_user_rfp_access.sql)
+- User must run confirmed_at migration (see supabase/migrations/20260124_add_confirmed_at.sql)
 
 ## Session Continuity
 
