@@ -5,23 +5,23 @@
 See: .planning/PROJECT.md (updated 2025-01-21)
 
 **Core value:** Users can upload an RFP, see suggested product matches, accept/reject interactively, and export confirmed matches
-**Current focus:** Phase 10.1 - RFP Upload Polish
+**Current focus:** Phase 10.1 - RFP Upload Polish (COMPLETE)
 
 ## Current Position
 
 Phase: 10.1 (RFP Upload Polish)
-Plan: 4 of 5 in current phase
-Status: In progress
-Last activity: 2026-01-24 - Completed 10.1-04-PLAN.md (Multi-user RFP access)
+Plan: 5 of 5 in current phase
+Status: Phase complete
+Last activity: 2026-01-24 - Completed 10.1-05-PLAN.md (Uploader display and table styling)
 
-Progress: [=========---] 80%
+Progress: [==========--] 85%
 
 ## Performance Metrics
 
 **Velocity:**
-- Total plans completed: 18
-- Average duration: 8.0 min
-- Total execution time: 2.4 hours
+- Total plans completed: 19
+- Average duration: 7.8 min
+- Total execution time: 2.5 hours
 
 **By Phase:**
 
@@ -33,10 +33,10 @@ Progress: [=========---] 80%
 | 04-inventory-management | 3 | 24min | 8min |
 | 06-processing-status | 1 | 6min | 6min |
 | 07-match-review | 2 | 10min | 5min |
-| 10.1-rfp-upload-polish | 4 | 22min | 6min |
+| 10.1-rfp-upload-polish | 5 | 28min | 6min |
 
 **Recent Trend:**
-- Last 5 plans: 07-02 (5min), 10.1-01 (4min), 10.1-02 (5min), 10.1-03 (4min), 10.1-04 (9min)
+- Last 5 plans: 10.1-01 (4min), 10.1-02 (5min), 10.1-03 (4min), 10.1-04 (9min), 10.1-05 (6min)
 - Trend: Phase 10.1 polish plans executing efficiently
 
 *Updated after each plan completion*
@@ -113,20 +113,23 @@ Recent decisions affecting current work:
 - [10.1-03]: Max 3 visible progress bars to avoid UI clutter
 - [10.1-03]: Dialog closes immediately after queueing, no wait for completion
 - [10.1-04]: updateLastEditedBy helper function for tracking changes
+- [10.1-05]: Use email only for user display (profiles table has no full_name column)
+- [10.1-05]: formatUserEmail helper: email -> readable name (joao.silva@example.com -> Joao Silva)
+- [10.1-05]: Inline button styling for sort headers (matching SortableHeader pattern)
 
 ### Pending Todos
 
-3 todos remaining for Phase 10.1 (RFP Upload Polish):
+Phase 10.1 (RFP Upload Polish) complete - all 7 todos resolved:
 
 | Priority | Title | Area | Status |
 |----------|-------|------|--------|
 | critical | Fix match review table sorting not applying | ui | DONE (10.1-01) |
 | high | Fix "Por Rever" KPI calculation | ui | DONE (10.1-02) |
 | high | Rename "Concluídos" to "Concursos Revistos" KPI | ui | DONE (10.1-02) |
-| high | Support multiple concurrent RFP uploads | ui | DONE (10.1-03) - executed 2026-01-24 |
+| high | Support multiple concurrent RFP uploads | ui | DONE (10.1-03) |
 | high | Make all RFPs visible to all users | database | DONE (10.1-04) |
-| medium | Show uploader email on RFP list | ui | Pending |
-| medium | Align inventory table design with matches table | ui | Pending |
+| medium | Show uploader email on RFP list | ui | DONE (10.1-05) |
+| medium | Align inventory table design with matches table | ui | DONE (10.1-05) |
 
 See `.planning/todos/pending/` for full details.
 
@@ -148,7 +151,7 @@ See `.planning/todos/pending/` for full details.
 ## Session Continuity
 
 Last session: 2026-01-24
-Stopped at: Completed 10.1-04-PLAN.md
+Stopped at: Completed 10.1-05-PLAN.md (Phase 10.1 complete)
 Resume file: None
 
 ## Phase 1 Plans
@@ -252,9 +255,16 @@ Resume file: None
 | 10.1-02 | 1 | Fix KPI calculations | Complete |
 | 10.1-03 | 1 | Support multiple concurrent RFP uploads | Complete |
 | 10.1-04 | 1 | Make all RFPs visible to all users | Complete |
-| 10.1-05 | 1 | Show uploader email and align inventory table | Pending |
+| 10.1-05 | 2 | Show uploader email and align inventory table | Complete |
 
 **Wave execution:**
 - Wave 1: 10.1-01, 10.1-02, 10.1-03, 10.1-04 - COMPLETE
+- Wave 2: 10.1-05 - COMPLETE
 
-**Phase 10.1 in progress.** 4 of 5 plans complete. Remaining: uploader email display and inventory table alignment.
+**Phase 10.1 complete.** All polish todos resolved:
+- Match review table sorting fixed
+- KPI calculations corrected
+- Multiple concurrent RFP uploads supported
+- Multi-user RFP access enabled
+- Uploader/editor display on RFP list
+- Inventory table styling aligned with match-review-table
