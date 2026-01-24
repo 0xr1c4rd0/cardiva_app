@@ -5,23 +5,23 @@
 See: .planning/PROJECT.md (updated 2025-01-21)
 
 **Core value:** Users can upload an RFP, see suggested product matches, accept/reject interactively, and export confirmed matches
-**Current focus:** Phase 8 - Bulk Operations (next)
+**Current focus:** Phase 10.1 - RFP Upload Polish
 
 ## Current Position
 
-Phase: 7 of 10 (Match Review)
-Plan: 2 of 2 in current phase
-Status: Phase complete
-Last activity: 2026-01-22 - Completed Phase 7 verification
+Phase: 10.1 (RFP Upload Polish)
+Plan: 1 of 5 in current phase
+Status: In progress
+Last activity: 2026-01-24 - Completed 10.1-01-PLAN.md (Fix match review sorting)
 
-Progress: [=======-----] 70%
+Progress: [========----] 75%
 
 ## Performance Metrics
 
 **Velocity:**
-- Total plans completed: 14
-- Average duration: 8.6 min
-- Total execution time: 2.0 hours
+- Total plans completed: 15
+- Average duration: 8.3 min
+- Total execution time: 2.1 hours
 
 **By Phase:**
 
@@ -33,10 +33,11 @@ Progress: [=======-----] 70%
 | 04-inventory-management | 3 | 24min | 8min |
 | 06-processing-status | 1 | 6min | 6min |
 | 07-match-review | 2 | 10min | 5min |
+| 10.1-rfp-upload-polish | 1 | 4min | 4min |
 
 **Recent Trend:**
-- Last 5 plans: 04-03 (4min), 06-01 (6min), 07-01 (5min), 07-02 (5min)
-- Trend: Phase 7 consistent (5min/plan) - components building efficiently
+- Last 5 plans: 06-01 (6min), 07-01 (5min), 07-02 (5min), 10.1-01 (4min)
+- Trend: Small focused fixes executing quickly (4min)
 
 *Updated after each plan completion*
 
@@ -101,14 +102,16 @@ Recent decisions affecting current work:
 - [07-02]: Opacity-based visual distinction (70%) for reviewed items
 - [07-02]: Three-column grid for match data: codigo_spms, artigo, descricao
 - [07-02]: Collapsed summary shows accepted match info inline
+- [10.1-01]: nuqs v2+ requires startTransition with shallow: false for server re-render
+- [10.1-01]: useTransition provides isPending instead of manual isNavigating state
 
 ### Pending Todos
 
-7 todos captured for Phase 10 (RFP Upload Polish & History):
+6 todos remaining for Phase 10.1 (RFP Upload Polish):
 
-| Priority | Title | Area |
-|----------|-------|------|
-| critical | Fix match review table sorting not applying | ui |
+| Priority | Title | Area | Status |
+|----------|-------|------|--------|
+| critical | Fix match review table sorting not applying | ui | DONE (10.1-01) |
 | high | Fix "Por Rever" KPI calculation | ui |
 | high | Rename "Concluídos" to "Concursos Revistos" KPI | ui |
 | high | Support multiple concurrent RFP uploads | ui |
@@ -134,8 +137,8 @@ See `.planning/todos/pending/` for full details.
 
 ## Session Continuity
 
-Last session: 2026-01-22
-Stopped at: Completed 07-02-PLAN.md
+Last session: 2026-01-24
+Stopped at: Completed 10.1-01-PLAN.md
 Resume file: None
 
 ## Phase 1 Plans
@@ -230,3 +233,18 @@ Resume file: None
 - Server Actions for accept/reject with cache invalidation
 - ConfidenceBar, MatchSuggestionRow, RFPItemCard components
 - Full accept/reject workflow with visual feedback and collapse behavior
+
+## Phase 10.1 Plans
+
+| Plan | Wave | Objective | Status |
+|------|------|-----------|--------|
+| 10.1-01 | 1 | Fix match review table sorting | Complete |
+| 10.1-02 | 1 | Fix KPI calculations | Pending |
+| 10.1-03 | 1 | Support multiple concurrent RFP uploads | Pending |
+| 10.1-04 | 1 | Make all RFPs visible to all users | Pending |
+| 10.1-05 | 1 | Show uploader email and align inventory table | Pending |
+
+**Wave execution:**
+- Wave 1: 10.1-01 - COMPLETE
+
+**Phase 10.1 in progress.** Fixing critical bugs and polish items from user testing.
