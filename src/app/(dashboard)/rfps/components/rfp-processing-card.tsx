@@ -59,7 +59,7 @@ function UploadProgressItem({ upload }: UploadProgressItemProps) {
         {isQueued ? (
           <Clock className="h-4 w-4 text-muted-foreground" />
         ) : isUploading ? (
-          <Upload className="h-4 w-4 text-blue-500 animate-pulse" />
+          <Upload className="h-4 w-4 text-green-600 animate-pulse" />
         ) : (
           <Loader2 className="h-4 w-4 text-green-600 animate-spin" />
         )}
@@ -79,9 +79,9 @@ function UploadProgressItem({ upload }: UploadProgressItemProps) {
           <span>Em fila...</span>
         </div>
       ) : isUploading ? (
-        <div className="relative h-1.5 w-full overflow-hidden rounded-full bg-blue-100">
+        <div className="relative h-1.5 w-full overflow-hidden rounded-full bg-primary/20">
           <div
-            className="bg-blue-500 h-full w-1/3"
+            className="bg-primary h-full w-1/3"
             style={{
               animation: 'indeterminate 1.5s ease-in-out infinite',
             }}
@@ -190,7 +190,7 @@ export function RFPProcessingCard() {
         )}
 
         {/* Navigation info */}
-        <p className="text-xs text-muted-foreground border-t pt-3 mt-2">
+        <p className="text-xs text-muted-foreground pt-3 mt-2">
           Pode navegar para outra pagina. Recebera uma notificacao quando o processamento terminar.
         </p>
       </CardContent>

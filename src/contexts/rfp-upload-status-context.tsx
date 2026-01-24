@@ -3,7 +3,9 @@
 import { createContext, useContext, useEffect, useState, useCallback, useRef, type ReactNode } from 'react'
 import { createClient } from '@/lib/supabase/client'
 import { toast } from 'sonner'
-import { triggerRFPUpload } from '@/app/(dashboard)/rfps/actions'
+import { triggerRFPUpload, getJobReviewStatus } from '@/app/(dashboard)/rfps/actions'
+
+export type ReviewStatus = 'por_rever' | 'revisto' | 'confirmado' | null
 
 export interface RFPUploadJob {
   id: string
@@ -17,6 +19,7 @@ export interface RFPUploadJob {
   updated_at: string
   completed_at: string | null
   last_edited_by: string | null
+  review_status?: ReviewStatus
 }
 
 // Multi-upload queue types
@@ -41,6 +44,9 @@ interface RFPUploadStatusContextValue {
   queueFiles: (files: File[]) => void
   processingCount: number
   queuedCount: number
+
+  // Refresh trigger - increments when data should be refreshed (e.g., job completed)
+  refreshTrigger: number
 }
 
 const RFPUploadStatusContext = createContext<RFPUploadStatusContextValue | null>(null)
@@ -65,6 +71,7 @@ export function RFPUploadStatusProvider({ children }: RFPUploadStatusProviderPro
   const [activeJob, setActiveJob] = useState<RFPUploadJob | null>(null)
   const [lastCompletedJob, setLastCompletedJob] = useState<RFPUploadJob | null>(null)
   const [uploadQueue, setUploadQueue] = useState<QueuedUpload[]>([])
+  const [refreshTrigger, setRefreshTrigger] = useState(0)
   const supabase = createClient()
   const channelRef = useRef<ReturnType<typeof supabase.channel> | null>(null)
   const userIdRef = useRef<string | null>(null)
@@ -93,7 +100,7 @@ export function RFPUploadStatusProvider({ children }: RFPUploadStatusProviderPro
   }, [supabase])
 
   // Handle job status updates (all jobs, not just user's own)
-  const handleJobUpdate = useCallback((payload: { new: RFPUploadJob; old: RFPUploadJob }) => {
+  const handleJobUpdate = useCallback(async (payload: { new: RFPUploadJob; old: RFPUploadJob }) => {
     const newJob = payload.new
     const oldJob = payload.old
 
@@ -101,6 +108,20 @@ export function RFPUploadStatusProvider({ children }: RFPUploadStatusProviderPro
     if (completionTimeoutRef.current) {
       clearTimeout(completionTimeoutRef.current)
       completionTimeoutRef.current = null
+    }
+
+    // When job completes or fails, trigger refresh for KPIs
+    let jobWithReviewStatus = newJob
+    if (newJob.status === 'completed' && oldJob.status !== 'completed') {
+      const result = await getJobReviewStatus(newJob.id)
+      if (result.success && result.reviewStatus) {
+        jobWithReviewStatus = { ...newJob, review_status: result.reviewStatus }
+      }
+      // Trigger refresh for KPIs
+      setRefreshTrigger(prev => prev + 1)
+    } else if (newJob.status === 'failed' && oldJob.status !== 'failed') {
+      // Also trigger refresh for failed jobs
+      setRefreshTrigger(prev => prev + 1)
     }
 
     // Update queue item if this job matches one in the queue
@@ -129,66 +150,22 @@ export function RFPUploadStatusProvider({ children }: RFPUploadStatusProviderPro
       setActiveJob(newJob)
       setLastCompletedJob(null)
     } else {
-      // Job completed/failed - set lastCompletedJob FIRST for smooth transition
-      setLastCompletedJob(newJob)
+      // Job completed/failed - set lastCompletedJob with review_status
+      setLastCompletedJob(jobWithReviewStatus)
       // Then clear activeJob after a delay (1s animation + 500ms pause)
       completionTimeoutRef.current = setTimeout(() => {
         setActiveJob(null)
       }, 1500)
     }
 
-    // Enhanced toast notifications for status changes
-    if (oldJob.status !== newJob.status) {
-      switch (newJob.status) {
-        case 'processing':
-          toast.loading('A processar concurso', {
-            id: `rfp-job-${newJob.id}`,
-            description: `A analisar ${newJob.file_name}... Pode demorar 2-3 minutos.`,
-            duration: Infinity,
-          })
-          break
-        case 'completed':
-          toast.success('Concurso processado com sucesso', {
-            id: `rfp-job-${newJob.id}`,
-            description: `${newJob.file_name} está pronto para revisão.`,
-            duration: 10000,
-            action: {
-              label: 'Ver Resultados',
-              onClick: () => {
-                window.location.href = `/rfps/${newJob.id}/matches`
-              },
-            },
-          })
-          break
-        case 'failed':
-          toast.error('Processamento falhou', {
-            id: `rfp-job-${newJob.id}`,
-            description: newJob.error_message
-              ? `${newJob.error_message}. Por favor, tente carregar novamente.`
-              : `Falha ao processar ${newJob.file_name}. Por favor, tente carregar novamente.`,
-            duration: 15000,
-          })
-          break
-      }
-    }
   }, [])
 
   // Handle new job insertions (when upload is triggered)
-  // Show toasts only for user's own uploads, but track all jobs
   const handleJobInsert = useCallback((payload: { new: RFPUploadJob }) => {
     const newJob = payload.new
-    const isOwnJob = userIdRef.current && newJob.user_id === userIdRef.current
 
     if (newJob.status === 'pending' || newJob.status === 'processing') {
       setActiveJob(newJob)
-      // Show initial upload confirmation toast only for user's own uploads
-      if (isOwnJob) {
-        toast.loading('Concurso recebido', {
-          id: `rfp-job-${newJob.id}`,
-          description: `${newJob.file_name} em fila para processamento...`,
-          duration: 5000,
-        })
-      }
     }
   }, [])
 
@@ -374,6 +351,8 @@ export function RFPUploadStatusProvider({ children }: RFPUploadStatusProviderPro
     queueFiles,
     processingCount,
     queuedCount,
+    // Refresh trigger for KPIs
+    refreshTrigger,
   }
 
   return (

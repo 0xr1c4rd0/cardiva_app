@@ -52,13 +52,13 @@ export function DeleteRFPDialog({
 
   return (
     <AlertDialog open={open} onOpenChange={onOpenChange}>
-      <AlertDialogContent>
+      <AlertDialogContent className="sm:max-w-[550px]">
         <AlertDialogHeader>
           <AlertDialogTitle>Eliminar Concurso</AlertDialogTitle>
           <AlertDialogDescription>
             Tem a certeza que deseja eliminar{' '}
             {jobName ? (
-              <span className="font-medium text-foreground">{jobName}</span>
+              <span className="font-medium text-foreground break-all">{jobName}</span>
             ) : (
               'este concurso'
             )}

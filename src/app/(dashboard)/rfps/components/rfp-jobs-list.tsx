@@ -142,12 +142,12 @@ export function RFPJobsList({ initialJobs, totalCount, initialState }: RFPJobsLi
   const router = useRouter()
   const [jobs, setJobs] = useState<RFPJob[]>(initialJobs)
   const [currentTotalCount, setCurrentTotalCount] = useState(totalCount)
-  const { activeJob, lastCompletedJob } = useRFPUploadStatus()
+  const { activeJob, lastCompletedJob, refreshTrigger } = useRFPUploadStatus()
   const [deleteDialogOpen, setDeleteDialogOpen] = useState(false)
   const [jobToDelete, setJobToDelete] = useState<{ id: string; name: string } | null>(null)
   const [isPending, startTransition] = useTransition()
-  // Track job IDs that have already triggered a refresh to prevent duplicates
-  const refreshedJobsRef = useRef<Set<string>>(new Set())
+  // Track refreshTrigger to avoid refreshing on initial mount
+  const lastRefreshTriggerRef = useRef(refreshTrigger)
 
   // URL state management
   const [{ page, pageSize, search, sortBy, sortOrder }, setParams] = useQueryStates(
@@ -167,27 +167,46 @@ export function RFPJobsList({ initialJobs, totalCount, initialState }: RFPJobsLi
     setCurrentTotalCount(totalCount)
   }, [initialJobs, totalCount])
 
+  // Helper to sort jobs: processing/pending at top, then by created_at descending
+  const sortJobs = (jobsList: RFPJob[]): RFPJob[] => {
+    return [...jobsList].sort((a, b) => {
+      // Processing/pending jobs go to top
+      const aIsProcessing = a.status === 'processing' || a.status === 'pending'
+      const bIsProcessing = b.status === 'processing' || b.status === 'pending'
+
+      if (aIsProcessing && !bIsProcessing) return -1
+      if (!aIsProcessing && bIsProcessing) return 1
+
+      // Within same category, sort by created_at descending
+      return new Date(b.created_at).getTime() - new Date(a.created_at).getTime()
+    })
+  }
+
   // Helper to update a job in the list (real-time updates from context)
   // RFPUploadJob from context may not have uploader/editor profile joins,
   // so we merge with existing data to preserve those fields
   const updateJobInList = (job: RFPUploadJob) => {
     setJobs((prev) => {
       const index = prev.findIndex((j) => j.id === job.id)
+      let updated: RFPJob[]
+
       if (index >= 0) {
         // Update existing job - preserve profile data from initial server fetch
-        const updated = [...prev]
+        updated = [...prev]
         updated[index] = {
           ...prev[index],  // Keep existing uploader/last_editor profile data
           ...job,          // Overlay with real-time status updates
         }
-        return updated
+      } else if (page === 1 && !search) {
+        // New job - prepend to list (only if on first page with no search filter)
+        // Note: new real-time jobs won't have profile data until page refresh
+        updated = [{ ...job } as RFPJob, ...prev.slice(0, pageSize - 1)]
+      } else {
+        return prev
       }
-      // New job - prepend to list (only if on first page with no search filter)
-      // Note: new real-time jobs won't have profile data until page refresh
-      if (page === 1 && !search) {
-        return [{ ...job } as RFPJob, ...prev.slice(0, pageSize - 1)]
-      }
-      return prev
+
+      // Sort to keep processing jobs at top
+      return sortJobs(updated)
     })
   }
 
@@ -205,21 +224,20 @@ export function RFPJobsList({ initialJobs, totalCount, initialState }: RFPJobsLi
     }
   }, [lastCompletedJob])
 
-  // Auto-refresh to update review_status when a job completes
-  // This triggers server-side computation of por_rever/revisto status
+  // Auto-refresh when refreshTrigger changes (job completed/failed)
+  // This refreshes server components including KPIs
   useEffect(() => {
-    if (lastCompletedJob?.status === 'completed') {
-      // Only refresh once per job to avoid duplicate refreshes
-      if (!refreshedJobsRef.current.has(lastCompletedJob.id)) {
-        refreshedJobsRef.current.add(lastCompletedJob.id)
-        // Small delay to let the completion animation finish
-        const timeout = setTimeout(() => {
-          router.refresh()
-        }, 1500)
-        return () => clearTimeout(timeout)
-      }
-    }
-  }, [lastCompletedJob, router])
+    // Skip initial mount
+    if (refreshTrigger === lastRefreshTriggerRef.current) return
+    lastRefreshTriggerRef.current = refreshTrigger
+
+    // Refresh to update KPIs (small delay to ensure state updates are committed)
+    const timeout = setTimeout(() => {
+      router.refresh()
+    }, 100)
+
+    return () => clearTimeout(timeout)
+  }, [refreshTrigger, router])
 
   const handleViewPDF = async (e: React.MouseEvent, jobId: string) => {
     e.preventDefault()
@@ -243,6 +261,10 @@ export function RFPJobsList({ initialJobs, totalCount, initialState }: RFPJobsLi
       setJobs((prev) => prev.filter((j) => j.id !== jobToDelete.id))
       setCurrentTotalCount((prev) => Math.max(0, prev - 1))
       setJobToDelete(null)
+      // Refresh to update KPIs (small delay to ensure server has processed)
+      setTimeout(() => {
+        router.refresh()
+      }, 100)
     }
   }
 

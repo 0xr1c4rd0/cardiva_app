@@ -50,8 +50,6 @@ export function PDFDropzone({ onFilesSelect, files, disabled }: PDFDropzoneProps
     }
   }, [disabled, open])
 
-  const totalSize = files.reduce((acc, f) => acc + f.size, 0)
-
   return (
     <div
       {...getRootProps()}
@@ -70,20 +68,15 @@ export function PDFDropzone({ onFilesSelect, files, disabled }: PDFDropzoneProps
         <div className="space-y-2">
           <div className="flex items-center justify-center gap-2">
             <FileText className="h-8 w-8 text-green-600 dark:text-green-400" />
-            <div className="text-left">
-              <p className="font-medium">
-                {files.length === 1
-                  ? files[0].name
-                  : `${files.length} ficheiros selecionados`
-                }
-              </p>
-              <p className="text-sm text-muted-foreground">
-                {(totalSize / 1024 / 1024).toFixed(2)} MB total
-              </p>
-            </div>
+            <p className="font-medium text-left">
+              {files.length === 1
+                ? files[0].name
+                : `${files.length} ficheiros selecionados`
+              }
+            </p>
           </div>
           {files.length > 1 && (
-            <div className="text-xs text-muted-foreground max-h-20 overflow-auto">
+            <div className="text-xs text-muted-foreground max-h-24 overflow-auto">
               {files.map((f, i) => (
                 <div key={i} className="truncate">{f.name}</div>
               ))}

@@ -265,6 +265,75 @@ export async function deleteRFPJob(
 }
 
 /**
+ * Compute review status for a single completed job
+ * Returns: 'por_rever' | 'revisto' | 'confirmado' | null
+ */
+export async function getJobReviewStatus(
+  jobId: string
+): Promise<{ success: boolean; reviewStatus: 'por_rever' | 'revisto' | 'confirmado' | null; error?: string }> {
+  const supabase = await createClient()
+
+  // Get job to check if completed and confirmed
+  const { data: job, error: jobError } = await supabase
+    .from('rfp_upload_jobs')
+    .select('id, status, confirmed_at')
+    .eq('id', jobId)
+    .single()
+
+  if (jobError || !job) {
+    return { success: false, reviewStatus: null, error: 'Job not found' }
+  }
+
+  // Not completed yet
+  if (job.status !== 'completed') {
+    return { success: true, reviewStatus: null }
+  }
+
+  // Already confirmed
+  if (job.confirmed_at) {
+    return { success: true, reviewStatus: 'confirmado' }
+  }
+
+  // Check if job has pending items needing decision
+  const { data: pendingItems } = await supabase
+    .from('rfp_items')
+    .select(`
+      id,
+      review_status,
+      rfp_match_suggestions!rfp_match_suggestions_rfp_item_id_fkey (
+        status,
+        similarity_score
+      )
+    `)
+    .eq('job_id', jobId)
+    .eq('review_status', 'pending')
+
+  // Check if any item needs human decision
+  let needsReview = false
+  for (const item of pendingItems ?? []) {
+    const suggestions = item.rfp_match_suggestions as Array<{
+      status: string
+      similarity_score: number
+    }>
+
+    if (!suggestions || suggestions.length === 0) continue
+
+    const hasPendingSuggestion = suggestions.some(s => s.status === 'pending')
+    const hasExactMatch = suggestions.some(s => s.similarity_score >= 0.9999)
+
+    if (hasPendingSuggestion && !hasExactMatch) {
+      needsReview = true
+      break
+    }
+  }
+
+  return {
+    success: true,
+    reviewStatus: needsReview ? 'por_rever' : 'revisto'
+  }
+}
+
+/**
  * Get a signed URL for viewing/downloading an RFP file
  * URL expires after 1 hour (3600 seconds)
  */
