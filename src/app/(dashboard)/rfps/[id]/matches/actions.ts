@@ -2,10 +2,26 @@
 
 import { createClient } from '@/lib/supabase/server'
 import { revalidatePath } from 'next/cache'
+import type { SupabaseClient } from '@supabase/supabase-js'
 
 interface ActionResult {
   success: boolean
   error?: string
+}
+
+/**
+ * Helper function to update last_edited_by on the RFP job.
+ * Called after any match action to track who made the most recent change.
+ */
+async function updateLastEditedBy(
+  supabase: SupabaseClient,
+  jobId: string,
+  userId: string
+): Promise<void> {
+  await supabase
+    .from('rfp_upload_jobs')
+    .update({ last_edited_by: userId })
+    .eq('id', jobId)
 }
 
 export interface InventorySearchResult {
@@ -73,6 +89,9 @@ export async function acceptMatch(
     if (itemError) {
       return { success: false, error: itemError.message }
     }
+
+    // Step 4: Track who made this change
+    await updateLastEditedBy(supabase, jobId, user.id)
 
     // Invalidate cache to refresh page data
     revalidatePath(`/rfps/${jobId}/matches`)
@@ -165,6 +184,9 @@ export async function unselectMatch(
       return { success: false, error: itemError.message }
     }
 
+    // Step 3: Track who made this change
+    await updateLastEditedBy(supabase, jobId, user.id)
+
     // Invalidate cache to refresh page data
     revalidatePath(`/rfps/${jobId}/matches`)
 
@@ -252,6 +274,9 @@ export async function rejectMatch(
         return { success: false, error: itemError.message }
       }
     }
+
+    // Track who made this change
+    await updateLastEditedBy(supabase, jobId, user.id)
 
     // Invalidate cache to refresh page data
     revalidatePath(`/rfps/${jobId}/matches`)
@@ -468,6 +493,9 @@ export async function setManualMatch(
     if (itemError) {
       return { success: false, error: itemError.message }
     }
+
+    // Step 4: Track who made this change
+    await updateLastEditedBy(supabase, jobId, user.id)
 
     // Invalidate cache to refresh page data
     revalidatePath(`/rfps/${jobId}/matches`)
