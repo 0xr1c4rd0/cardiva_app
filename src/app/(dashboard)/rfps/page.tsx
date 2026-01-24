@@ -30,9 +30,14 @@ export default async function RFPsPage({ searchParams }: RFPsPageProps) {
 
   // Build query with search, sort, and pagination
   // All authenticated users can see all RFPs (no user_id filter)
+  // Join profiles to get uploader and editor info
   let query = supabase
     .from('rfp_upload_jobs')
-    .select('*', { count: 'exact' })
+    .select(`
+      *,
+      uploader:profiles!user_id(email),
+      last_editor:profiles!last_edited_by(email)
+    `, { count: 'exact' })
 
   // Apply search filter on file_name
   if (search) {

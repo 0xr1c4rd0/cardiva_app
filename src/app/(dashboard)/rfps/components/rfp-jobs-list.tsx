@@ -31,6 +31,15 @@ interface RFPJob {
   error_message: string | null
   created_at: string
   completed_at: string | null
+  // Optional fields for uploader/editor tracking (joined from profiles)
+  user_id?: string
+  last_edited_by?: string | null
+  uploader?: {
+    email: string
+  } | null
+  last_editor?: {
+    email: string
+  } | null
 }
 
 interface RFPListState {
@@ -45,6 +54,18 @@ interface RFPJobsListProps {
   initialJobs: RFPJob[]
   totalCount: number
   initialState: RFPListState
+}
+
+// Helper to format user email as readable name
+function formatUserEmail(profile: { email: string } | null | undefined): string | null {
+  if (!profile) return null
+  // Extract name portion before @ for cleaner display
+  const emailName = profile.email.split('@')[0]
+  // Capitalize first letter of each word (split on . _ -)
+  return emailName
+    .split(/[._-]/)
+    .map(part => part.charAt(0).toUpperCase() + part.slice(1))
+    .join(' ')
 }
 
 const statusConfig = {
@@ -100,19 +121,25 @@ export function RFPJobsList({ initialJobs, totalCount, initialState }: RFPJobsLi
     setCurrentTotalCount(totalCount)
   }, [initialJobs, totalCount])
 
-  // Helper to update a job in the list
+  // Helper to update a job in the list (real-time updates from context)
+  // RFPUploadJob from context may not have uploader/editor profile joins,
+  // so we merge with existing data to preserve those fields
   const updateJobInList = (job: RFPUploadJob) => {
     setJobs((prev) => {
       const index = prev.findIndex((j) => j.id === job.id)
       if (index >= 0) {
-        // Update existing job
+        // Update existing job - preserve profile data from initial server fetch
         const updated = [...prev]
-        updated[index] = job as RFPJob
+        updated[index] = {
+          ...prev[index],  // Keep existing uploader/last_editor profile data
+          ...job,          // Overlay with real-time status updates
+        }
         return updated
       }
       // New job - prepend to list (only if on first page with no search filter)
+      // Note: new real-time jobs won't have profile data until page refresh
       if (page === 1 && !search) {
-        return [job as RFPJob, ...prev.slice(0, pageSize - 1)]
+        return [{ ...job } as RFPJob, ...prev.slice(0, pageSize - 1)]
       }
       return prev
     })
@@ -276,10 +303,24 @@ export function RFPJobsList({ initialJobs, totalCount, initialState }: RFPJobsLi
                         {job.file_size && (
                           <span>{(job.file_size / 1024 / 1024).toFixed(2)} MB</span>
                         )}
-                        <span>•</span>
+                        <span>-</span>
                         <span>
                           {formatDistanceToNow(new Date(job.created_at), { addSuffix: true, locale: pt })}
                         </span>
+                        {job.uploader && (
+                          <>
+                            <span>-</span>
+                            <span>{formatUserEmail(job.uploader)}</span>
+                          </>
+                        )}
+                        {job.last_editor && job.last_edited_by !== job.user_id && (
+                          <>
+                            <span>-</span>
+                            <span className="text-muted-foreground/80">
+                              Editado por {formatUserEmail(job.last_editor)}
+                            </span>
+                          </>
+                        )}
                       </div>
                       {job.error_message && (
                         <p className="text-sm text-destructive mt-1">{job.error_message}</p>
