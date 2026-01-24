@@ -55,7 +55,10 @@ export function RFPListToolbar({
   const currentSortValue: SortOption = `${sortBy}_${sortOrder}` as SortOption
 
   const handleSortChange = (value: string) => {
-    const [newSortBy, newSortOrder] = value.split('_') as ['file_name' | 'created_at', 'asc' | 'desc']
+    // Split at last underscore to handle compound names (created_at, file_name)
+    const lastUnderscoreIndex = value.lastIndexOf('_')
+    const newSortBy = value.slice(0, lastUnderscoreIndex) as 'file_name' | 'created_at'
+    const newSortOrder = value.slice(lastUnderscoreIndex + 1) as 'asc' | 'desc'
     onSortChange(newSortBy, newSortOrder)
   }
 

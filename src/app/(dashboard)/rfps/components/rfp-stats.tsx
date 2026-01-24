@@ -43,10 +43,11 @@ export function RFPStats() {
   const supabase = createClient()
 
   const fetchKPIs = useCallback(async () => {
-    // Fetch total count of all RFP jobs
+    // Fetch total count of completed RFP jobs only
     const { count: totalCount } = await supabase
       .from('rfp_upload_jobs')
       .select('*', { count: 'exact', head: true })
+      .eq('status', 'completed')
 
     // Fetch all completed jobs with confirmation status
     const { data: completedJobs } = await supabase
