@@ -11,79 +11,74 @@ import {
 } from '@/components/ui/dialog'
 import { Button } from '@/components/ui/button'
 import { PDFDropzone } from './pdf-dropzone'
-import { Loader2 } from 'lucide-react'
+import { Upload } from 'lucide-react'
+import { useRFPUploadStatus } from '@/contexts/rfp-upload-status-context'
 
 interface RFPUploadDialogProps {
   open: boolean
   onOpenChange: (open: boolean) => void
-  onUpload: (file: File) => Promise<{ success: boolean; error?: string }>
 }
 
-export function RFPUploadDialog({ open, onOpenChange, onUpload }: RFPUploadDialogProps) {
-  const [file, setFile] = useState<File | null>(null)
-  const [isUploading, setIsUploading] = useState(false)
+export function RFPUploadDialog({ open, onOpenChange }: RFPUploadDialogProps) {
+  const [files, setFiles] = useState<File[]>([])
+  const { queueFiles } = useRFPUploadStatus()
 
-  const handleUpload = async () => {
-    if (!file) return
+  const handleUpload = () => {
+    if (files.length === 0) return
 
-    setIsUploading(true)
-    try {
-      const result = await onUpload(file)
-      if (result.success) {
-        setFile(null)
-        onOpenChange(false)
-      }
-    } finally {
-      setIsUploading(false)
-    }
+    // Queue all selected files for processing
+    queueFiles(files)
+
+    // Clear selection and close dialog immediately
+    setFiles([])
+    onOpenChange(false)
   }
 
   const handleClose = () => {
-    if (!isUploading) {
-      setFile(null)
-      onOpenChange(false)
-    }
+    setFiles([])
+    onOpenChange(false)
   }
+
+  const buttonLabel = files.length === 0
+    ? 'Carregar'
+    : files.length === 1
+      ? 'Carregar 1 concurso'
+      : `Carregar ${files.length} concursos`
 
   return (
     <Dialog open={open} onOpenChange={handleClose}>
       <DialogContent className="sm:max-w-[500px]">
         <DialogHeader>
-          <DialogTitle>Carregar Concurso</DialogTitle>
+          <DialogTitle>Carregar Concursos</DialogTitle>
           <DialogDescription>
-            Carregue um ficheiro PDF com o concurso. O sistema irá extrair e comparar os produtos
-            com o seu inventário.
+            Carregue ficheiros PDF com os concursos. O sistema ira extrair e comparar os produtos
+            com o seu inventario.
           </DialogDescription>
         </DialogHeader>
 
-        <div className="py-4">
+        <div className="py-4 space-y-3">
           <PDFDropzone
-            onFileSelect={setFile}
-            file={file}
-            disabled={isUploading}
+            onFilesSelect={setFiles}
+            files={files}
           />
+          <p className="text-xs text-muted-foreground text-center">
+            Pode carregar ate 10 ficheiros de cada vez
+          </p>
         </div>
 
         <DialogFooter>
           <Button
             variant="outline"
             onClick={handleClose}
-            disabled={isUploading}
           >
             Cancelar
           </Button>
           <Button
             onClick={handleUpload}
-            disabled={!file || isUploading}
+            disabled={files.length === 0}
           >
-            {isUploading ? (
-              <>
-                <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                A carregar...
-              </>
-            ) : (
-              'Carregar Concurso'
-            )}
+            <Upload className="mr-2 h-4 w-4" />
+            {buttonLabel}
           </Button>
         </DialogFooter>
       </DialogContent>
