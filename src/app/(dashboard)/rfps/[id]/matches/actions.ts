@@ -4,9 +4,43 @@ import { createClient } from '@/lib/supabase/server'
 import { revalidatePath } from 'next/cache'
 import type { SupabaseClient } from '@supabase/supabase-js'
 
+import type { RFPItemWithMatches, MatchSuggestion } from '@/types/rfp'
+
 export interface ActionResult {
   success: boolean
   error?: string
+  updatedItem?: RFPItemWithMatches
+}
+
+/**
+ * Helper function to fetch an RFP item with its match suggestions.
+ * Used to return updated data after mutations for optimistic UI updates.
+ */
+async function fetchItemWithMatches(
+  supabase: SupabaseClient,
+  rfpItemId: string
+): Promise<RFPItemWithMatches | null> {
+  const { data, error } = await supabase
+    .from('rfp_items')
+    .select(`
+      *,
+      rfp_match_suggestions!rfp_match_suggestions_rfp_item_id_fkey (*)
+    `)
+    .eq('id', rfpItemId)
+    .single()
+
+  if (error || !data) {
+    console.error('Failed to fetch updated item:', error)
+    return null
+  }
+
+  // Sort match suggestions by similarity_score DESC
+  return {
+    ...data,
+    rfp_match_suggestions: (data.rfp_match_suggestions || []).sort(
+      (a: MatchSuggestion, b: MatchSuggestion) => b.similarity_score - a.similarity_score
+    ),
+  } as RFPItemWithMatches
 }
 
 /**
@@ -45,6 +79,7 @@ export async function acceptMatch(
   matchId: string
 ): Promise<ActionResult> {
   try {
+    console.log('[acceptMatch] Starting...', { jobId, rfpItemId, matchId })
     const supabase = await createClient()
 
     // Verify user is authenticated
@@ -52,16 +87,22 @@ export async function acceptMatch(
       data: { user },
     } = await supabase.auth.getUser()
     if (!user) {
+      console.log('[acceptMatch] Not authenticated')
       return { success: false, error: 'Not authenticated' }
     }
+    console.log('[acceptMatch] Authenticated as:', user.id)
 
     // Step 1: Accept the selected match
-    const { error: matchError } = await supabase
+    const { data: matchData, error: matchError, count: matchCount } = await supabase
       .from('rfp_match_suggestions')
       .update({ status: 'accepted' })
       .eq('id', matchId)
+      .select()
+
+    console.log('[acceptMatch] Step 1 - Update match:', { matchData, matchError, matchCount })
 
     if (matchError) {
+      console.log('[acceptMatch] Match update error:', matchError)
       return { success: false, error: matchError.message }
     }
 
@@ -78,25 +119,33 @@ export async function acceptMatch(
     }
 
     // Step 3: Update the RFP item's review_status and selected_match_id
-    const { error: itemError } = await supabase
+    const { data: itemData, error: itemError } = await supabase
       .from('rfp_items')
       .update({
         review_status: 'accepted',
         selected_match_id: matchId,
       })
       .eq('id', rfpItemId)
+      .select()
+
+    console.log('[acceptMatch] Step 3 - Update item:', { itemData, itemError })
 
     if (itemError) {
+      console.log('[acceptMatch] Item update error:', itemError)
       return { success: false, error: itemError.message }
     }
 
     // Step 4: Track who made this change
     await updateLastEditedBy(supabase, jobId, user.id)
 
+    // Step 5: Fetch and return the updated item for optimistic UI update
+    const updatedItem = await fetchItemWithMatches(supabase, rfpItemId)
+
     // Invalidate cache to refresh page data
     revalidatePath(`/rfps/${jobId}/matches`)
 
-    return { success: true }
+    console.log('[acceptMatch] Complete - success')
+    return { success: true, updatedItem: updatedItem ?? undefined }
   } catch (error) {
     console.error('acceptMatch error:', error)
     return {
@@ -187,10 +236,13 @@ export async function unselectMatch(
     // Step 3: Track who made this change
     await updateLastEditedBy(supabase, jobId, user.id)
 
+    // Step 4: Fetch and return the updated item for optimistic UI update
+    const updatedItem = await fetchItemWithMatches(supabase, rfpItemId)
+
     // Invalidate cache to refresh page data
     revalidatePath(`/rfps/${jobId}/matches`)
 
-    return { success: true }
+    return { success: true, updatedItem: updatedItem ?? undefined }
   } catch (error) {
     console.error('unselectMatch error:', error)
     return {
@@ -278,10 +330,13 @@ export async function rejectMatch(
     // Track who made this change
     await updateLastEditedBy(supabase, jobId, user.id)
 
+    // Fetch and return the updated item for optimistic UI update
+    const updatedItem = await fetchItemWithMatches(supabase, rfpItemId)
+
     // Invalidate cache to refresh page data
     revalidatePath(`/rfps/${jobId}/matches`)
 
-    return { success: true }
+    return { success: true, updatedItem: updatedItem ?? undefined }
   } catch (error) {
     console.error('rejectMatch error:', error)
     return {
@@ -497,10 +552,13 @@ export async function setManualMatch(
     // Step 4: Track who made this change
     await updateLastEditedBy(supabase, jobId, user.id)
 
+    // Step 5: Fetch and return the updated item for optimistic UI update
+    const updatedItem = await fetchItemWithMatches(supabase, rfpItemId)
+
     // Invalidate cache to refresh page data
     revalidatePath(`/rfps/${jobId}/matches`)
 
-    return { success: true }
+    return { success: true, updatedItem: updatedItem ?? undefined }
   } catch (error) {
     console.error('setManualMatch error:', error)
     return {

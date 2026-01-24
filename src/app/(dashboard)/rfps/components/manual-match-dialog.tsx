@@ -15,6 +15,7 @@ import { Button } from '@/components/ui/button'
 import { Search, Loader2, Check } from 'lucide-react'
 import { searchInventory, setManualMatch } from '../[id]/matches/actions'
 import type { InventorySearchResult } from '../[id]/matches/actions'
+import type { RFPItemWithMatches } from '@/types/rfp'
 
 interface ManualMatchDialogProps {
   open: boolean
@@ -22,7 +23,7 @@ interface ManualMatchDialogProps {
   jobId: string
   rfpItemId: string
   rfpItemDescription: string
-  onComplete?: () => void
+  onComplete?: (updatedItem: RFPItemWithMatches) => void
 }
 
 interface InventoryResultItemProps {
@@ -122,9 +123,9 @@ export function ManualMatchDialog({
         setQuery('')
         setResults([])
         setSelectedItemId(null)
-        // Trigger refresh via callback or fallback to router.refresh()
-        if (onComplete) {
-          onComplete()
+        // Trigger instant UI update via callback, fallback to router.refresh()
+        if (onComplete && result.updatedItem) {
+          onComplete(result.updatedItem)
         } else {
           router.refresh()
         }

@@ -43,6 +43,7 @@ interface MatchReviewTableProps {
   items: RFPItemWithMatches[]
   totalCount: number
   initialState: MatchReviewState
+  onItemUpdate: (updatedItem: RFPItemWithMatches) => void
 }
 
 // Sortable header button component
@@ -75,9 +76,9 @@ function SortableHeader({ column, label, sortBy, sortDir, onSort, className = ''
   )
 }
 
-export function MatchReviewTable({ jobId, items, totalCount, initialState }: MatchReviewTableProps) {
+export function MatchReviewTable({ jobId, items, totalCount, initialState, onItemUpdate }: MatchReviewTableProps) {
   // Get confirmation state from context
-  const { isConfirmed, refreshItems } = useRFPConfirmation()
+  const { isConfirmed } = useRFPConfirmation()
 
   // useTransition provides loading state and is REQUIRED by nuqs v2+ for server re-render
   const [isPending, startTransition] = useTransition()
@@ -228,7 +229,7 @@ export function MatchReviewTable({ jobId, items, totalCount, initialState }: Mat
                     jobId={jobId}
                     item={item}
                     isConfirmed={isConfirmed}
-                    refreshItems={refreshItems}
+                    onItemUpdate={onItemUpdate}
                   />
                 ))}
                 {items.length === 0 && (
@@ -263,10 +264,10 @@ interface ItemRowProps {
   jobId: string
   item: RFPItemWithMatches
   isConfirmed: boolean
-  refreshItems: () => void
+  onItemUpdate: (updatedItem: RFPItemWithMatches) => void
 }
 
-function ItemRow({ jobId, item, isConfirmed, refreshItems }: ItemRowProps) {
+function ItemRow({ jobId, item, isConfirmed, onItemUpdate }: ItemRowProps) {
   const [isPopoverOpen, setIsPopoverOpen] = useState(false)
   const [showManualDialog, setShowManualDialog] = useState(false)
 
@@ -444,9 +445,11 @@ function ItemRow({ jobId, item, isConfirmed, refreshItems }: ItemRowProps) {
                         rfpItemId={item.id}
                         match={match}
                         isPerfectMatch={match.similarity_score >= 0.9999}
-                        onActionComplete={() => {
+                        onActionComplete={(updatedItem) => {
                           setIsPopoverOpen(false)
-                          refreshItems()
+                          if (updatedItem) {
+                            onItemUpdate(updatedItem)
+                          }
                         }}
                       />
                     ))}
@@ -495,7 +498,7 @@ function ItemRow({ jobId, item, isConfirmed, refreshItems }: ItemRowProps) {
           jobId={jobId}
           rfpItemId={item.id}
           rfpItemDescription={item.descricao_pedido}
-          onComplete={refreshItems}
+          onComplete={onItemUpdate}
         />
       </TableCell>
     </TableRow>
@@ -507,7 +510,7 @@ interface SuggestionItemProps {
   rfpItemId: string
   match: MatchSuggestion
   isPerfectMatch: boolean
-  onActionComplete: () => void
+  onActionComplete: (updatedItem?: RFPItemWithMatches) => void
 }
 
 function SuggestionItem({ jobId, rfpItemId, match, isPerfectMatch, onActionComplete }: SuggestionItemProps) {
@@ -526,36 +529,40 @@ function SuggestionItem({ jobId, rfpItemId, match, isPerfectMatch, onActionCompl
   // But manual matches CAN be toggled (user should be able to undo their selection)
   const isLocked = isPerfectMatch && !isManualMatch
 
-  const handleAcceptOrToggle = () => {
+  const handleAcceptOrToggle = async () => {
     // If locked (perfect match), do nothing
     if (isLocked) return
 
-    startTransition(async () => {
-      if (isAccepted) {
-        // Toggle off - unselect
-        await unselectMatch(jobId, rfpItemId, match.id)
-      } else {
-        // Accept this match
-        await acceptMatch(jobId, rfpItemId, match.id)
-      }
-      onActionComplete()
-    })
+    // Call server action directly
+    const result = isAccepted
+      ? await unselectMatch(jobId, rfpItemId, match.id)
+      : await acceptMatch(jobId, rfpItemId, match.id)
+
+    if (!result.success) {
+      console.error('[handleAcceptOrToggle] Action failed:', result.error)
+      return
+    }
+
+    // Pass the updated item to trigger instant UI update
+    onActionComplete(result.updatedItem)
   }
 
-  const handleRejectOrToggle = () => {
+  const handleRejectOrToggle = async () => {
     // If locked (perfect match), do nothing
     if (isLocked) return
 
-    startTransition(async () => {
-      if (isRejected) {
-        // Toggle off - unreject (restore to pending)
-        await unselectMatch(jobId, rfpItemId, match.id)
-      } else {
-        // Reject this match
-        await rejectMatch(jobId, rfpItemId, match.id)
-      }
-      onActionComplete()
-    })
+    // Call server action directly
+    const result = isRejected
+      ? await unselectMatch(jobId, rfpItemId, match.id)
+      : await rejectMatch(jobId, rfpItemId, match.id)
+
+    if (!result.success) {
+      console.error('[handleRejectOrToggle] Action failed:', result.error)
+      return
+    }
+
+    // Pass the updated item to trigger instant UI update
+    onActionComplete(result.updatedItem)
   }
 
   return (

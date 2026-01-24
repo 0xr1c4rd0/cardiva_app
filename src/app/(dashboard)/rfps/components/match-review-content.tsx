@@ -1,5 +1,6 @@
 'use client'
 
+import { useState, useCallback } from 'react'
 import type { RFPItemWithMatches } from '@/types/rfp'
 import { RFPConfirmationProvider } from './rfp-confirmation-context'
 import { RFPStatusBadge } from './rfp-status-badge'
@@ -29,16 +30,31 @@ interface MatchReviewContentProps {
 /**
  * Client wrapper for the match review page content.
  * Provides RFPConfirmationContext to all child components.
+ * Manages local state for items to enable instant UI updates after actions.
  */
 export function MatchReviewContent({
   jobId,
   fileName,
   initialIsConfirmed,
-  allItems,
-  paginatedItems,
+  allItems: initialAllItems,
+  paginatedItems: initialPaginatedItems,
   totalCount,
   initialState,
 }: MatchReviewContentProps) {
+  // Local state for items - enables instant UI updates after actions
+  const [allItems, setAllItems] = useState(initialAllItems)
+  const [paginatedItems, setPaginatedItems] = useState(initialPaginatedItems)
+
+  // Update an item in both allItems and paginatedItems
+  const updateItem = useCallback((updatedItem: RFPItemWithMatches) => {
+    setAllItems(prev => prev.map(item =>
+      item.id === updatedItem.id ? updatedItem : item
+    ))
+    setPaginatedItems(prev => prev.map(item =>
+      item.id === updatedItem.id ? updatedItem : item
+    ))
+  }, [])
+
   return (
     <RFPConfirmationProvider initialIsConfirmed={initialIsConfirmed}>
       {/* Header with document name, status badge, stats, and action button */}
@@ -62,6 +78,7 @@ export function MatchReviewContent({
           items={paginatedItems}
           totalCount={totalCount}
           initialState={initialState}
+          onItemUpdate={updateItem}
         />
       </div>
     </RFPConfirmationProvider>
