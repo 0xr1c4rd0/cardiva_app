@@ -1,7 +1,6 @@
 'use client'
 
 import { useState, useTransition } from 'react'
-import { useRouter } from 'next/navigation'
 import { CheckCircle2, Download, ChevronDown, Loader2, Mail, FileSpreadsheet } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import {
@@ -19,25 +18,26 @@ import { toast } from 'sonner'
 import type { RFPItemWithMatches } from '@/types/rfp'
 import { ExportDialog } from './export-dialog'
 import { confirmRFP } from '../[id]/matches/actions'
+import { useRFPConfirmation } from './rfp-confirmation-context'
 
 type ExportType = 'excel' | 'email'
 
 interface RFPActionButtonProps {
   jobId: string
-  isConfirmed: boolean
   items: RFPItemWithMatches[]
 }
 
 /**
  * Smart action button that shows:
  * - "Confirmar" when not confirmed (with pending item indicator if applicable)
- * - "Exportar ▼" dropdown when confirmed (with Reverter option)
+ * - "Exportar ▼" dropdown when confirmed
+ * Uses RFPConfirmationContext for shared state.
  */
-export function RFPActionButton({ jobId, isConfirmed, items }: RFPActionButtonProps) {
+export function RFPActionButton({ jobId, items }: RFPActionButtonProps) {
+  const { isConfirmed, setIsConfirmed } = useRFPConfirmation()
   const [isPending, startTransition] = useTransition()
   const [exportDialogOpen, setExportDialogOpen] = useState(false)
   const [exportType, setExportType] = useState<ExportType>('excel')
-  const router = useRouter()
 
   // Calculate pending count (items with suggestions that need review, excluding 100% matches)
   const pendingCount = items.filter((i) => {
@@ -62,7 +62,8 @@ export function RFPActionButton({ jobId, isConfirmed, items }: RFPActionButtonPr
         toast.success('Concurso confirmado', {
           description: 'O concurso esta pronto para exportacao.',
         })
-        router.refresh()
+        // Update shared state via context
+        setIsConfirmed(true)
       } else {
         toast.error('Erro ao confirmar', {
           description: result.error,

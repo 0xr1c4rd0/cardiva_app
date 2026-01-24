@@ -22,6 +22,7 @@ import { acceptMatch, rejectMatch, unselectMatch } from '../[id]/matches/actions
 import { ManualMatchDialog } from './manual-match-dialog'
 import { MatchReviewToolbar } from './match-review-toolbar'
 import { MatchReviewPagination } from './match-review-pagination'
+import { useRFPConfirmation } from './rfp-confirmation-context'
 import type { RFPItemWithMatches, MatchSuggestion } from '@/types/rfp'
 
 type StatusFilter = 'all' | 'pending' | 'matched' | 'no_match'
@@ -75,6 +76,9 @@ function SortableHeader({ column, label, sortBy, sortDir, onSort, className = ''
 }
 
 export function MatchReviewTable({ jobId, items, totalCount, initialState }: MatchReviewTableProps) {
+  // Get confirmation state from context
+  const { isConfirmed, refreshItems } = useRFPConfirmation()
+
   // useTransition provides loading state and is REQUIRED by nuqs v2+ for server re-render
   const [isPending, startTransition] = useTransition()
 
@@ -223,6 +227,8 @@ export function MatchReviewTable({ jobId, items, totalCount, initialState }: Mat
                     key={item.id}
                     jobId={jobId}
                     item={item}
+                    isConfirmed={isConfirmed}
+                    refreshItems={refreshItems}
                   />
                 ))}
                 {items.length === 0 && (
@@ -256,9 +262,11 @@ export function MatchReviewTable({ jobId, items, totalCount, initialState }: Mat
 interface ItemRowProps {
   jobId: string
   item: RFPItemWithMatches
+  isConfirmed: boolean
+  refreshItems: () => void
 }
 
-function ItemRow({ jobId, item }: ItemRowProps) {
+function ItemRow({ jobId, item, isConfirmed, refreshItems }: ItemRowProps) {
   const [isPopoverOpen, setIsPopoverOpen] = useState(false)
   const [showManualDialog, setShowManualDialog] = useState(false)
 
@@ -335,45 +343,55 @@ function ItemRow({ jobId, item }: ItemRowProps) {
         <div className="flex items-center justify-end gap-2">
           {/* Status button / Popover */}
           {hasNoSuggestions ? (
-            /* "Sem correspondência" - now clickable to show manual correction option */
-            <Popover open={isPopoverOpen} onOpenChange={setIsPopoverOpen}>
+            /* "Sem correspondência" - now clickable to show manual correction option (unless confirmed) */
+            <Popover open={isPopoverOpen} onOpenChange={isConfirmed ? undefined : setIsPopoverOpen}>
               <PopoverTrigger asChild>
                 <Button
                   variant="outline"
                   size="sm"
-                  className="text-gray-500 border-gray-200 bg-gray-50/50 hover:bg-gray-100"
+                  className={cn(
+                    "text-gray-500 border-gray-200 bg-gray-50/50",
+                    isConfirmed ? "cursor-default" : "hover:bg-gray-100"
+                  )}
+                  disabled={isConfirmed}
                 >
                   Sem correspondência
                 </Button>
               </PopoverTrigger>
-              <PopoverContent
-                align="end"
-                className="w-[300px] p-4 shadow-lg border-border/50"
-                sideOffset={8}
-              >
-                <p className="text-sm text-muted-foreground mb-3">
-                  Não foram encontradas correspondências automáticas para este produto.
-                </p>
-                <button
-                  type="button"
-                  className="text-sm font-medium text-muted-foreground hover:text-foreground underline text-left"
-                  onClick={() => {
-                    setIsPopoverOpen(false)
-                    setShowManualDialog(true)
-                  }}
+              {!isConfirmed && (
+                <PopoverContent
+                  align="end"
+                  className="w-[300px] p-4 shadow-lg border-border/50"
+                  sideOffset={8}
                 >
-                  Selecionar produto do inventário?
-                </button>
-              </PopoverContent>
+                  <p className="text-sm text-muted-foreground mb-3">
+                    Não foram encontradas correspondências automáticas para este produto.
+                  </p>
+                  <button
+                    type="button"
+                    className="text-sm font-medium text-muted-foreground hover:text-foreground underline text-left"
+                    onClick={() => {
+                      setIsPopoverOpen(false)
+                      setShowManualDialog(true)
+                    }}
+                  >
+                    Selecionar produto do inventário?
+                  </button>
+                </PopoverContent>
+              )}
             </Popover>
           ) : (
-            <Popover open={isPopoverOpen} onOpenChange={setIsPopoverOpen}>
+            <Popover open={isPopoverOpen} onOpenChange={isConfirmed ? undefined : setIsPopoverOpen}>
               <PopoverTrigger asChild>
                 {(showAsManual || showAsMatched) && displayMatch ? (
                   <Button
                     variant="outline"
                     size="sm"
-                    className="text-emerald-600 border-emerald-200 bg-emerald-50/20 hover:bg-emerald-50 hover:border-emerald-300"
+                    className={cn(
+                      "text-emerald-600 border-emerald-200 bg-emerald-50/20",
+                      isConfirmed ? "cursor-default" : "hover:bg-emerald-50 hover:border-emerald-300"
+                    )}
+                    disabled={isConfirmed}
                   >
                     <Check className="h-3.5 w-3.5 mr-1.5" />
                     Selecionado
@@ -382,7 +400,11 @@ function ItemRow({ jobId, item }: ItemRowProps) {
                   <Button
                     variant="outline"
                     size="sm"
-                    className="text-gray-500 border-gray-200 bg-gray-50/50 hover:bg-gray-100"
+                    className={cn(
+                      "text-gray-500 border-gray-200 bg-gray-50/50",
+                      isConfirmed ? "cursor-default" : "hover:bg-gray-100"
+                    )}
+                    disabled={isConfirmed}
                   >
                     Sem correspondência
                   </Button>
@@ -390,44 +412,64 @@ function ItemRow({ jobId, item }: ItemRowProps) {
                   <Button
                     variant="outline"
                     size="sm"
-                    className="text-amber-600 border-amber-200 bg-amber-50/50 hover:bg-amber-50"
+                    className={cn(
+                      "text-amber-600 border-amber-200 bg-amber-50/50",
+                      isConfirmed ? "cursor-default" : "hover:bg-amber-50"
+                    )}
+                    disabled={isConfirmed}
                   >
                     {pendingSuggestions} {pendingSuggestions !== 1 ? 'sugestões' : 'sugestão'}
                   </Button>
                 )}
               </PopoverTrigger>
-              <PopoverContent
-                align="end"
-                className="w-[420px] p-0 shadow-lg border-border/50"
-                sideOffset={8}
-              >
-                <div className="p-4 border-b border-border/40">
-                  <p className="text-sm font-medium">
-                    {showAsMatched ? 'Alterar seleção' : showAsRejected ? 'Rever sugestões' : 'Selecionar correspondência'}
-                  </p>
-                  <p className="text-xs text-muted-foreground mt-0.5 line-clamp-2">
-                    {item.descricao_pedido}
-                  </p>
-                </div>
-                <div className="max-h-[280px] overflow-y-auto">
-                  {item.rfp_match_suggestions.map((match) => (
-                    <SuggestionItem
-                      key={match.id}
-                      jobId={jobId}
-                      rfpItemId={item.id}
-                      match={match}
-                      isPerfectMatch={match.similarity_score >= 0.9999}
-                      onActionComplete={() => setIsPopoverOpen(false)}
-                    />
-                  ))}
-                </div>
-                {/* Footer - Show "Selecionar produto do inventário?" if all rejected, otherwise "Selecionar outro produto" */}
-                <div className="p-3 border-t border-border/40 bg-muted/20">
-                  {allSuggestionsRejected ? (
-                    <div className="text-left">
-                      <p className="text-xs text-muted-foreground mb-1">
-                        Todas as sugestões foram rejeitadas.
-                      </p>
+              {!isConfirmed && (
+                <PopoverContent
+                  align="end"
+                  className="w-[420px] p-0 shadow-lg border-border/50"
+                  sideOffset={8}
+                >
+                  <div className="p-4 border-b border-border/40">
+                    <p className="text-sm font-medium">
+                      {showAsMatched ? 'Alterar seleção' : showAsRejected ? 'Rever sugestões' : 'Selecionar correspondência'}
+                    </p>
+                    <p className="text-xs text-muted-foreground mt-0.5 line-clamp-2">
+                      {item.descricao_pedido}
+                    </p>
+                  </div>
+                  <div className="max-h-[280px] overflow-y-auto">
+                    {item.rfp_match_suggestions.map((match) => (
+                      <SuggestionItem
+                        key={match.id}
+                        jobId={jobId}
+                        rfpItemId={item.id}
+                        match={match}
+                        isPerfectMatch={match.similarity_score >= 0.9999}
+                        onActionComplete={() => {
+                          setIsPopoverOpen(false)
+                          refreshItems()
+                        }}
+                      />
+                    ))}
+                  </div>
+                  {/* Footer - Show "Selecionar produto do inventário?" if all rejected, otherwise "Selecionar outro produto" */}
+                  <div className="p-3 border-t border-border/40 bg-muted/20">
+                    {allSuggestionsRejected ? (
+                      <div className="text-left">
+                        <p className="text-xs text-muted-foreground mb-1">
+                          Todas as sugestões foram rejeitadas.
+                        </p>
+                        <button
+                          type="button"
+                          className="text-sm font-medium text-muted-foreground hover:text-foreground underline text-left"
+                          onClick={() => {
+                            setIsPopoverOpen(false)
+                            setShowManualDialog(true)
+                          }}
+                        >
+                          Selecionar produto do inventário?
+                        </button>
+                      </div>
+                    ) : (
                       <button
                         type="button"
                         className="text-sm font-medium text-muted-foreground hover:text-foreground underline text-left"
@@ -438,21 +480,10 @@ function ItemRow({ jobId, item }: ItemRowProps) {
                       >
                         Selecionar produto do inventário?
                       </button>
-                    </div>
-                  ) : (
-                    <button
-                      type="button"
-                      className="text-sm font-medium text-muted-foreground hover:text-foreground underline text-left"
-                      onClick={() => {
-                        setIsPopoverOpen(false)
-                        setShowManualDialog(true)
-                      }}
-                    >
-                      Selecionar produto do inventário?
-                    </button>
-                  )}
-                </div>
-              </PopoverContent>
+                    )}
+                  </div>
+                </PopoverContent>
+              )}
             </Popover>
           )}
         </div>
@@ -464,6 +495,7 @@ function ItemRow({ jobId, item }: ItemRowProps) {
           jobId={jobId}
           rfpItemId={item.id}
           rfpItemDescription={item.descricao_pedido}
+          onComplete={refreshItems}
         />
       </TableCell>
     </TableRow>
@@ -522,6 +554,7 @@ function SuggestionItem({ jobId, rfpItemId, match, isPerfectMatch, onActionCompl
         // Reject this match
         await rejectMatch(jobId, rfpItemId, match.id)
       }
+      onActionComplete()
     })
   }
 

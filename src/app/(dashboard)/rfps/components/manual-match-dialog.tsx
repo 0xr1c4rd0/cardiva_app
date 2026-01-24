@@ -22,6 +22,7 @@ interface ManualMatchDialogProps {
   jobId: string
   rfpItemId: string
   rfpItemDescription: string
+  onComplete?: () => void
 }
 
 interface InventoryResultItemProps {
@@ -75,6 +76,7 @@ export function ManualMatchDialog({
   jobId,
   rfpItemId,
   rfpItemDescription,
+  onComplete,
 }: ManualMatchDialogProps) {
   const router = useRouter()
   const [query, setQuery] = useState('')
@@ -120,8 +122,12 @@ export function ManualMatchDialog({
         setQuery('')
         setResults([])
         setSelectedItemId(null)
-        // Explicitly refresh the page to show updated match data
-        router.refresh()
+        // Trigger refresh via callback or fallback to router.refresh()
+        if (onComplete) {
+          onComplete()
+        } else {
+          router.refresh()
+        }
       } else {
         console.error('Failed to set manual match:', result.error)
         setSelectedItemId(null)

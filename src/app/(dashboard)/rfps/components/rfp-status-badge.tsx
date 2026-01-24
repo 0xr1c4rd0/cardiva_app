@@ -1,19 +1,18 @@
 'use client'
 
 import { useTransition } from 'react'
-import { useRouter } from 'next/navigation'
 import { Clock, CheckCircle2, Undo2, Loader2 } from 'lucide-react'
 import { Badge } from '@/components/ui/badge'
 import { cn } from '@/lib/utils'
 import { toast } from 'sonner'
 import type { RFPItemWithMatches } from '@/types/rfp'
 import { revertConfirmation } from '../[id]/matches/actions'
+import { useRFPConfirmation } from './rfp-confirmation-context'
 
 type ReviewStatus = 'por_rever' | 'revisto' | 'confirmado'
 
 interface RFPStatusBadgeProps {
   jobId: string
-  isConfirmed: boolean
   items: RFPItemWithMatches[]
 }
 
@@ -77,10 +76,11 @@ function computeReviewStatus(
  * Status badge showing the review status of an RFP job.
  * Displayed next to the file name on the match review page.
  * Includes "Reverter" link when confirmed.
+ * Uses RFPConfirmationContext for shared state.
  */
-export function RFPStatusBadge({ jobId, isConfirmed, items }: RFPStatusBadgeProps) {
+export function RFPStatusBadge({ jobId, items }: RFPStatusBadgeProps) {
+  const { isConfirmed, setIsConfirmed } = useRFPConfirmation()
   const [isPending, startTransition] = useTransition()
-  const router = useRouter()
   const status = computeReviewStatus(isConfirmed, items)
   const config = statusConfig[status]
   const StatusIcon = config.icon
@@ -92,7 +92,8 @@ export function RFPStatusBadge({ jobId, isConfirmed, items }: RFPStatusBadgeProp
         toast.success('Confirmacao revertida', {
           description: 'O concurso pode ser editado novamente.',
         })
-        router.refresh()
+        // Update shared state via context
+        setIsConfirmed(false)
       } else {
         toast.error('Erro ao reverter', {
           description: result.error,
