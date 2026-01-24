@@ -1,6 +1,5 @@
 import { createClient } from '@/lib/supabase/server'
 import { RFPPageContent } from './components/rfp-page-content'
-import { RFPStats } from './components/rfp-stats'
 
 // Force dynamic rendering
 export const dynamic = 'force-dynamic'
@@ -173,7 +172,6 @@ export default async function RFPsPage({ searchParams }: RFPsPageProps) {
         sortBy,
         sortOrder,
       }}
-      stats={<RFPStats />}
     />
   )
 }

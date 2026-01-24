@@ -1,6 +1,6 @@
 'use client'
 
-import { useState, useEffect, useTransition, useRef } from 'react'
+import { useState, useEffect, useTransition } from 'react'
 import Link from 'next/link'
 import { useRouter } from 'next/navigation'
 import { formatDistanceToNow } from 'date-fns'
@@ -142,12 +142,10 @@ export function RFPJobsList({ initialJobs, totalCount, initialState }: RFPJobsLi
   const router = useRouter()
   const [jobs, setJobs] = useState<RFPJob[]>(initialJobs)
   const [currentTotalCount, setCurrentTotalCount] = useState(totalCount)
-  const { activeJob, lastCompletedJob, refreshTrigger } = useRFPUploadStatus()
+  const { activeJob, lastCompletedJob } = useRFPUploadStatus()
   const [deleteDialogOpen, setDeleteDialogOpen] = useState(false)
   const [jobToDelete, setJobToDelete] = useState<{ id: string; name: string } | null>(null)
   const [isPending, startTransition] = useTransition()
-  // Track refreshTrigger to avoid refreshing on initial mount
-  const lastRefreshTriggerRef = useRef(refreshTrigger)
 
   // URL state management
   const [{ page, pageSize, search, sortBy, sortOrder }, setParams] = useQueryStates(
@@ -223,21 +221,6 @@ export function RFPJobsList({ initialJobs, totalCount, initialState }: RFPJobsLi
       updateJobInList(lastCompletedJob)
     }
   }, [lastCompletedJob])
-
-  // Auto-refresh when refreshTrigger changes (job completed/failed)
-  // This refreshes server components including KPIs
-  useEffect(() => {
-    // Skip initial mount
-    if (refreshTrigger === lastRefreshTriggerRef.current) return
-    lastRefreshTriggerRef.current = refreshTrigger
-
-    // Refresh to update KPIs (small delay to ensure state updates are committed)
-    const timeout = setTimeout(() => {
-      router.refresh()
-    }, 100)
-
-    return () => clearTimeout(timeout)
-  }, [refreshTrigger, router])
 
   const handleViewPDF = async (e: React.MouseEvent, jobId: string) => {
     e.preventDefault()

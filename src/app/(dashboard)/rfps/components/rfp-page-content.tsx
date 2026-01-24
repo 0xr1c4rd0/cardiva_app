@@ -4,6 +4,7 @@ import { RFPUploadStatusProvider } from '@/contexts/rfp-upload-status-context'
 import { RFPUploadButton } from './rfp-upload-button'
 import { RFPJobsList } from './rfp-jobs-list'
 import { RFPProcessingCard } from './rfp-processing-card'
+import { RFPStats } from './rfp-stats'
 
 interface RFPJob {
   id: string
@@ -34,10 +35,9 @@ interface RFPPageContentProps {
   initialJobs: RFPJob[]
   totalCount: number
   initialState: RFPListState
-  stats?: React.ReactNode
 }
 
-export function RFPPageContent({ initialJobs, totalCount, initialState, stats }: RFPPageContentProps) {
+export function RFPPageContent({ initialJobs, totalCount, initialState }: RFPPageContentProps) {
   return (
     <RFPUploadStatusProvider>
       <div className="flex flex-1 flex-col gap-6">
@@ -52,8 +52,8 @@ export function RFPPageContent({ initialJobs, totalCount, initialState, stats }:
           <RFPUploadButton />
         </div>
 
-        {/* KPI Stats */}
-        {stats}
+        {/* KPI Stats - Client component that auto-refreshes on job changes */}
+        <RFPStats />
 
         {/* Processing status card - shows only when active job is processing */}
         <RFPProcessingCard />
