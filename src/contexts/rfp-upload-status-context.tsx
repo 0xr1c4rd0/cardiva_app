@@ -51,6 +51,8 @@ interface RFPUploadStatusProviderProps {
 
 // Multi-upload constants
 const MAX_CONCURRENT = 10
+const MAX_PARALLEL_UPLOADS = 3 // Max simultaneous uploads showing progress animation
+const UPLOAD_STAGGER_MS = 2000 // 2s delay between starting each upload
 const WEBHOOK_DELAY_MS = 2500 // 2.5s between n8n triggers
 const COMPLETED_CLEANUP_DELAY_MS = 5000 // Remove completed items after 5s
 
@@ -217,19 +219,29 @@ export function RFPUploadStatusProvider({ children }: RFPUploadStatusProviderPro
   }, [])
 
   // Process queue - triggered when queue changes
+  // Allows up to MAX_PARALLEL_UPLOADS concurrent uploads with staggered start times
   useEffect(() => {
     const processNext = async () => {
-      // Prevent concurrent processing
+      // Prevent concurrent processing of the same queue iteration
       if (isProcessingQueueRef.current) return
 
       const nextQueued = uploadQueue.find(q => q.status === 'queued')
       if (!nextQueued) return
 
-      // Check if there's already an upload in progress
-      const isUploading = uploadQueue.some(q => q.status === 'uploading')
-      if (isUploading) return
+      // Count active uploads (uploading or processing)
+      const activeCount = uploadQueue.filter(q =>
+        q.status === 'uploading' || q.status === 'processing'
+      ).length
+
+      // Only allow up to MAX_PARALLEL_UPLOADS concurrent
+      if (activeCount >= MAX_PARALLEL_UPLOADS) return
 
       isProcessingQueueRef.current = true
+
+      // Stagger uploads - wait if there are other active uploads
+      if (activeCount > 0) {
+        await new Promise(resolve => setTimeout(resolve, UPLOAD_STAGGER_MS))
+      }
 
       // Mark as uploading
       setUploadQueue(prev => prev.map(q =>

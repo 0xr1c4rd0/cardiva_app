@@ -116,6 +116,27 @@ export default async function RFPsPage({ searchParams }: RFPsPageProps) {
     console.error('Failed to fetch RFP jobs:', error)
   }
 
+  // Fetch profiles for uploader and last_editor display
+  // Collect unique user IDs from jobs
+  const userIds = new Set<string>()
+  for (const job of jobs ?? []) {
+    if (job.user_id) userIds.add(job.user_id)
+    if (job.last_edited_by) userIds.add(job.last_edited_by)
+  }
+
+  // Fetch profiles in a single query
+  const profilesMap = new Map<string, { email: string }>()
+  if (userIds.size > 0) {
+    const { data: profiles } = await supabase
+      .from('profiles')
+      .select('id, email')
+      .in('id', Array.from(userIds))
+
+    for (const profile of profiles ?? []) {
+      profilesMap.set(profile.id, { email: profile.email })
+    }
+  }
+
   // Compute review status for completed, unconfirmed jobs
   const completedUnconfirmedIds = (jobs ?? [])
     .filter(j => j.status === 'completed' && !j.confirmed_at)
@@ -123,7 +144,7 @@ export default async function RFPsPage({ searchParams }: RFPsPageProps) {
 
   const reviewStatuses = await computeReviewStatuses(supabase, completedUnconfirmedIds)
 
-  // Add review_status to each job
+  // Add review_status and profile data to each job
   const jobsWithStatus = (jobs ?? []).map(job => {
     let review_status: ReviewStatus = null
     if (job.status === 'completed') {
@@ -133,7 +154,12 @@ export default async function RFPsPage({ searchParams }: RFPsPageProps) {
         review_status = reviewStatuses.get(job.id) ?? 'revisto'
       }
     }
-    return { ...job, review_status }
+    return {
+      ...job,
+      review_status,
+      uploader: job.user_id ? profilesMap.get(job.user_id) ?? null : null,
+      last_editor: job.last_edited_by ? profilesMap.get(job.last_edited_by) ?? null : null,
+    }
   })
 
   return (

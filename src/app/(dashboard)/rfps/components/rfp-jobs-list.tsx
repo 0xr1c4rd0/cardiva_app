@@ -1,7 +1,8 @@
 'use client'
 
-import { useState, useEffect, useTransition } from 'react'
+import { useState, useEffect, useTransition, useRef } from 'react'
 import Link from 'next/link'
+import { useRouter } from 'next/navigation'
 import { formatDistanceToNow } from 'date-fns'
 import { pt } from 'date-fns/locale'
 import { useQueryStates, parseAsInteger, parseAsString } from 'nuqs'
@@ -130,12 +131,15 @@ const reviewStatusConfig = {
 }
 
 export function RFPJobsList({ initialJobs, totalCount, initialState }: RFPJobsListProps) {
+  const router = useRouter()
   const [jobs, setJobs] = useState<RFPJob[]>(initialJobs)
   const [currentTotalCount, setCurrentTotalCount] = useState(totalCount)
   const { activeJob, lastCompletedJob } = useRFPUploadStatus()
   const [deleteDialogOpen, setDeleteDialogOpen] = useState(false)
   const [jobToDelete, setJobToDelete] = useState<{ id: string; name: string } | null>(null)
   const [isPending, startTransition] = useTransition()
+  // Track job IDs that have already triggered a refresh to prevent duplicates
+  const refreshedJobsRef = useRef<Set<string>>(new Set())
 
   // URL state management
   const [{ page, pageSize, search, sortBy, sortOrder }, setParams] = useQueryStates(
@@ -192,6 +196,22 @@ export function RFPJobsList({ initialJobs, totalCount, initialState }: RFPJobsLi
       updateJobInList(lastCompletedJob)
     }
   }, [lastCompletedJob])
+
+  // Auto-refresh to update review_status when a job completes
+  // This triggers server-side computation of por_rever/revisto status
+  useEffect(() => {
+    if (lastCompletedJob?.status === 'completed') {
+      // Only refresh once per job to avoid duplicate refreshes
+      if (!refreshedJobsRef.current.has(lastCompletedJob.id)) {
+        refreshedJobsRef.current.add(lastCompletedJob.id)
+        // Small delay to let the completion animation finish
+        const timeout = setTimeout(() => {
+          router.refresh()
+        }, 1500)
+        return () => clearTimeout(timeout)
+      }
+    }
+  }, [lastCompletedJob, router])
 
   const handleViewPDF = async (e: React.MouseEvent, jobId: string) => {
     e.preventDefault()
@@ -343,22 +363,20 @@ export function RFPJobsList({ initialJobs, totalCount, initialState }: RFPJobsLi
                         {job.file_size && (
                           <span>{(job.file_size / 1024 / 1024).toFixed(2)} MB</span>
                         )}
-                        <span>-</span>
+                        <span className="text-muted-foreground/40">•</span>
                         <span>
                           {formatDistanceToNow(new Date(job.created_at), { addSuffix: true, locale: pt })}
                         </span>
                         {job.uploader && (
                           <>
-                            <span>-</span>
-                            <span>{formatUserEmail(job.uploader)}</span>
+                            <span className="text-muted-foreground/40">•</span>
+                            <span>Criado por {formatUserEmail(job.uploader)}</span>
                           </>
                         )}
-                        {job.last_editor && job.last_edited_by !== job.user_id && (
+                        {job.last_editor && job.last_edited_by && (
                           <>
-                            <span>-</span>
-                            <span className="text-muted-foreground/80">
-                              Editado por {formatUserEmail(job.last_editor)}
-                            </span>
+                            <span className="text-muted-foreground/40">•</span>
+                            <span>Atualizado por {formatUserEmail(job.last_editor)}</span>
                           </>
                         )}
                       </div>
