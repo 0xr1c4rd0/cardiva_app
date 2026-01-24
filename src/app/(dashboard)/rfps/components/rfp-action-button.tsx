@@ -1,6 +1,7 @@
 'use client'
 
 import { useState, useTransition } from 'react'
+import { useRouter } from 'next/navigation'
 import { CheckCircle2, Download, ChevronDown, Loader2, Mail, FileSpreadsheet } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import {
@@ -36,6 +37,7 @@ export function RFPActionButton({ jobId, isConfirmed, items }: RFPActionButtonPr
   const [isPending, startTransition] = useTransition()
   const [exportDialogOpen, setExportDialogOpen] = useState(false)
   const [exportType, setExportType] = useState<ExportType>('excel')
+  const router = useRouter()
 
   // Calculate pending count (items with suggestions that need review, excluding 100% matches)
   const pendingCount = items.filter((i) => {
@@ -60,6 +62,7 @@ export function RFPActionButton({ jobId, isConfirmed, items }: RFPActionButtonPr
         toast.success('Concurso confirmado', {
           description: 'O concurso esta pronto para exportacao.',
         })
+        router.refresh()
       } else {
         toast.error('Erro ao confirmar', {
           description: result.error,

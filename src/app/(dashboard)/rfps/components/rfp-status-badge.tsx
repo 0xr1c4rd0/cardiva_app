@@ -1,6 +1,7 @@
 'use client'
 
 import { useTransition } from 'react'
+import { useRouter } from 'next/navigation'
 import { Clock, CheckCircle2, Undo2, Loader2 } from 'lucide-react'
 import { Badge } from '@/components/ui/badge'
 import { cn } from '@/lib/utils'
@@ -79,6 +80,7 @@ function computeReviewStatus(
  */
 export function RFPStatusBadge({ jobId, isConfirmed, items }: RFPStatusBadgeProps) {
   const [isPending, startTransition] = useTransition()
+  const router = useRouter()
   const status = computeReviewStatus(isConfirmed, items)
   const config = statusConfig[status]
   const StatusIcon = config.icon
@@ -90,6 +92,7 @@ export function RFPStatusBadge({ jobId, isConfirmed, items }: RFPStatusBadgeProp
         toast.success('Confirmacao revertida', {
           description: 'O concurso pode ser editado novamente.',
         })
+        router.refresh()
       } else {
         toast.error('Erro ao reverter', {
           description: result.error,
