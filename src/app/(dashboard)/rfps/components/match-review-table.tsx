@@ -75,11 +75,10 @@ function SortableHeader({ column, label, sortBy, sortDir, onSort, className = ''
 }
 
 export function MatchReviewTable({ jobId, items, totalCount, initialState }: MatchReviewTableProps) {
+  // useTransition provides loading state and is REQUIRED by nuqs v2+ for server re-render
   const [isPending, startTransition] = useTransition()
 
-  // URL state management
-  // Use fixed defaults for sortBy/sortDir to ensure nuqs properly updates URL
-  // (dynamic defaults from initialState cause params to be stripped incorrectly)
+  // URL state management with startTransition for proper server component re-render
   const [{ page, pageSize, search, status, sortBy, sortDir }, setParams] = useQueryStates(
     {
       page: parseAsInteger.withDefault(1),
@@ -89,49 +88,40 @@ export function MatchReviewTable({ jobId, items, totalCount, initialState }: Mat
       sortBy: parseAsString.withDefault('lote'),
       sortDir: parseAsString.withDefault('asc'),
     },
-    { shallow: false }
+    {
+      shallow: false,
+      startTransition, // CRITICAL: Required for server re-render with nuqs v2+
+    }
   )
 
-  // URL state handlers
+  // URL state handlers - setParams directly triggers server navigation via startTransition
   const handleSearchChange = (value: string) => {
-    startTransition(() => {
-      setParams({ search: value || null, page: 1 })
-    })
+    setParams({ search: value || null, page: 1 })
   }
 
   const handleStatusChange = (newStatus: StatusFilter) => {
-    startTransition(() => {
-      setParams({ status: newStatus === 'all' ? null : newStatus, page: 1 })
-    })
+    setParams({ status: newStatus === 'all' ? null : newStatus, page: 1 })
   }
 
   const handleSortChange = (column: SortColumn) => {
     const newDir = sortBy === column && sortDir === 'asc' ? 'desc' : 'asc'
-    // Update URL params - shallow: false triggers server-side navigation automatically
-    // Do NOT call router.refresh() as it overwrites the URL update
     setParams({
       sortBy: column,
       sortDir: newDir,
-      page: null // Reset to first page (null = default = 1)
+      page: 1
     })
   }
 
   const handlePageChange = (newPage: number) => {
-    startTransition(() => {
-      setParams({ page: newPage === 1 ? null : newPage })
-    })
+    setParams({ page: newPage === 1 ? null : newPage })
   }
 
   const handlePageSizeChange = (newPageSize: number) => {
-    startTransition(() => {
-      setParams({ pageSize: newPageSize === 25 ? null : newPageSize, page: 1 })
-    })
+    setParams({ pageSize: newPageSize === 25 ? null : newPageSize, page: 1 })
   }
 
   const handleClearFilters = () => {
-    startTransition(() => {
-      setParams({ search: null, status: null, page: 1 })
-    })
+    setParams({ search: null, status: null, page: 1 })
   }
 
   // Empty state for search results
