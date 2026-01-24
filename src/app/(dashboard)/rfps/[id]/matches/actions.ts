@@ -4,7 +4,7 @@ import { createClient } from '@/lib/supabase/server'
 import { revalidatePath } from 'next/cache'
 import type { SupabaseClient } from '@supabase/supabase-js'
 
-interface ActionResult {
+export interface ActionResult {
   success: boolean
   error?: string
 }
@@ -503,6 +503,48 @@ export async function setManualMatch(
     return { success: true }
   } catch (error) {
     console.error('setManualMatch error:', error)
+    return {
+      success: false,
+      error: error instanceof Error ? error.message : 'Unknown error',
+    }
+  }
+}
+
+/**
+ * Confirm an RFP job, marking it as ready for export.
+ * Sets the confirmed_at timestamp and tracks who confirmed it.
+ */
+export async function confirmRFP(jobId: string): Promise<ActionResult> {
+  try {
+    const supabase = await createClient()
+
+    // Verify user is authenticated
+    const {
+      data: { user },
+    } = await supabase.auth.getUser()
+    if (!user) {
+      return { success: false, error: 'Not authenticated' }
+    }
+
+    const { error } = await supabase
+      .from('rfp_upload_jobs')
+      .update({
+        confirmed_at: new Date().toISOString(),
+        last_edited_by: user.id,
+      })
+      .eq('id', jobId)
+
+    if (error) {
+      return { success: false, error: error.message }
+    }
+
+    // Invalidate cache to refresh page data
+    revalidatePath('/rfps')
+    revalidatePath(`/rfps/${jobId}/matches`)
+
+    return { success: true }
+  } catch (error) {
+    console.error('confirmRFP error:', error)
     return {
       success: false,
       error: error instanceof Error ? error.message : 'Unknown error',

@@ -5,6 +5,7 @@ import { ChevronRight } from 'lucide-react'
 import { MatchReviewTable } from '@/app/(dashboard)/rfps/components/match-review-table'
 import { ReviewStatsChips } from '@/app/(dashboard)/rfps/components/review-stats-chips'
 import { HeaderExportButton } from '@/app/(dashboard)/rfps/components/header-export-button'
+import { ConfirmRFPButton } from '@/app/(dashboard)/rfps/components/confirm-rfp-button'
 import { autoAcceptExactMatches } from './actions'
 import type { RFPItemWithMatches, MatchSuggestion } from '@/types/rfp'
 
@@ -58,9 +59,10 @@ export default async function MatchReviewPage({ params, searchParams }: PageProp
   }
 
   // Fetch job (all authenticated users can access any RFP)
+  // Include confirmed_at for the Confirm button state
   const { data: job, error: jobError } = await supabase
     .from('rfp_upload_jobs')
-    .select('*')
+    .select('id, file_name, status, confirmed_at')
     .eq('id', jobId)
     .single()
 
@@ -237,6 +239,7 @@ export default async function MatchReviewPage({ params, searchParams }: PageProp
         </h1>
         <div className="flex items-center gap-4 shrink-0">
           <ReviewStatsChips items={allItemsWithSortedMatches} />
+          <ConfirmRFPButton jobId={jobId} isConfirmed={!!job.confirmed_at} />
           <HeaderExportButton items={allItemsWithSortedMatches} jobId={jobId} />
         </div>
       </div>
