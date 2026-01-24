@@ -1,6 +1,6 @@
 'use client'
 
-import { useState, useEffect, useTransition } from 'react'
+import { useState, useEffect, useTransition, useCallback } from 'react'
 import Link from 'next/link'
 import { formatDistanceToNow } from 'date-fns'
 import { pt } from 'date-fns/locale'
@@ -24,6 +24,9 @@ import { RFPListSkeleton } from './rfp-list-skeleton'
 import { getRFPFileUrl } from '../actions'
 
 import type { ReviewStatus } from '../page'
+
+// Animation duration for deletion (ms)
+const DELETE_ANIMATION_DURATION = 400
 
 interface RFPJob {
   id: string
@@ -137,12 +140,136 @@ const reviewStatusConfig = {
   },
 }
 
+// Individual job row component with animation support
+interface RFPJobRowProps {
+  job: RFPJob
+  isDeleting: boolean
+  onViewPDF: (e: React.MouseEvent, jobId: string) => void
+  onDeleteClick: (e: React.MouseEvent, job: RFPJob) => void
+  onAnimationComplete: (jobId: string) => void
+}
+
+function RFPJobRow({ job, isDeleting, onViewPDF, onDeleteClick, onAnimationComplete }: RFPJobRowProps) {
+  const [animationPhase, setAnimationPhase] = useState<'normal' | 'collapsing'>('normal')
+
+  // Start collapse animation when isDeleting becomes true
+  useEffect(() => {
+    if (isDeleting && animationPhase === 'normal') {
+      // Small delay to ensure state update, then start collapsing
+      requestAnimationFrame(() => {
+        setAnimationPhase('collapsing')
+      })
+    }
+  }, [isDeleting, animationPhase])
+
+  // Handle transition end
+  const handleTransitionEnd = useCallback((e: React.TransitionEvent) => {
+    if (e.propertyName === 'opacity' && animationPhase === 'collapsing') {
+      onAnimationComplete(job.id)
+    }
+  }, [animationPhase, job.id, onAnimationComplete])
+
+  // For completed jobs, use review status; otherwise use processing status
+  const isCompleted = job.status === 'completed'
+  const reviewStatus = job.review_status && reviewStatusConfig[job.review_status]
+  const processingStatus = statusConfig[job.status]
+
+  // Use review status for completed jobs, processing status otherwise
+  const displayStatus = isCompleted && reviewStatus ? reviewStatus : processingStatus
+  const StatusIcon = displayStatus.icon
+  const isClickable = job.status === 'completed'
+  const showActions = job.status === 'completed' || job.status === 'failed'
+
+  const content = (
+    <div
+      onTransitionEnd={handleTransitionEnd}
+      className={cn(
+        "flex items-center justify-between p-4 border rounded-lg transition-all ease-out",
+        isClickable ? "hover:bg-muted/50 cursor-pointer" : "",
+        animationPhase === 'collapsing' && "opacity-0 max-h-0 py-0 px-4 my-0 overflow-hidden border-transparent"
+      )}
+      style={{
+        transitionDuration: animationPhase === 'collapsing' ? `${DELETE_ANIMATION_DURATION}ms` : '150ms',
+        maxHeight: animationPhase === 'collapsing' ? 0 : 200,
+        marginBottom: animationPhase === 'collapsing' ? 0 : undefined,
+      }}
+    >
+      <div className="flex items-center gap-4">
+        <FileText className="h-8 w-8 text-muted-foreground" />
+        <div>
+          <p className="font-medium">{job.file_name}</p>
+          <div className="flex items-center gap-2 text-sm text-muted-foreground">
+            <span>
+              Criado {formatRelativeTime(new Date(job.created_at))}
+              {job.uploader && ` por ${formatUserEmail(job.uploader)}`}
+            </span>
+            {job.last_editor && job.last_edited_by && (
+              <>
+                <span className="text-muted-foreground/40">•</span>
+                <span>
+                  Editado {formatRelativeTime(new Date(job.updated_at))}
+                  {` por ${formatUserEmail(job.last_editor)}`}
+                </span>
+              </>
+            )}
+          </div>
+          {job.error_message && (
+            <p className="text-sm text-destructive mt-1">{job.error_message}</p>
+          )}
+        </div>
+      </div>
+
+      <div className="flex items-center gap-2">
+        <Badge
+          variant={displayStatus.variant}
+          className={cn("flex items-center gap-1", displayStatus.badgeClassName)}
+        >
+          <StatusIcon className={cn('h-3 w-3', displayStatus.className)} />
+          {displayStatus.label}
+        </Badge>
+
+        {showActions && (
+          <>
+            <Button
+              variant="outline"
+              size="icon"
+              className="h-8 w-8"
+              onClick={(e) => onViewPDF(e, job.id)}
+              title="Ver PDF"
+            >
+              <FileDown className="h-4 w-4" />
+            </Button>
+            <Button
+              variant="outline"
+              size="icon"
+              className="h-8 w-8 hover:bg-destructive hover:text-white hover:border-destructive"
+              onClick={(e) => onDeleteClick(e, job)}
+              title="Eliminar"
+            >
+              <Trash2 className="h-4 w-4" />
+            </Button>
+          </>
+        )}
+      </div>
+    </div>
+  )
+
+  return isClickable ? (
+    <Link href={`/rfps/${job.id}/matches`}>
+      {content}
+    </Link>
+  ) : (
+    <div>{content}</div>
+  )
+}
+
 export function RFPJobsList({ initialJobs, totalCount, initialState }: RFPJobsListProps) {
   const [jobs, setJobs] = useState<RFPJob[]>(initialJobs)
   const [currentTotalCount, setCurrentTotalCount] = useState(totalCount)
   const { activeJob, lastCompletedJob, triggerKPIRefresh } = useRFPUploadStatus()
   const [deleteDialogOpen, setDeleteDialogOpen] = useState(false)
   const [jobToDelete, setJobToDelete] = useState<{ id: string; name: string } | null>(null)
+  const [deletingIds, setDeletingIds] = useState<Set<string>>(new Set())
   const [isPending, startTransition] = useTransition()
 
   // URL state management
@@ -246,15 +373,31 @@ export function RFPJobsList({ initialJobs, totalCount, initialState }: RFPJobsLi
     setDeleteDialogOpen(true)
   }
 
+  // Called when delete dialog confirms deletion
   const handleDeleted = () => {
     if (jobToDelete) {
-      setJobs((prev) => prev.filter((j) => j.id !== jobToDelete.id))
-      setCurrentTotalCount((prev) => Math.max(0, prev - 1))
-      setJobToDelete(null)
-      // Trigger KPI refresh
-      triggerKPIRefresh()
+      // Start the deletion animation
+      setDeletingIds(prev => new Set(prev).add(jobToDelete.id))
+      setDeleteDialogOpen(false)
+      // Note: actual removal happens in handleAnimationComplete
     }
   }
+
+  // Called when the delete animation completes
+  const handleAnimationComplete = useCallback((jobId: string) => {
+    // Remove from jobs list
+    setJobs((prev) => prev.filter((j) => j.id !== jobId))
+    setCurrentTotalCount((prev) => Math.max(0, prev - 1))
+    // Clean up deleting state
+    setDeletingIds(prev => {
+      const next = new Set(prev)
+      next.delete(jobId)
+      return next
+    })
+    setJobToDelete(null)
+    // Trigger KPI refresh
+    triggerKPIRefresh()
+  }, [triggerKPIRefresh])
 
   // Store original jobs for filtering (reset when initialJobs changes)
   const [originalJobs, setOriginalJobs] = useState<RFPJob[]>(initialJobs)
@@ -380,93 +523,16 @@ export function RFPJobsList({ initialJobs, totalCount, initialState }: RFPJobsLi
         ) : (
           // Jobs list
           <div className="flex flex-col gap-2">
-            {jobs.map((job) => {
-              // For completed jobs, use review status; otherwise use processing status
-              const isCompleted = job.status === 'completed'
-              const reviewStatus = job.review_status && reviewStatusConfig[job.review_status]
-              const processingStatus = statusConfig[job.status]
-
-              // Use review status for completed jobs, processing status otherwise
-              const displayStatus = isCompleted && reviewStatus ? reviewStatus : processingStatus
-              const StatusIcon = displayStatus.icon
-              const isClickable = job.status === 'completed'
-              const showActions = job.status === 'completed' || job.status === 'failed'
-
-              const content = (
-                <div
-                  className={cn(
-                    "flex items-center justify-between p-4 border rounded-lg transition-colors",
-                    isClickable ? "hover:bg-muted/50 cursor-pointer" : ""
-                  )}
-                >
-                  <div className="flex items-center gap-4">
-                    <FileText className="h-8 w-8 text-muted-foreground" />
-                    <div>
-                      <p className="font-medium">{job.file_name}</p>
-                      <div className="flex items-center gap-2 text-sm text-muted-foreground">
-                        <span>
-                          Criado {formatRelativeTime(new Date(job.created_at))}
-                          {job.uploader && ` por ${formatUserEmail(job.uploader)}`}
-                        </span>
-                        {job.last_editor && job.last_edited_by && (
-                          <>
-                            <span className="text-muted-foreground/40">•</span>
-                            <span>
-                              Editado {formatRelativeTime(new Date(job.updated_at))}
-                              {` por ${formatUserEmail(job.last_editor)}`}
-                            </span>
-                          </>
-                        )}
-                      </div>
-                      {job.error_message && (
-                        <p className="text-sm text-destructive mt-1">{job.error_message}</p>
-                      )}
-                    </div>
-                  </div>
-
-                  <div className="flex items-center gap-2">
-                    <Badge
-                      variant={displayStatus.variant}
-                      className={cn("flex items-center gap-1", displayStatus.badgeClassName)}
-                    >
-                      <StatusIcon className={cn('h-3 w-3', displayStatus.className)} />
-                      {displayStatus.label}
-                    </Badge>
-
-                    {showActions && (
-                      <>
-                        <Button
-                          variant="outline"
-                          size="icon"
-                          className="h-8 w-8"
-                          onClick={(e) => handleViewPDF(e, job.id)}
-                          title="Ver PDF"
-                        >
-                          <FileDown className="h-4 w-4" />
-                        </Button>
-                        <Button
-                          variant="outline"
-                          size="icon"
-                          className="h-8 w-8 hover:bg-destructive hover:text-white hover:border-destructive"
-                          onClick={(e) => handleDeleteClick(e, job)}
-                          title="Eliminar"
-                        >
-                          <Trash2 className="h-4 w-4" />
-                        </Button>
-                      </>
-                    )}
-                  </div>
-                </div>
-              )
-
-              return isClickable ? (
-                <Link key={job.id} href={`/rfps/${job.id}/matches`}>
-                  {content}
-                </Link>
-              ) : (
-                <div key={job.id}>{content}</div>
-              )
-            })}
+            {jobs.map((job) => (
+              <RFPJobRow
+                key={job.id}
+                job={job}
+                isDeleting={deletingIds.has(job.id)}
+                onViewPDF={handleViewPDF}
+                onDeleteClick={handleDeleteClick}
+                onAnimationComplete={handleAnimationComplete}
+              />
+            ))}
           </div>
         )}
 
