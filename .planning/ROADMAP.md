@@ -22,7 +22,7 @@ Decimal phases appear between their surrounding integers in numeric order.
 - [ ] **Phase 8: Bulk Operations** - Manual correction, confirmation step (scope modified)
 - [ ] **Phase 9: Export & Email** - Excel export, email send, preview, configuration
 - [ ] **Phase 10: History & Polish** - RFP history, search, re-download, final polish
-- [ ] **Phase 10.1: RFP Upload Polish** - INSERTED: Multi-upload, multi-user, KPI fixes, sorting fix
+- [x] **Phase 10.1: RFP Upload Polish** - INSERTED: Multi-upload, multi-user, KPI fixes, sorting fix
 
 ## Phase Details
 
@@ -208,11 +208,11 @@ Plans:
 **Plans**: 5 plans in 2 waves
 
 Plans:
-- [ ] 10.1-01-PLAN.md — Fix match review table sorting (add startTransition to nuqs)
-- [ ] 10.1-02-PLAN.md — KPI calculations and 3-state model with confirmation workflow
-- [ ] 10.1-03-PLAN.md — Multi-upload support with progress UI and queue management
-- [ ] 10.1-04-PLAN.md — Multi-user permissions and real-time sync (RLS updates)
-- [ ] 10.1-05-PLAN.md — Uploader/editor display and table design alignment
+- [x] 10.1-01-PLAN.md — Fix match review table sorting (add startTransition to nuqs)
+- [x] 10.1-02-PLAN.md — KPI calculations and 3-state model with confirmation workflow
+- [x] 10.1-03-PLAN.md — Multi-upload support with progress UI and queue management
+- [x] 10.1-04-PLAN.md — Multi-user permissions and real-time sync (RLS updates)
+- [x] 10.1-05-PLAN.md — Uploader/editor display and table design alignment
 
 ## Progress
 
@@ -231,8 +231,8 @@ Phases execute in numeric order: 1 -> 2 -> 3 -> ... -> 10
 | 8. Bulk Operations | 0/2 | Not started | - |
 | 9. Export & Email | 0/3 | Not started | - |
 | 10. History & Polish | 0/3 | Not started | - |
-| 10.1 RFP Upload Polish | 0/5 | Not started | - |
+| 10.1 RFP Upload Polish | 5/5 | Complete | 2026-01-24 |
 
 ---
 *Created: 2025-01-21*
-*Last updated: 2026-01-24 after Phase 10.1 planning*
+*Last updated: 2026-01-24 after Phase 10.1 completion*
