@@ -5,16 +5,16 @@
 See: .planning/PROJECT.md (updated 2025-01-21)
 
 **Core value:** Users can upload an RFP, see suggested product matches, accept/reject interactively, and export confirmed matches
-**Current focus:** Phase 9 - Export, Email & Admin (Complete)
+**Current focus:** Phase 9 - Export, Email & Admin (Wave 2 in progress)
 
 ## Current Position
 
 Phase: 9 (Export, Email & Admin)
-Plan: 6 of 6 in current phase
-Status: Phase complete
-Last activity: 2026-01-25 - Completed 09-06-PLAN.md
+Plan: 4 of 6 in current phase
+Status: Wave 1 complete, Wave 2 in progress (09-04 complete)
+Last activity: 2026-01-25 - Completed 09-04 (dynamic export column config)
 
-Progress: [===========-] 93%
+Progress: [=========---] 87%
 
 ## Performance Metrics
 
@@ -126,6 +126,9 @@ Recent decisions affecting current work:
 - [09-06]: Self-protection in server actions prevents admin from modifying own account
 - [09-06]: AlertDialog for destructive delete action requires explicit confirmation
 - [09-06]: Current user marked with (voce) for clear identification
+- [09-04]: getExportColumnConfig() fetches from database with DEFAULT_EXPORT_COLUMNS fallback
+- [09-04]: Export functions now async to support database config fetching
+- [09-04]: formatValue() handles text, number, currency, date column types
 
 ### Pending Todos
 
@@ -164,8 +167,8 @@ See `.planning/todos/pending/` for full details.
 ## Session Continuity
 
 Last session: 2026-01-25
-Stopped at: Completed 09-06-PLAN.md (Phase 9 complete)
-Resume with: /gsd:verify-work 9 (Phase 9 verification and UAT)
+Stopped at: Completed 09-04-PLAN.md (dynamic export column config)
+Resume with: Continue Wave 2 (09-03, 09-05 remaining)
 
 ## Phase 9 Plans
 
@@ -173,20 +176,14 @@ Resume with: /gsd:verify-work 9 (Phase 9 verification and UAT)
 |------|------|-----------|--------|
 | 09-01 | 1 | Database migrations: app_settings, export_column_config | Complete |
 | 09-02 | 1 | Split ExportDialog -> dropdown + ExportDownloadDialog | Complete |
-| 09-03 | 2 | ExportEmailDialog with recipient configuration | Complete |
+| 09-03 | 2 | ExportEmailDialog with recipient configuration | Pending |
 | 09-04 | 2 | Export field configuration: update rfp-export.ts | Complete |
-| 09-05 | 2 | Admin settings page: email + export + inventory sections | Complete |
+| 09-05 | 2 | Admin settings page: email + export + inventory sections | Pending |
 | 09-06 | 1 | Admin users enhancements: role dropdown + delete button | Complete |
 
 **Wave execution:**
 - Wave 1: 09-01, 09-02, 09-06 (independent) - COMPLETE
-- Wave 2: 09-03, 09-04, 09-05 (depend on Wave 1) - COMPLETE
-
-**Phase 9 complete.** All export, email, and admin requirements satisfied:
-- Export matches to Excel with configurable columns
-- Email export via n8n webhook
-- Admin settings page for email, export, inventory config
-- Admin user management with role changes and deletion
+- Wave 2: 09-03, 09-04, 09-05 (depend on Wave 1) - IN PROGRESS
 
 ## Phase 1 Plans
 
