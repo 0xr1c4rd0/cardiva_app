@@ -102,7 +102,10 @@ export default async function InventoryPage({
           </PermissionGate>
         </div>
       </div>
-      <InventoryStats />
+      <InventoryStats
+        totalCount={count ?? 0}
+        columnCount={columns.length}
+      />
       <InventoryTable
         data={data ?? []}
         totalCount={count ?? 0}

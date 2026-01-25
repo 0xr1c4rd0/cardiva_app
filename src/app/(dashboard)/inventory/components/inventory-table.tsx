@@ -1,6 +1,6 @@
 'use client'
 
-import { useMemo, useTransition } from 'react'
+import { useState, useEffect, useMemo, useTransition } from 'react'
 import {
   useReactTable,
   getCoreRowModel,
@@ -119,8 +119,24 @@ export function InventoryTable({
 }: InventoryTableProps) {
   const [isPending, startTransition] = useTransition()
 
+  // Local state for instant client-side updates
+  const [localData, setLocalData] = useState<Artigo[]>(data)
+  const [originalData, setOriginalData] = useState<Artigo[]>(data)
+
+  // Update local state when server data arrives
+  useEffect(() => {
+    setLocalData(data)
+    setOriginalData(data)
+  }, [data])
+
   // Generate columns from config
   const columns = useMemo(() => createColumns(columnConfig), [columnConfig])
+
+  // Get searchable column names for client-side filtering
+  const searchableColumnNames = useMemo(() =>
+    columnConfig.filter(c => c.searchable).map(c => c.column_name),
+    [columnConfig]
+  )
 
   const [{ page, pageSize, search, sortBy, sortOrder }, setParams] =
     useQueryStates(
@@ -134,10 +150,45 @@ export function InventoryTable({
       { shallow: false }
     )
 
+  // Client-side sorting function
+  const sortData = (dataList: Artigo[], column: string, order: 'asc' | 'desc'): Artigo[] => {
+    return [...dataList].sort((a, b) => {
+      const aVal = a[column as keyof Artigo]
+      const bVal = b[column as keyof Artigo]
+
+      // Handle null/undefined
+      if (aVal == null && bVal == null) return 0
+      if (aVal == null) return order === 'asc' ? 1 : -1
+      if (bVal == null) return order === 'asc' ? -1 : 1
+
+      // Compare based on type
+      let comparison = 0
+      if (typeof aVal === 'number' && typeof bVal === 'number') {
+        comparison = aVal - bVal
+      } else {
+        comparison = String(aVal).localeCompare(String(bVal), 'pt')
+      }
+
+      return order === 'asc' ? comparison : -comparison
+    })
+  }
+
+  // Client-side search filtering function
+  const filterBySearch = (dataList: Artigo[], searchTerm: string): Artigo[] => {
+    if (!searchTerm) return dataList
+    const searchLower = searchTerm.toLowerCase()
+    return dataList.filter(item => {
+      return searchableColumnNames.some(colName => {
+        const value = item[colName as keyof Artigo]
+        return value != null && String(value).toLowerCase().includes(searchLower)
+      })
+    })
+  }
+
   const sorting: SortingState = [{ id: sortBy, desc: sortOrder === 'desc' }]
 
   const table = useReactTable({
-    data,
+    data: localData,
     columns,
     manualPagination: true,
     manualSorting: true,
@@ -162,23 +213,33 @@ export function InventoryTable({
       })
     },
     onSortingChange: (updater) => {
-      startTransition(() => {
-        const current: SortingState = [{ id: sortBy, desc: sortOrder === 'desc' }]
-        const newState =
-          typeof updater === 'function' ? updater(current) : updater
-        if (newState[0]) {
+      const current: SortingState = [{ id: sortBy, desc: sortOrder === 'desc' }]
+      const newState =
+        typeof updater === 'function' ? updater(current) : updater
+      if (newState[0]) {
+        const newSortBy = newState[0].id
+        const newSortOrder = newState[0].desc ? 'desc' : 'asc'
+        // Instant client-side sort
+        setLocalData(prev => sortData(prev, newSortBy, newSortOrder as 'asc' | 'desc'))
+        // Update URL in background
+        startTransition(() => {
           setParams({
-            sortBy: newState[0].id,
-            sortOrder: newState[0].desc ? 'desc' : 'asc',
+            sortBy: newSortBy,
+            sortOrder: newSortOrder,
             page: 1,
           })
-        }
-      })
+        })
+      }
     },
     getCoreRowModel: getCoreRowModel(),
   })
 
   const handleSearchChange = (value: string) => {
+    // Instant client-side filter
+    const filtered = filterBySearch(originalData, value)
+    const sorted = sortData(filtered, sortBy, sortOrder as 'asc' | 'desc')
+    setLocalData(sorted)
+    // Update URL in background
     startTransition(() => {
       setParams({ search: value || null, page: 1 })
     })
