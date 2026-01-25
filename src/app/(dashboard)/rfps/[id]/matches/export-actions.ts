@@ -40,16 +40,15 @@ export async function sendExportEmail(
       return { success: false, error: 'Not authenticated' }
     }
 
-    // Verify job ownership
+    // Verify job exists (all authenticated users can access all jobs per 10.1-04)
     const { data: job, error: jobError } = await supabase
       .from('rfp_upload_jobs')
       .select('id')
       .eq('id', params.jobId)
-      .eq('user_id', user.id)
       .single()
 
     if (jobError || !job) {
-      return { success: false, error: 'Job not found or access denied' }
+      return { success: false, error: 'Job not found' }
     }
 
     // Validate email format (basic check)
