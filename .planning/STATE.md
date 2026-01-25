@@ -10,11 +10,11 @@ See: .planning/PROJECT.md (updated 2025-01-21)
 ## Current Position
 
 Phase: 9 (Export, Email & Admin)
-Plan: 4 of 6 in current phase
-Status: Wave 1 complete, Wave 2 in progress (09-04 complete)
-Last activity: 2026-01-25 - Completed 09-04 (dynamic export column config)
+Plan: 5 of 6 in current phase
+Status: Wave 1 complete, Wave 2 in progress (09-03, 09-04 complete)
+Last activity: 2026-01-25 - Completed 09-03 (ExportEmailDialog with recipient modes)
 
-Progress: [=========---] 87%
+Progress: [=========---] 88%
 
 ## Performance Metrics
 
@@ -129,6 +129,9 @@ Recent decisions affecting current work:
 - [09-04]: getExportColumnConfig() fetches from database with DEFAULT_EXPORT_COLUMNS fallback
 - [09-04]: Export functions now async to support database config fetching
 - [09-04]: formatValue() handles text, number, currency, date column types
+- [09-03]: 4 email recipient modes: no-defaults, locked, add-only, replaceable
+- [09-03]: Default emails as secondary badges, user-added as outline badges
+- [09-03]: Max 10 emails total, sendExportEmail uses comma-separated string
 
 ### Pending Todos
 
@@ -167,8 +170,8 @@ See `.planning/todos/pending/` for full details.
 ## Session Continuity
 
 Last session: 2026-01-25
-Stopped at: Completed 09-04-PLAN.md (dynamic export column config)
-Resume with: Continue Wave 2 (09-03, 09-05 remaining)
+Stopped at: Completed 09-03-PLAN.md (ExportEmailDialog with recipient modes)
+Resume with: Continue Wave 2 (09-05 remaining)
 
 ## Phase 9 Plans
 
@@ -176,7 +179,7 @@ Resume with: Continue Wave 2 (09-03, 09-05 remaining)
 |------|------|-----------|--------|
 | 09-01 | 1 | Database migrations: app_settings, export_column_config | Complete |
 | 09-02 | 1 | Split ExportDialog -> dropdown + ExportDownloadDialog | Complete |
-| 09-03 | 2 | ExportEmailDialog with recipient configuration | Pending |
+| 09-03 | 2 | ExportEmailDialog with recipient configuration | Complete |
 | 09-04 | 2 | Export field configuration: update rfp-export.ts | Complete |
 | 09-05 | 2 | Admin settings page: email + export + inventory sections | Pending |
 | 09-06 | 1 | Admin users enhancements: role dropdown + delete button | Complete |
