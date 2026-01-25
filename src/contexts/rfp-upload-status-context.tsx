@@ -25,11 +25,13 @@ export interface RFPUploadJob {
 // Multi-upload queue types
 export interface QueuedUpload {
   id: string              // Temporary ID until job created
-  file: File
+  file: File | null       // Null for restored jobs (after page refresh)
   status: 'queued' | 'uploading' | 'processing' | 'completed' | 'failed'
   jobId?: string          // Set after job created in DB
   startedAt?: Date
   error?: string
+  isRestored?: boolean    // True when restored from DB after page refresh
+  fileName?: string       // For display when file is null (restored jobs)
 }
 
 interface RFPUploadStatusContextValue {
@@ -197,6 +199,40 @@ export function RFPUploadStatusProvider({ children }: RFPUploadStatusProviderPro
     })
   }, [])
 
+  // Restore processing jobs from DB on mount (for page refresh persistence)
+  useEffect(() => {
+    const restoreActiveJobs = async () => {
+      const { data: activeJobs, error } = await supabase
+        .from('rfp_upload_jobs')
+        .select('*')
+        .in('status', ['pending', 'processing'])
+        .order('created_at', { ascending: false })
+        .limit(MAX_PARALLEL_UPLOADS)
+
+      if (error || !activeJobs || activeJobs.length === 0) return
+
+      setUploadQueue(prev => {
+        // Don't add duplicates - check by jobId
+        const existingJobIds = new Set(prev.filter(q => q.jobId).map(q => q.jobId))
+        const newItems: QueuedUpload[] = activeJobs
+          .filter(job => !existingJobIds.has(job.id))
+          .map(job => ({
+            id: job.id,
+            file: null,
+            status: job.status === 'pending' ? 'uploading' as const : 'processing' as const,
+            jobId: job.id,
+            startedAt: new Date(job.created_at),
+            isRestored: true,
+            fileName: job.file_name,
+          }))
+
+        return newItems.length > 0 ? [...newItems, ...prev] : prev
+      })
+    }
+
+    restoreActiveJobs()
+  }, [supabase])
+
   // Process queue - triggered when queue changes
   // Allows up to MAX_PARALLEL_UPLOADS concurrent uploads with staggered start times
   useEffect(() => {
@@ -233,6 +269,9 @@ export function RFPUploadStatusProvider({ children }: RFPUploadStatusProviderPro
       isProcessingQueueRef.current = false
 
       // Now do the actual upload (without holding the lock)
+      // Skip if no file (restored jobs don't have files, but they also won't be 'queued')
+      if (!nextQueued.file) return
+
       try {
         const formData = new FormData()
         formData.append('file', nextQueued.file)

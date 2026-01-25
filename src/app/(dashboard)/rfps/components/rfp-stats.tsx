@@ -31,14 +31,14 @@ interface KPIData {
   confirmedCount: number
 }
 
-export function RFPStats() {
-  const [data, setData] = useState<KPIData>({
-    totalCount: 0,
-    porReverCount: 0,
-    revistosCount: 0,
-    confirmedCount: 0,
-  })
-  const [isLoading, setIsLoading] = useState(true)
+interface RFPStatsProps {
+  initialKPIs: KPIData
+}
+
+export function RFPStats({ initialKPIs }: RFPStatsProps) {
+  // Initialize with server-provided data - no loading state needed
+  const [data, setData] = useState<KPIData>(initialKPIs)
+  const [isLoading, setIsLoading] = useState(false)
   const { refreshTrigger } = useRFPUploadStatus()
   const supabase = createClient()
 
@@ -134,16 +134,11 @@ export function RFPStats() {
     setIsLoading(false)
   }, [supabase])
 
-  // Initial fetch
-  useEffect(() => {
-    fetchKPIs()
-  }, [fetchKPIs])
-
   // Refetch when refreshTrigger changes (job completed/failed/deleted)
+  // Skip initial (refreshTrigger === 0) since we already have server data
+  // Fetch silently without showing loading state - current data remains visible
   useEffect(() => {
-    // Skip initial render
     if (refreshTrigger === 0) return
-
     fetchKPIs()
   }, [refreshTrigger, fetchKPIs])
 

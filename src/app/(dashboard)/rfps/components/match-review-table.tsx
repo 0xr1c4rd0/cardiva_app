@@ -1,6 +1,6 @@
 'use client'
 
-import { useState, useTransition } from 'react'
+import { useState, useEffect, useTransition } from 'react'
 import { useQueryStates, parseAsInteger, parseAsString } from 'nuqs'
 import { Check, X, Loader2, SearchX, ArrowUpDown, ArrowUp, ArrowDown } from 'lucide-react'
 import {
@@ -83,6 +83,29 @@ export function MatchReviewTable({ jobId, items, totalCount, initialState, onIte
   // useTransition provides loading state and is REQUIRED by nuqs v2+ for server re-render
   const [isPending, startTransition] = useTransition()
 
+  // Local state for instant client-side updates
+  const [localItems, setLocalItems] = useState<RFPItemWithMatches[]>(items)
+  const [originalItems, setOriginalItems] = useState<RFPItemWithMatches[]>(items)
+
+  // Update local state when server data arrives
+  useEffect(() => {
+    setLocalItems(items)
+    setOriginalItems(items)
+  }, [items])
+
+  // Wrapped onItemUpdate that also updates local state immediately
+  const handleItemUpdate = (updatedItem: RFPItemWithMatches) => {
+    // Update local state immediately for instant feedback
+    setLocalItems(prev => prev.map(item =>
+      item.id === updatedItem.id ? updatedItem : item
+    ))
+    setOriginalItems(prev => prev.map(item =>
+      item.id === updatedItem.id ? updatedItem : item
+    ))
+    // Also notify parent
+    onItemUpdate(updatedItem)
+  }
+
   // URL state management with startTransition for proper server component re-render
   const [{ page, pageSize, search, status, sortBy, sortDir }, setParams] = useQueryStates(
     {
@@ -99,21 +122,132 @@ export function MatchReviewTable({ jobId, items, totalCount, initialState, onIte
     }
   )
 
-  // URL state handlers - setParams directly triggers server navigation via startTransition
+  // Client-side sorting function
+  const sortItems = (itemsList: RFPItemWithMatches[], column: SortColumn, direction: SortDirection): RFPItemWithMatches[] => {
+    return [...itemsList].sort((a, b) => {
+      const isAsc = direction === 'asc'
+      let comparison = 0
+
+      switch (column) {
+        case 'lote':
+          // Sort by lote (string), then position (number)
+          comparison = String(a.lote_pedido ?? '').localeCompare(String(b.lote_pedido ?? ''), 'pt')
+          if (comparison === 0) {
+            comparison = (a.posicao_pedido ?? 0) - (b.posicao_pedido ?? 0)
+          }
+          break
+        case 'pos':
+          comparison = (a.posicao_pedido ?? 0) - (b.posicao_pedido ?? 0)
+          break
+        case 'artigo':
+          comparison = String(a.artigo_pedido ?? '').localeCompare(String(b.artigo_pedido ?? ''), 'pt')
+          break
+        case 'descricao':
+          comparison = String(a.descricao_pedido ?? '').localeCompare(String(b.descricao_pedido ?? ''), 'pt')
+          break
+        case 'status':
+          comparison = String(a.review_status ?? '').localeCompare(String(b.review_status ?? ''), 'pt')
+          break
+        default:
+          comparison = 0
+      }
+
+      return isAsc ? comparison : -comparison
+    })
+  }
+
+  // Client-side search filtering function
+  const filterBySearch = (itemsList: RFPItemWithMatches[], searchTerm: string): RFPItemWithMatches[] => {
+    if (!searchTerm) return itemsList
+    const searchLower = searchTerm.toLowerCase()
+    return itemsList.filter(item => {
+      // Check RFP side
+      const rfpMatch =
+        item.artigo_pedido?.toLowerCase().includes(searchLower) ||
+        item.descricao_pedido?.toLowerCase().includes(searchLower)
+      if (rfpMatch) return true
+
+      // Check matched product side (accepted suggestions)
+      const acceptedMatch = item.rfp_match_suggestions.find(m => m.status === 'accepted')
+      if (acceptedMatch) {
+        return (
+          acceptedMatch.artigo?.toLowerCase().includes(searchLower) ||
+          acceptedMatch.descricao?.toLowerCase().includes(searchLower)
+        )
+      }
+
+      return false
+    })
+  }
+
+  // Client-side status filtering function (matches server-side logic)
+  const filterByStatus = (itemsList: RFPItemWithMatches[], statusFilter: StatusFilter): RFPItemWithMatches[] => {
+    if (statusFilter === 'all') return itemsList
+    return itemsList.filter(item => {
+      const hasSuggestions = item.rfp_match_suggestions.length > 0
+      const hasPerfectMatch = item.rfp_match_suggestions.some(m => m.similarity_score >= 0.9999)
+
+      switch (statusFilter) {
+        case 'pending':
+          // Pending items with suggestions to review (no 100% match)
+          return item.review_status === 'pending' && hasSuggestions && !hasPerfectMatch
+        case 'matched':
+          // Items with accepted/manual match OR perfect match
+          return (
+            item.review_status === 'accepted' ||
+            item.review_status === 'manual' ||
+            (item.review_status === 'pending' && hasPerfectMatch)
+          )
+        case 'no_match':
+          // Rejected items OR pending items with no suggestions
+          return item.review_status === 'rejected' || (item.review_status === 'pending' && !hasSuggestions)
+        default:
+          return true
+      }
+    })
+  }
+
+  // Combined filter function
+  const applyFilters = (itemsList: RFPItemWithMatches[], searchTerm: string, statusFilter: StatusFilter): RFPItemWithMatches[] => {
+    let result = filterByStatus(itemsList, statusFilter)
+    result = filterBySearch(result, searchTerm)
+    return result
+  }
+
+  // URL state handlers with instant client-side updates
   const handleSearchChange = (value: string) => {
-    setParams({ search: value || null, page: 1 })
+    // Instant client-side filter
+    const filtered = applyFilters(originalItems, value, (status as StatusFilter) || 'all')
+    const sorted = sortItems(filtered, sortBy as SortColumn, sortDir as SortDirection)
+    setLocalItems(sorted)
+    // Update URL (server will refetch with full results across all pages)
+    startTransition(() => {
+      setParams({ search: value || null, page: 1 })
+    })
   }
 
   const handleStatusChange = (newStatus: StatusFilter) => {
-    setParams({ status: newStatus === 'all' ? null : newStatus, page: 1 })
+    // Instant client-side filter
+    const filtered = applyFilters(originalItems, search, newStatus)
+    const sorted = sortItems(filtered, sortBy as SortColumn, sortDir as SortDirection)
+    setLocalItems(sorted)
+    // Update URL (server will refetch with full results across all pages)
+    startTransition(() => {
+      setParams({ status: newStatus === 'all' ? null : newStatus, page: 1 })
+    })
   }
 
   const handleSortChange = (column: SortColumn) => {
     const newDir = sortBy === column && sortDir === 'asc' ? 'desc' : 'asc'
-    setParams({
-      sortBy: column,
-      sortDir: newDir,
-      page: 1
+    // Instant client-side sort
+    setLocalItems(prev => sortItems(prev, column, newDir))
+    // Update URL (will also trigger server refresh for pagination correctness)
+    startTransition(() => {
+      setParams({
+        sortBy: column,
+        sortDir: newDir,
+        page: 1
+      })
     })
   }
 
@@ -126,11 +260,16 @@ export function MatchReviewTable({ jobId, items, totalCount, initialState, onIte
   }
 
   const handleClearFilters = () => {
-    setParams({ search: null, status: null, page: 1 })
+    // Restore original items with current sort (no filters)
+    const sorted = sortItems(originalItems, sortBy as SortColumn, sortDir as SortDirection)
+    setLocalItems(sorted)
+    startTransition(() => {
+      setParams({ search: null, status: null, page: 1 })
+    })
   }
 
   // Empty state for search results
-  const isSearchEmpty = items.length === 0 && (search || status !== 'all')
+  const isSearchEmpty = localItems.length === 0 && (search || status !== 'all')
 
   return (
     <div className="space-y-0">
@@ -212,27 +351,21 @@ export function MatchReviewTable({ jobId, items, totalCount, initialState, onIte
                     <span className="inline-flex items-center">Descrição</span>
                   </TableHead>
                   <TableHead className="whitespace-nowrap pr-4 text-xs font-medium text-slate-700 tracking-wide bg-slate-100/70 py-2 text-right rounded-r-md">
-                    <SortableHeader
-                      column="status"
-                      label="Estado"
-                      sortBy={sortBy}
-                      sortDir={sortDir}
-                      onSort={handleSortChange}
-                    />
+                    <span className="inline-flex items-center">Estado</span>
                   </TableHead>
                 </TableRow>
               </TableHeader>
               <TableBody>
-                {items.map((item) => (
+                {localItems.map((item) => (
                   <ItemRow
                     key={item.id}
                     jobId={jobId}
                     item={item}
                     isConfirmed={isConfirmed}
-                    onItemUpdate={onItemUpdate}
+                    onItemUpdate={handleItemUpdate}
                   />
                 ))}
-                {items.length === 0 && (
+                {localItems.length === 0 && (
                   <TableRow>
                     <TableCell colSpan={8} className="h-32 text-center text-muted-foreground">
                       Nenhum produto encontrado para este concurso.

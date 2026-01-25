@@ -31,13 +31,21 @@ interface RFPListState {
   sortOrder: 'asc' | 'desc'
 }
 
+interface KPIData {
+  totalCount: number
+  porReverCount: number
+  revistosCount: number
+  confirmedCount: number
+}
+
 interface RFPPageContentProps {
   initialJobs: RFPJob[]
   totalCount: number
+  initialKPIs: KPIData
   initialState: RFPListState
 }
 
-export function RFPPageContent({ initialJobs, totalCount, initialState }: RFPPageContentProps) {
+export function RFPPageContent({ initialJobs, totalCount, initialKPIs, initialState }: RFPPageContentProps) {
   return (
     <RFPUploadStatusProvider>
       <div className="flex flex-1 flex-col gap-6">
@@ -52,8 +60,8 @@ export function RFPPageContent({ initialJobs, totalCount, initialState }: RFPPag
           <RFPUploadButton />
         </div>
 
-        {/* KPI Stats - Client component that auto-refreshes on job changes */}
-        <RFPStats />
+        {/* KPI Stats - Uses server data initially, refreshes on job changes */}
+        <RFPStats initialKPIs={initialKPIs} />
 
         {/* Processing status card - shows only when active job is processing */}
         <RFPProcessingCard />

@@ -3,7 +3,7 @@
 import { useState, useEffect, useMemo, useRef, useCallback } from 'react'
 import { formatDistanceToNow } from 'date-fns'
 import { pt } from 'date-fns/locale'
-import { Loader2, Clock, FileText, ChevronDown, ChevronUp, Upload, XCircle, CheckCircle2 } from 'lucide-react'
+import { Loader2, Clock, ChevronDown, ChevronUp, Upload, XCircle } from 'lucide-react'
 import {
   Card,
   CardContent,
@@ -21,9 +21,9 @@ const ESTIMATED_TIME_MS = 3 * 60 * 1000
 const MAX_VISIBLE_PROGRESS = 3
 
 // Animation durations (ms)
-const FILL_TO_100_DURATION = 400
-const SHOW_100_DURATION = 600
-const COLLAPSE_DURATION = 400
+const FILL_TO_100_DURATION = 600 // Smooth fill to 100%
+const SHOW_100_DURATION = 400    // Brief pause at 100%
+const COLLAPSE_DURATION = 400    // Collapse out
 
 interface UploadProgressItemProps {
   upload: QueuedUpload
@@ -34,8 +34,11 @@ function UploadProgressItem({ upload, onRemoveComplete }: UploadProgressItemProp
   const [elapsedTime, setElapsedTime] = useState(0)
   const [animatedProgress, setAnimatedProgress] = useState(0)
   const [animationPhase, setAnimationPhase] = useState<'active' | 'filling' | 'showing' | 'collapsing' | 'removed'>('active')
+
+  // Use ref to track if we've started the completion animation
+  // This prevents the effect from re-triggering and cancelling the animation
+  const hasStartedCompletionRef = useRef(false)
   const animationFrameRef = useRef<number | null>(null)
-  const containerRef = useRef<HTMLDivElement>(null)
 
   // Calculate base progress (time-based, capped at 98%)
   const baseProgress = Math.min(98, (elapsedTime / ESTIMATED_TIME_MS) * 100)
@@ -49,39 +52,54 @@ function UploadProgressItem({ upload, onRemoveComplete }: UploadProgressItemProp
     const startTime = upload.startedAt.getTime()
     const initialElapsed = Date.now() - startTime
     setElapsedTime(initialElapsed)
-    setAnimatedProgress(Math.min(98, (initialElapsed / ESTIMATED_TIME_MS) * 100))
+
+    const initialProgress = Math.min(98, (initialElapsed / ESTIMATED_TIME_MS) * 100)
+    setAnimatedProgress(initialProgress)
 
     const interval = setInterval(() => {
       const elapsed = Date.now() - startTime
       setElapsedTime(elapsed)
-      setAnimatedProgress(Math.min(98, (elapsed / ESTIMATED_TIME_MS) * 100))
+      const progress = Math.min(98, (elapsed / ESTIMATED_TIME_MS) * 100)
+      setAnimatedProgress(progress)
     }, 1000)
 
     return () => clearInterval(interval)
   }, [upload.startedAt, upload.status])
 
-  // Smooth animation to 100% when completed
+  // Trigger smooth fill to 100% when completed
+  // Using ref to prevent re-triggering and cancellation
   useEffect(() => {
-    if (upload.status !== 'completed' || animationPhase !== 'active') return
+    if (upload.status !== 'completed') return
+    if (hasStartedCompletionRef.current) return // Already started, don't restart
 
+    hasStartedCompletionRef.current = true
     setAnimationPhase('filling')
+
+    // Capture current progress at the moment of completion
     const startProgress = animatedProgress
     const startTime = performance.now()
 
     const animate = (currentTime: number) => {
       const elapsed = currentTime - startTime
       const progress = Math.min(1, elapsed / FILL_TO_100_DURATION)
-      // Ease out cubic
+
+      // Ease out cubic for smooth deceleration
       const eased = 1 - Math.pow(1 - progress, 3)
       const newProgress = startProgress + (100 - startProgress) * eased
+
       setAnimatedProgress(newProgress)
 
       if (progress < 1) {
         animationFrameRef.current = requestAnimationFrame(animate)
       } else {
-        // Reached 100%, start showing phase
+        // Reached 100%, move to showing phase
         setAnimatedProgress(100)
         setAnimationPhase('showing')
+
+        // After showing, start collapse
+        setTimeout(() => {
+          setAnimationPhase('collapsing')
+        }, SHOW_100_DURATION)
       }
     }
 
@@ -92,52 +110,43 @@ function UploadProgressItem({ upload, onRemoveComplete }: UploadProgressItemProp
         cancelAnimationFrame(animationFrameRef.current)
       }
     }
-  }, [upload.status, animationPhase])
-
-  // After showing 100%, start collapse
-  useEffect(() => {
-    if (animationPhase !== 'showing') return
-
-    const timer = setTimeout(() => {
-      setAnimationPhase('collapsing')
-    }, SHOW_100_DURATION)
-
-    return () => clearTimeout(timer)
-  }, [animationPhase])
+  }, [upload.status]) // Only depend on upload.status, not animationPhase
 
   // Handle collapse transition end
   const handleTransitionEnd = useCallback((e: React.TransitionEvent) => {
-    // Only trigger on opacity transition (to avoid firing multiple times)
     if (e.propertyName === 'opacity' && animationPhase === 'collapsing') {
       setAnimationPhase('removed')
       onRemoveComplete?.(upload.id)
     }
   }, [animationPhase, upload.id, onRemoveComplete])
 
-  // Determine status
+  // Determine base status (ignoring animation phases)
   const isUploading = upload.status === 'uploading'
-  const isProcessing = upload.status === 'processing'
   const isQueued = upload.status === 'queued'
   const isFailed = upload.status === 'failed'
-  const isCompleted = upload.status === 'completed'
+
+  // During 'filling' and 'showing' phases, we're visually still "processing"
+  const isAnimatingCompletion = animationPhase === 'filling' || animationPhase === 'showing'
+  const isCollapsing = animationPhase === 'collapsing'
 
   // Don't render if removed
   if (animationPhase === 'removed') return null
 
-  // Display progress
-  const displayProgress = isCompleted ? animatedProgress : baseProgress
+  // Display progress: use animated value when completing, otherwise base progress
+  const displayProgress = (upload.status === 'completed')
+    ? animatedProgress
+    : baseProgress
 
   return (
     <div
-      ref={containerRef}
       onTransitionEnd={handleTransitionEnd}
       className={cn(
         "space-y-2 py-2 border-b last:border-b-0 transition-all ease-out",
-        animationPhase === 'collapsing' && "opacity-0 max-h-0 py-0 overflow-hidden border-b-0"
+        isCollapsing && "opacity-0 max-h-0 py-0 overflow-hidden border-b-0"
       )}
       style={{
-        transitionDuration: animationPhase === 'collapsing' ? `${COLLAPSE_DURATION}ms` : '150ms',
-        maxHeight: animationPhase === 'collapsing' ? 0 : 100,
+        transitionDuration: isCollapsing ? `${COLLAPSE_DURATION}ms` : '150ms',
+        maxHeight: isCollapsing ? 0 : 100,
       }}
     >
       {/* File info row */}
@@ -148,9 +157,8 @@ function UploadProgressItem({ upload, onRemoveComplete }: UploadProgressItemProp
           <Upload className="h-4 w-4 text-green-600 animate-pulse" />
         ) : isFailed ? (
           <XCircle className="h-4 w-4 text-destructive" />
-        ) : isCompleted ? (
-          <CheckCircle2 className="h-4 w-4 text-green-600" />
         ) : (
+          // Processing or completing - keep spinner
           <Loader2 className="h-4 w-4 text-green-600 animate-spin" />
         )}
         <span className="font-medium text-sm truncate flex-1" title={upload.fileName || upload.file?.name}>
@@ -158,12 +166,12 @@ function UploadProgressItem({ upload, onRemoveComplete }: UploadProgressItemProp
         </span>
         {upload.startedAt && (
           <span className="text-xs text-muted-foreground whitespace-nowrap">
-            ha {formatDistanceToNow(upload.startedAt, { locale: pt })}
+            há {formatDistanceToNow(upload.startedAt, { locale: pt })}
           </span>
         )}
       </div>
 
-      {/* Progress bar */}
+      {/* Progress bar - same style during fill animation */}
       {isQueued ? (
         <div className="flex items-center gap-2 text-xs text-muted-foreground">
           <span>Em fila...</span>
@@ -181,14 +189,8 @@ function UploadProgressItem({ upload, onRemoveComplete }: UploadProgressItemProp
         <div className="flex items-center gap-2 text-xs text-destructive">
           <span>Falhou: {upload.error || 'Processamento falhou'}</span>
         </div>
-      ) : isCompleted ? (
-        <div className="space-y-0.5">
-          <Progress value={displayProgress} className="h-1.5" />
-          <div className="flex justify-between text-xs text-green-600">
-            <span>{Math.round(displayProgress)}%</span>
-          </div>
-        </div>
       ) : (
+        // Processing OR filling to 100% - same visual style
         <div className="space-y-0.5">
           <Progress
             value={displayProgress}
@@ -196,7 +198,7 @@ function UploadProgressItem({ upload, onRemoveComplete }: UploadProgressItemProp
           />
           <div className="flex justify-between text-xs text-muted-foreground">
             <span>{Math.round(displayProgress)}%</span>
-            <span>~2-3 min</span>
+            {!isAnimatingCompletion && !isCollapsing && <span>~2-3 min</span>}
           </div>
         </div>
       )}
@@ -205,7 +207,7 @@ function UploadProgressItem({ upload, onRemoveComplete }: UploadProgressItemProp
 }
 
 export function RFPProcessingCard() {
-  const { uploadQueue, queuedCount } = useRFPUploadStatus()
+  const { uploadQueue } = useRFPUploadStatus()
   const [showOverflow, setShowOverflow] = useState(false)
   const [removedIds, setRemovedIds] = useState<Set<string>>(new Set())
 
@@ -214,7 +216,7 @@ export function RFPProcessingCard() {
     setRemovedIds(prev => new Set(prev).add(id))
   }, [])
 
-  // Filter to active uploads (uploading, processing, failed, or recently completed for fade animation)
+  // Filter to active uploads (uploading, processing, failed, or recently completed for animation)
   // Exclude items that have completed their removal animation
   const activeUploads = useMemo(() =>
     uploadQueue.filter(q =>
@@ -317,8 +319,6 @@ export function RFPProcessingCard() {
                   )}>
                     {upload.status === 'failed' ? (
                       <XCircle className="h-3 w-3 text-destructive" />
-                    ) : upload.status === 'completed' ? (
-                      <CheckCircle2 className="h-3 w-3 text-green-600" />
                     ) : (
                       <Loader2 className="h-3 w-3 text-green-600 animate-spin" />
                     )}
@@ -339,7 +339,7 @@ export function RFPProcessingCard() {
 
         {/* Navigation info */}
         <p className="text-xs text-muted-foreground pt-3 mt-2">
-          Pode navegar para outra pagina. Recebera uma notificacao quando o processamento terminar.
+          Pode navegar para outra página. Receberá uma notificação quando o processamento terminar.
         </p>
       </CardContent>
     </Card>
