@@ -5,23 +5,23 @@
 See: .planning/PROJECT.md (updated 2025-01-21)
 
 **Core value:** Users can upload an RFP, see suggested product matches, accept/reject interactively, and export confirmed matches
-**Current focus:** Phase 9 - Export, Email & Admin (Ready to plan)
+**Current focus:** Phase 9 - Export, Email & Admin (Ready to execute)
 
 ## Current Position
 
 Phase: 9 (Export, Email & Admin)
-Plan: 0 of 6 in current phase
-Status: Ready to plan
-Last activity: 2026-01-25 - ROADMAP updated with expanded Phase 9 scope
+Plan: 1 of 6 in current phase
+Status: In progress
+Last activity: 2026-01-25 - Completed 09-01-PLAN.md
 
-Progress: [=========---] 80%
+Progress: [=========---] 81%
 
 ## Performance Metrics
 
 **Velocity:**
-- Total plans completed: 19
-- Average duration: 7.8 min
-- Total execution time: 2.5 hours
+- Total plans completed: 20
+- Average duration: 7.6 min
+- Total execution time: 2.6 hours
 
 **By Phase:**
 
@@ -34,10 +34,11 @@ Progress: [=========---] 80%
 | 06-processing-status | 1 | 6min | 6min |
 | 07-match-review | 2 | 10min | 5min |
 | 10.1-rfp-upload-polish | 5 | 28min | 6min |
+| 09-export-email-admin | 1 | 5min | 5min |
 
 **Recent Trend:**
-- Last 5 plans: 10.1-01 (4min), 10.1-02 (5min), 10.1-03 (4min), 10.1-04 (9min), 10.1-05 (6min)
-- Trend: Phase 10.1 polish plans executing efficiently
+- Last 5 plans: 10.1-02 (5min), 10.1-03 (4min), 10.1-04 (9min), 10.1-05 (6min), 09-01 (5min)
+- Trend: Phase 9 migrations executing efficiently
 
 *Updated after each plan completion*
 
@@ -119,6 +120,9 @@ Recent decisions affecting current work:
 - [10.1-05]: Use email only for user display (profiles table has no full_name column)
 - [10.1-05]: formatUserEmail helper: email -> readable name (joao.silva@example.com -> Joao Silva)
 - [10.1-05]: Inline button styling for sort headers (matching SortableHeader pattern)
+- [09-01]: Single-row pattern with CHECK (id = 1) for app_settings table
+- [09-01]: sync_export_columns() iterates ARRAY['rfp_items', 'rfp_match_suggestions']
+- [09-01]: UPDATE-only policy for app_settings (no INSERT/DELETE)
 
 ### Pending Todos
 
@@ -151,12 +155,29 @@ See `.planning/todos/pending/` for full details.
 - User must run rfp_match_results migration (see supabase/migrations/20260122_rfp_match_results.sql)
 - User must run multi-user RFP access migration (see supabase/migrations/20260124_multi_user_rfp_access.sql)
 - User must run confirmed_at migration (see supabase/migrations/20260124_add_confirmed_at.sql)
+- User must run app_settings migration (see supabase/migrations/20260125_app_settings.sql)
+- User must run export_column_config migration (see supabase/migrations/20260125_export_column_config.sql)
 
 ## Session Continuity
 
 Last session: 2026-01-25
-Stopped at: ROADMAP updated with expanded Phase 9 scope (design complete)
-Resume file: docs/plans/2026-01-25-phase9-export-email-admin-design.md
+Stopped at: Completed 09-01-PLAN.md
+Resume with: /gsd:execute-phase 9 (continue with 09-02)
+
+## Phase 9 Plans
+
+| Plan | Wave | Objective | Status |
+|------|------|-----------|--------|
+| 09-01 | 1 | Database migrations: app_settings, export_column_config | Complete |
+| 09-02 | 1 | Split ExportDialog → dropdown + ExportDownloadDialog | Pending |
+| 09-03 | 2 | ExportEmailDialog with recipient configuration | Pending |
+| 09-04 | 2 | Export field configuration: update rfp-export.ts | Pending |
+| 09-05 | 2 | Admin settings page: email + export + inventory sections | Pending |
+| 09-06 | 1 | Admin users enhancements: role dropdown + delete button | Pending |
+
+**Wave execution:**
+- Wave 1: 09-01, 09-02, 09-06 (independent)
+- Wave 2: 09-03, 09-04, 09-05 (depend on Wave 1)
 
 ## Phase 1 Plans
 
