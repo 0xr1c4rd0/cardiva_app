@@ -47,7 +47,7 @@ export function RFPUploadDialog({ open, onOpenChange }: RFPUploadDialogProps) {
 
   return (
     <Dialog open={open} onOpenChange={handleClose}>
-      <DialogContent className="sm:max-w-[650px]">
+      <DialogContent className="sm:max-w-3xl">
         <DialogHeader>
           <DialogTitle>Carregar Concursos</DialogTitle>
           <DialogDescription>

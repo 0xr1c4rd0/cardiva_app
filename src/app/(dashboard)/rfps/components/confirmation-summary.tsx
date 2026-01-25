@@ -17,9 +17,10 @@ import { ExportEmailDialog } from './export-email-dialog'
 interface ConfirmationSummaryProps {
   items: RFPItemWithMatches[]
   jobId: string
+  rfpFileName: string
 }
 
-export function ConfirmationSummary({ items, jobId }: ConfirmationSummaryProps) {
+export function ConfirmationSummary({ items, jobId, rfpFileName }: ConfirmationSummaryProps) {
   const [downloadDialogOpen, setDownloadDialogOpen] = useState(false)
   const [emailDialogOpen, setEmailDialogOpen] = useState(false)
 
@@ -140,6 +141,7 @@ export function ConfirmationSummary({ items, jobId }: ConfirmationSummaryProps) 
         open={downloadDialogOpen}
         onOpenChange={setDownloadDialogOpen}
         items={items}
+        rfpFileName={rfpFileName}
       />
 
       {/* Export Email dialog */}
@@ -148,6 +150,7 @@ export function ConfirmationSummary({ items, jobId }: ConfirmationSummaryProps) 
         onOpenChange={setEmailDialogOpen}
         items={items}
         jobId={jobId}
+        rfpFileName={rfpFileName}
       />
     </Card>
   )

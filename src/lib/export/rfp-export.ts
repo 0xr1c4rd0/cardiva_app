@@ -253,11 +253,39 @@ export async function exportRFPToExcel(
 }
 
 /**
- * Generate Excel file as base64 for email attachment
+ * Generate Excel file as ArrayBuffer for binary transfer
  * @param items - RFP items with match suggestions
  * @param confirmedOnly - If true, only include accepted/manual items
  * @param columnConfig - Optional column config (fetches from DB if not provided)
- * @returns Base64 encoded Excel file
+ * @returns ArrayBuffer of Excel file
+ */
+export async function generateExcelBuffer(
+  items: RFPItemWithMatches[],
+  confirmedOnly: boolean = false,
+  columnConfig?: ExportColumnMapping[]
+): Promise<ArrayBuffer> {
+  const config = columnConfig || await getExportColumnConfig()
+  const exportData = transformToExportRows(items, confirmedOnly, config)
+
+  const worksheet = XLSX.utils.json_to_sheet(exportData)
+  const workbook = XLSX.utils.book_new()
+  XLSX.utils.book_append_sheet(workbook, worksheet, 'Resultados RFP')
+
+  const headers = [...config.map(c => c.header), 'Status']
+  const maxWidths = headers.map((header) => {
+    const headerWidth = header.length
+    const dataWidths = exportData.map((row) => String(row[header] ?? '').length)
+    return Math.min(Math.max(headerWidth, ...dataWidths) + 2, 50)
+  })
+  worksheet['!cols'] = maxWidths.map((w) => ({ wch: w }))
+
+  const buffer: ArrayBuffer = XLSX.write(workbook, { bookType: 'xlsx', type: 'array' })
+  return buffer
+}
+
+/**
+ * @deprecated Use generateExcelBuffer instead for binary transfer
+ * Generate Excel file as base64 for email attachment
  */
 export async function generateExcelBase64(
   items: RFPItemWithMatches[],

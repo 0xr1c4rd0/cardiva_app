@@ -67,8 +67,8 @@ export function PDFDropzone({ onFilesSelect, files, disabled }: PDFDropzoneProps
       {files.length > 0 ? (
         <div className="space-y-2">
           <div className="flex items-center justify-center gap-2">
-            <FileText className="h-8 w-8 text-green-600 dark:text-green-400" />
-            <p className="font-medium text-left">
+            <FileText className="h-8 w-8 text-green-600 dark:text-green-400 shrink-0" />
+            <p className="font-medium text-left text-sm">
               {files.length === 1
                 ? files[0].name
                 : `${files.length} ficheiros selecionados`

@@ -25,9 +25,10 @@ interface ExportDownloadDialogProps {
   open: boolean
   onOpenChange: (open: boolean) => void
   items: RFPItemWithMatches[]
+  rfpFileName: string
 }
 
-export function ExportDownloadDialog({ open, onOpenChange, items }: ExportDownloadDialogProps) {
+export function ExportDownloadDialog({ open, onOpenChange, items, rfpFileName }: ExportDownloadDialogProps) {
   const [exportMode, setExportMode] = useState<'matched' | 'all'>('matched')
   const [isExporting, setIsExporting] = useState(false)
 
@@ -55,7 +56,9 @@ export function ExportDownloadDialog({ open, onOpenChange, items }: ExportDownlo
     setIsExporting(true)
     try {
       const confirmedOnly = exportMode === 'matched'
-      await exportRFPToExcel(items, confirmedOnly, 'RFP_Resultados')
+      // Use RFP filename (without extension) for Excel filename
+      const baseName = rfpFileName.replace(/\.pdf$/i, '')
+      await exportRFPToExcel(items, confirmedOnly, baseName)
       toast.success('Ficheiro Excel transferido')
       onOpenChange(false)
     } catch (error) {

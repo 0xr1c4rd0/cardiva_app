@@ -67,7 +67,7 @@ export function MatchReviewContent({
         </div>
         <div className="flex items-center gap-4 shrink-0">
           <ReviewStatsChips items={allItems} />
-          <RFPActionButton jobId={jobId} items={allItems} />
+          <RFPActionButton jobId={jobId} items={allItems} rfpFileName={fileName} />
         </div>
       </div>
 

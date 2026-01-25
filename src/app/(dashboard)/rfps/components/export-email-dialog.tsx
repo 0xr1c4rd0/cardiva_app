@@ -22,7 +22,7 @@ import { getEmailRecipientMode } from '@/types/app-settings'
 import {
   transformToExportRows,
   calculateExportSummary,
-  generateExcelBase64,
+  generateExcelBuffer,
   generateExportFilename,
 } from '@/lib/export/rfp-export'
 import { sendExportEmail } from '@/app/(dashboard)/rfps/[id]/matches/export-actions'
@@ -33,11 +33,12 @@ interface ExportEmailDialogProps {
   onOpenChange: (open: boolean) => void
   items: RFPItemWithMatches[]
   jobId: string
+  rfpFileName: string
 }
 
 const MAX_EMAILS = 10
 
-export function ExportEmailDialog({ open, onOpenChange, items, jobId }: ExportEmailDialogProps) {
+export function ExportEmailDialog({ open, onOpenChange, items, jobId, rfpFileName }: ExportEmailDialogProps) {
   const [exportMode, setExportMode] = useState<'matched' | 'all'>('matched')
   const [isSending, setIsSending] = useState(false)
   const [isLoading, setIsLoading] = useState(true)
@@ -138,16 +139,22 @@ export function ExportEmailDialog({ open, onOpenChange, items, jobId }: ExportEm
     setIsSending(true)
     try {
       const confirmedOnly = exportMode === 'matched'
-      const excelBase64 = await generateExcelBase64(items, confirmedOnly)
-      const fileName = generateExportFilename('RFP_Resultados')
+      const excelBuffer = await generateExcelBuffer(items, confirmedOnly)
+      // Use RFP filename (without extension) + date for Excel filename
+      const baseName = rfpFileName.replace(/\.pdf$/i, '')
+      const fileName = generateExportFilename(baseName)
       const summary = calculateExportSummary(items)
+
+      // Convert ArrayBuffer to number array for server action transport
+      const bufferArray = Array.from(new Uint8Array(excelBuffer))
 
       // Send to all emails (webhook handles multiple recipients)
       const result = await sendExportEmail({
         jobId,
         recipientEmail: allEmails.join(','), // Comma-separated for multiple
         fileName,
-        excelBase64,
+        rfpFileName, // Original RFP filename for reference
+        excelBuffer: bufferArray,
         summary: {
           totalItems: summary.totalItems,
           confirmedCount: summary.confirmedCount,

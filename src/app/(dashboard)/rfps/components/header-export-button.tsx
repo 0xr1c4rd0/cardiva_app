@@ -16,13 +16,15 @@ import {
 } from '@/components/ui/tooltip'
 import type { RFPItemWithMatches } from '@/types/rfp'
 import { ExportDownloadDialog } from './export-download-dialog'
+import { ExportEmailDialog } from './export-email-dialog'
 
 interface HeaderExportButtonProps {
   items: RFPItemWithMatches[]
   jobId: string
+  rfpFileName: string
 }
 
-export function HeaderExportButton({ items, jobId }: HeaderExportButtonProps) {
+export function HeaderExportButton({ items, jobId, rfpFileName }: HeaderExportButtonProps) {
   const [downloadDialogOpen, setDownloadDialogOpen] = useState(false)
   const [emailDialogOpen, setEmailDialogOpen] = useState(false)
 
@@ -101,12 +103,16 @@ export function HeaderExportButton({ items, jobId }: HeaderExportButtonProps) {
         open={downloadDialogOpen}
         onOpenChange={setDownloadDialogOpen}
         items={items}
+        rfpFileName={rfpFileName}
       />
 
-      {/* ExportEmailDialog - implemented in plan 09-03 */}
-      {emailDialogOpen && (
-        <div className="hidden">Email dialog placeholder - implemented in 09-03</div>
-      )}
+      <ExportEmailDialog
+        open={emailDialogOpen}
+        onOpenChange={setEmailDialogOpen}
+        items={items}
+        jobId={jobId}
+        rfpFileName={rfpFileName}
+      />
     </>
   )
 }

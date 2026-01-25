@@ -12,7 +12,8 @@ interface SendExportEmailParams {
   jobId: string
   recipientEmail: string
   fileName: string
-  excelBase64: string
+  rfpFileName: string  // Original RFP filename for reference
+  excelBuffer: number[]  // ArrayBuffer serialized as number array for server action transport
   summary: {
     totalItems: number
     confirmedCount: number
@@ -56,12 +57,17 @@ export async function sendExportEmail(
       return { success: false, error: 'Invalid email address' }
     }
 
+    // Convert number array back to ArrayBuffer for webhook
+    const buffer = new Uint8Array(params.excelBuffer).buffer
+
     // Build webhook payload
     const payload: ExportEmailPayload = {
       jobId: params.jobId,
+      userId: user.id,
       recipientEmail: params.recipientEmail,
       fileName: params.fileName,
-      excelBase64: params.excelBase64,
+      rfpFileName: params.rfpFileName,
+      excelBuffer: buffer,
       summary: params.summary,
     }
 

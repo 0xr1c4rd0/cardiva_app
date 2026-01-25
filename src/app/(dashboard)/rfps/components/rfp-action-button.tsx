@@ -17,12 +17,14 @@ import {
 import { toast } from 'sonner'
 import type { RFPItemWithMatches } from '@/types/rfp'
 import { ExportDownloadDialog } from './export-download-dialog'
+import { ExportEmailDialog } from './export-email-dialog'
 import { confirmRFP } from '../[id]/matches/actions'
 import { useRFPConfirmation } from './rfp-confirmation-context'
 
 interface RFPActionButtonProps {
   jobId: string
   items: RFPItemWithMatches[]
+  rfpFileName: string
 }
 
 /**
@@ -31,7 +33,7 @@ interface RFPActionButtonProps {
  * - "Exportar ▼" dropdown when confirmed
  * Uses RFPConfirmationContext for shared state.
  */
-export function RFPActionButton({ jobId, items }: RFPActionButtonProps) {
+export function RFPActionButton({ jobId, items, rfpFileName }: RFPActionButtonProps) {
   const { isConfirmed, setIsConfirmed } = useRFPConfirmation()
   const [isPending, startTransition] = useTransition()
   const [downloadDialogOpen, setDownloadDialogOpen] = useState(false)
@@ -151,12 +153,16 @@ export function RFPActionButton({ jobId, items }: RFPActionButtonProps) {
         open={downloadDialogOpen}
         onOpenChange={setDownloadDialogOpen}
         items={items}
+        rfpFileName={rfpFileName}
       />
 
-      {/* ExportEmailDialog - implemented in plan 09-03 */}
-      {emailDialogOpen && (
-        <div className="hidden">Email dialog placeholder - implemented in 09-03</div>
-      )}
+      <ExportEmailDialog
+        open={emailDialogOpen}
+        onOpenChange={setEmailDialogOpen}
+        items={items}
+        jobId={jobId}
+        rfpFileName={rfpFileName}
+      />
     </>
   )
 }
