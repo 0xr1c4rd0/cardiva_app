@@ -19,8 +19,8 @@ Decimal phases appear between their surrounding integers in numeric order.
 - [x] **Phase 5: RFP Upload** - PDF upload, webhook trigger, file storage
 - [x] **Phase 6: Processing Status** - Real-time status updates, notifications
 - [x] **Phase 7: Match Review** - Display results, accept/reject individual matches
-- [ ] **Phase 8: Bulk Operations** - Manual correction, confirmation step (scope modified)
-- [ ] **Phase 9: Export & Email** - Excel export, email send, preview, configuration
+- [x] **Phase 8: Bulk Operations** - Manual correction, confirmation step (scope modified)
+- [ ] **Phase 9: Export, Email & Admin** - Excel export, email send, admin configuration (expanded scope)
 - [ ] **Phase 10: History & Polish** - RFP history, search, re-download, final polish
 - [x] **Phase 10.1: RFP Upload Polish** - INSERTED: Multi-upload, multi-user, KPI fixes, sorting fix
 
@@ -155,25 +155,32 @@ Plans:
 **Plans**: 2 plans in 2 waves
 
 Plans:
-- [ ] 08-01-PLAN.md — Server Actions for inventory search and manual match setting
-- [ ] 08-02-PLAN.md — ManualMatchDialog, ConfirmationSummary, and page integration
+- [x] 08-01-PLAN.md — Server Actions for inventory search and manual match setting
+- [x] 08-02-PLAN.md — ManualMatchDialog, ConfirmationSummary, and page integration
 
-### Phase 9: Export & Email
-**Goal**: Users can export confirmed matches to Excel and send via email
+### Phase 9: Export, Email & Admin (Expanded Scope)
+**Goal**: Users can export/email matches; admins can configure email recipients, export fields, inventory fields, and manage users
 **Depends on**: Phase 8
-**Requirements**: EXP-01, EXP-02, EXP-03, EXP-04, EXP-05
+**Requirements**: EXP-01, EXP-02, EXP-03, EXP-04, EXP-05, plus new admin features
 **Success Criteria** (what must be TRUE):
-  1. User can download match results as Excel (.xlsx) file
-  2. User can send match results via email
-  3. Export preview shows data before download or send
-  4. User can configure export to include confirmed matches only or all items
-  5. Export/email buttons only enabled after confirmation step is complete
-**Plans**: TBD
+  1. User can download match results as Excel (.xlsx) file via separate dialog
+  2. User can send match results via email via separate dialog
+  3. Email recipients configurable by admin (preset, editable, replaceable modes)
+  4. Export fields configurable by admin (select columns, display names, order)
+  5. Inventory display fields configurable by admin
+  6. Admin can change user roles (user ↔ admin)
+  7. Admin can delete users (except self)
+  8. Export dropdown replaces single button in confirmation summary
+**Plans**: 6 plans in 2 waves
+**Design**: See `docs/plans/2026-01-25-phase9-export-email-admin-design.md`
 
 Plans:
-- [ ] 09-01: Excel export with ExcelJS
-- [ ] 09-02: Email send functionality
-- [ ] 09-03: Export preview and configuration options
+- [ ] 09-01-PLAN.md — Database migrations: app_settings, export_column_config, sync functions
+- [ ] 09-02-PLAN.md — Split ExportDialog → dropdown + ExportDownloadDialog
+- [ ] 09-03-PLAN.md — ExportEmailDialog with recipient configuration
+- [ ] 09-04-PLAN.md — Export field configuration: update rfp-export.ts to use DB config
+- [ ] 09-05-PLAN.md — Admin settings page: email + export fields + inventory fields sections
+- [ ] 09-06-PLAN.md — Admin users enhancements: role dropdown + delete button
 
 ### Phase 10: History & Polish
 **Goal**: Users can access past RFPs and the application feels polished and production-ready
@@ -228,11 +235,11 @@ Phases execute in numeric order: 1 -> 2 -> 3 -> ... -> 10
 | 5. RFP Upload | 3/3 | Complete | 2026-01-22 |
 | 6. Processing Status | 1/1 | Complete | 2026-01-22 |
 | 7. Match Review | 2/2 | Complete | 2026-01-22 |
-| 8. Bulk Operations | 0/2 | Not started | - |
-| 9. Export & Email | 0/3 | Not started | - |
+| 8. Bulk Operations | 2/2 | Complete | 2026-01-23 |
+| 9. Export, Email & Admin | 0/6 | Not started | - |
 | 10. History & Polish | 0/3 | Not started | - |
 | 10.1 RFP Upload Polish | 5/5 | Complete | 2026-01-24 |
 
 ---
 *Created: 2025-01-21*
-*Last updated: 2026-01-24 after Phase 10.1 completion*
+*Last updated: 2026-01-25 — Phase 8 marked complete, Phase 9 expanded scope*
