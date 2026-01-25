@@ -3,9 +3,15 @@
 import { useState } from 'react'
 import { Button } from '@/components/ui/button'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
-import { Check, X, AlertCircle, Edit, Download } from 'lucide-react'
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuTrigger,
+} from '@/components/ui/dropdown-menu'
+import { Check, X, AlertCircle, Edit, Download, ChevronDown, Mail } from 'lucide-react'
 import type { RFPItemWithMatches } from '@/types/rfp'
-import { ExportDialog } from './export-dialog'
+import { ExportDownloadDialog } from './export-download-dialog'
 
 interface ConfirmationSummaryProps {
   items: RFPItemWithMatches[]
@@ -13,7 +19,9 @@ interface ConfirmationSummaryProps {
 }
 
 export function ConfirmationSummary({ items, jobId }: ConfirmationSummaryProps) {
-  const [exportDialogOpen, setExportDialogOpen] = useState(false)
+  const [downloadDialogOpen, setDownloadDialogOpen] = useState(false)
+  const [emailDialogOpen, setEmailDialogOpen] = useState(false)
+
   // Calculate stats from items
   // "Sem correspondência" items (no suggestions) are considered reviewed - nothing to decide
   const noMatchItems = items.filter(
@@ -92,17 +100,31 @@ export function ConfirmationSummary({ items, jobId }: ConfirmationSummaryProps) 
           </div>
         )}
 
-        {/* Export button */}
-        <Button
-          className="w-full"
-          disabled={!allDecided || !hasMatches}
-          onClick={() => setExportDialogOpen(true)}
-        >
-          <Download className="h-4 w-4 mr-2" />
-          {allDecided
-            ? 'Confirmar e Exportar'
-            : `${stats.pending} ${stats.pending === 1 ? 'produto' : 'produtos'} por rever`}
-        </Button>
+        {/* Export dropdown */}
+        <DropdownMenu>
+          <DropdownMenuTrigger asChild>
+            <Button className="w-full" disabled={!allDecided || !hasMatches}>
+              {allDecided ? (
+                <>
+                  Exportar
+                  <ChevronDown className="ml-2 h-4 w-4" />
+                </>
+              ) : (
+                `${stats.pending} ${stats.pending === 1 ? 'produto' : 'produtos'} por rever`
+              )}
+            </Button>
+          </DropdownMenuTrigger>
+          <DropdownMenuContent align="end" className="w-48">
+            <DropdownMenuItem onClick={() => setDownloadDialogOpen(true)}>
+              <Download className="mr-2 h-4 w-4" />
+              Transferir Excel
+            </DropdownMenuItem>
+            <DropdownMenuItem onClick={() => setEmailDialogOpen(true)}>
+              <Mail className="mr-2 h-4 w-4" />
+              Enviar por Email
+            </DropdownMenuItem>
+          </DropdownMenuContent>
+        </DropdownMenu>
 
         {/* Help text */}
         {allDecided && !hasMatches && (
@@ -112,13 +134,17 @@ export function ConfirmationSummary({ items, jobId }: ConfirmationSummaryProps) 
         )}
       </CardContent>
 
-      {/* Export dialog */}
-      <ExportDialog
-        open={exportDialogOpen}
-        onOpenChange={setExportDialogOpen}
+      {/* Export Download dialog */}
+      <ExportDownloadDialog
+        open={downloadDialogOpen}
+        onOpenChange={setDownloadDialogOpen}
         items={items}
-        jobId={jobId}
       />
+
+      {/* ExportEmailDialog - implemented in plan 09-03 */}
+      {emailDialogOpen && (
+        <div className="hidden">Email dialog placeholder - implemented in 09-03</div>
+      )}
     </Card>
   )
 }

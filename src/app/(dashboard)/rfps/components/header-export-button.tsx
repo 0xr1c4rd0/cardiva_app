@@ -1,15 +1,21 @@
 'use client'
 
 import { useState } from 'react'
-import { Download } from 'lucide-react'
+import { Download, ChevronDown, Mail } from 'lucide-react'
 import { Button } from '@/components/ui/button'
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuTrigger,
+} from '@/components/ui/dropdown-menu'
 import {
   Tooltip,
   TooltipContent,
   TooltipTrigger,
 } from '@/components/ui/tooltip'
 import type { RFPItemWithMatches } from '@/types/rfp'
-import { ExportDialog } from './export-dialog'
+import { ExportDownloadDialog } from './export-download-dialog'
 
 interface HeaderExportButtonProps {
   items: RFPItemWithMatches[]
@@ -17,7 +23,8 @@ interface HeaderExportButtonProps {
 }
 
 export function HeaderExportButton({ items, jobId }: HeaderExportButtonProps) {
-  const [exportDialogOpen, setExportDialogOpen] = useState(false)
+  const [downloadDialogOpen, setDownloadDialogOpen] = useState(false)
+  const [emailDialogOpen, setEmailDialogOpen] = useState(false)
 
   // Calculate pending count (items with suggestions that need review)
   const pendingCount = items.filter(
@@ -35,7 +42,7 @@ export function HeaderExportButton({ items, jobId }: HeaderExportButtonProps) {
     if (pendingCount > 0) {
       return `${pendingCount} ${pendingCount === 1 ? 'produto' : 'produtos'} por rever`
     }
-    return 'Confirmar e Exportar'
+    return 'Exportar'
   }
 
   const getTooltipText = () => {
@@ -51,35 +58,55 @@ export function HeaderExportButton({ items, jobId }: HeaderExportButtonProps) {
   const button = (
     <Button
       disabled={isDisabled}
-      onClick={() => setExportDialogOpen(true)}
       className={isDisabled ? 'cursor-not-allowed' : ''}
     >
       <Download className="h-4 w-4 mr-2" />
       {getButtonText()}
+      {!isDisabled && <ChevronDown className="ml-2 h-4 w-4" />}
     </Button>
   )
 
+  if (isDisabled) {
+    return (
+      <Tooltip>
+        <TooltipTrigger asChild>
+          <span tabIndex={0}>{button}</span>
+        </TooltipTrigger>
+        <TooltipContent>
+          <p>{getTooltipText()}</p>
+        </TooltipContent>
+      </Tooltip>
+    )
+  }
+
   return (
     <>
-      {isDisabled ? (
-        <Tooltip>
-          <TooltipTrigger asChild>
-            <span tabIndex={0}>{button}</span>
-          </TooltipTrigger>
-          <TooltipContent>
-            <p>{getTooltipText()}</p>
-          </TooltipContent>
-        </Tooltip>
-      ) : (
-        button
-      )}
+      <DropdownMenu>
+        <DropdownMenuTrigger asChild>
+          {button}
+        </DropdownMenuTrigger>
+        <DropdownMenuContent align="end" className="w-48">
+          <DropdownMenuItem onClick={() => setDownloadDialogOpen(true)}>
+            <Download className="mr-2 h-4 w-4" />
+            Transferir Excel
+          </DropdownMenuItem>
+          <DropdownMenuItem onClick={() => setEmailDialogOpen(true)}>
+            <Mail className="mr-2 h-4 w-4" />
+            Enviar por Email
+          </DropdownMenuItem>
+        </DropdownMenuContent>
+      </DropdownMenu>
 
-      <ExportDialog
-        open={exportDialogOpen}
-        onOpenChange={setExportDialogOpen}
+      <ExportDownloadDialog
+        open={downloadDialogOpen}
+        onOpenChange={setDownloadDialogOpen}
         items={items}
-        jobId={jobId}
       />
+
+      {/* ExportEmailDialog - implemented in plan 09-03 */}
+      {emailDialogOpen && (
+        <div className="hidden">Email dialog placeholder - implemented in 09-03</div>
+      )}
     </>
   )
 }

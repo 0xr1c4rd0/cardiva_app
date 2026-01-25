@@ -16,11 +16,9 @@ import {
 } from '@/components/ui/tooltip'
 import { toast } from 'sonner'
 import type { RFPItemWithMatches } from '@/types/rfp'
-import { ExportDialog } from './export-dialog'
+import { ExportDownloadDialog } from './export-download-dialog'
 import { confirmRFP } from '../[id]/matches/actions'
 import { useRFPConfirmation } from './rfp-confirmation-context'
-
-type ExportType = 'excel' | 'email'
 
 interface RFPActionButtonProps {
   jobId: string
@@ -36,8 +34,8 @@ interface RFPActionButtonProps {
 export function RFPActionButton({ jobId, items }: RFPActionButtonProps) {
   const { isConfirmed, setIsConfirmed } = useRFPConfirmation()
   const [isPending, startTransition] = useTransition()
-  const [exportDialogOpen, setExportDialogOpen] = useState(false)
-  const [exportType, setExportType] = useState<ExportType>('excel')
+  const [downloadDialogOpen, setDownloadDialogOpen] = useState(false)
+  const [emailDialogOpen, setEmailDialogOpen] = useState(false)
 
   // Calculate pending count (items with suggestions that need review, excluding 100% matches)
   const pendingCount = items.filter((i) => {
@@ -70,11 +68,6 @@ export function RFPActionButton({ jobId, items }: RFPActionButtonProps) {
         })
       }
     })
-  }
-
-  const handleExport = (type: ExportType) => {
-    setExportType(type)
-    setExportDialogOpen(true)
   }
 
   // Unconfirmed state: show Confirmar button
@@ -142,24 +135,28 @@ export function RFPActionButton({ jobId, items }: RFPActionButtonProps) {
             <ChevronDown className="ml-2 h-4 w-4" />
           </Button>
         </DropdownMenuTrigger>
-        <DropdownMenuContent align="end">
-          <DropdownMenuItem onClick={() => handleExport('excel')}>
+        <DropdownMenuContent align="end" className="w-48">
+          <DropdownMenuItem onClick={() => setDownloadDialogOpen(true)}>
             <FileSpreadsheet className="mr-2 h-4 w-4" />
-            Exportar Excel
+            Transferir Excel
           </DropdownMenuItem>
-          <DropdownMenuItem onClick={() => handleExport('email')}>
+          <DropdownMenuItem onClick={() => setEmailDialogOpen(true)}>
             <Mail className="mr-2 h-4 w-4" />
             Enviar por Email
           </DropdownMenuItem>
         </DropdownMenuContent>
       </DropdownMenu>
 
-      <ExportDialog
-        open={exportDialogOpen}
-        onOpenChange={setExportDialogOpen}
+      <ExportDownloadDialog
+        open={downloadDialogOpen}
+        onOpenChange={setDownloadDialogOpen}
         items={items}
-        jobId={jobId}
       />
+
+      {/* ExportEmailDialog - implemented in plan 09-03 */}
+      {emailDialogOpen && (
+        <div className="hidden">Email dialog placeholder - implemented in 09-03</div>
+      )}
     </>
   )
 }
