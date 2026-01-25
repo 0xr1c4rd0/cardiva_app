@@ -53,19 +53,17 @@ export function ExportDownloadDialog({ open, onOpenChange, items }: ExportDownlo
     }
 
     setIsExporting(true)
-    setTimeout(() => {
-      try {
-        const confirmedOnly = exportMode === 'matched'
-        exportRFPToExcel(items, confirmedOnly, 'RFP_Resultados')
-        toast.success('Ficheiro Excel transferido')
-        onOpenChange(false)
-      } catch (error) {
-        console.error('Export failed:', error)
-        toast.error('Erro ao exportar ficheiro')
-      } finally {
-        setIsExporting(false)
-      }
-    }, 0)
+    try {
+      const confirmedOnly = exportMode === 'matched'
+      await exportRFPToExcel(items, confirmedOnly, 'RFP_Resultados')
+      toast.success('Ficheiro Excel transferido')
+      onOpenChange(false)
+    } catch (error) {
+      console.error('Export failed:', error)
+      toast.error('Erro ao exportar ficheiro')
+    } finally {
+      setIsExporting(false)
+    }
   }
 
   return (
