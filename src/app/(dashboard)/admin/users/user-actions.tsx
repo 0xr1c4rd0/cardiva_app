@@ -1,8 +1,7 @@
 'use client'
 
 import { useState } from 'react'
-import { useActionState } from 'react'
-import { approveUser, rejectUser, updateUserRole, deleteUser } from './actions'
+import { updateUserRole, deleteUser, toggleUserActive } from './actions'
 import { Button } from '@/components/ui/button'
 import {
   Select,
@@ -22,76 +21,40 @@ import {
   AlertDialogTitle,
   AlertDialogTrigger,
 } from '@/components/ui/alert-dialog'
+import { Checkbox } from '@/components/ui/checkbox'
 import { Trash2, Loader2 } from 'lucide-react'
 import { toast } from 'sonner'
-
-export function ApproveButton({ userId }: { userId: string }) {
-  const [state, formAction, isPending] = useActionState(
-    async (_prevState: any, formData: FormData) => {
-      return await approveUser(userId)
-    },
-    null
-  )
-
-  return (
-    <form action={formAction} className="inline">
-      <Button
-        type="submit"
-        size="sm"
-        variant="default"
-        className="mr-2"
-        disabled={isPending}
-      >
-        {isPending ? 'A aprovar...' : 'Aprovar'}
-      </Button>
-    </form>
-  )
-}
-
-export function RejectButton({ userId }: { userId: string }) {
-  const [state, formAction, isPending] = useActionState(
-    async (_prevState: any, formData: FormData) => {
-      return await rejectUser(userId)
-    },
-    null
-  )
-
-  return (
-    <form action={formAction} className="inline">
-      <Button
-        type="submit"
-        size="sm"
-        variant="destructive"
-        disabled={isPending}
-      >
-        {isPending ? 'A rejeitar...' : 'Rejeitar'}
-      </Button>
-    </form>
-  )
-}
 
 interface RoleDropdownProps {
   userId: string
   currentRole: string
   isCurrentUser: boolean
+  onUpdate?: (newRole: string) => void
 }
 
-export function RoleDropdown({ userId, currentRole, isCurrentUser }: RoleDropdownProps) {
+export function RoleDropdown({ userId, currentRole, isCurrentUser, onUpdate }: RoleDropdownProps) {
   const [isUpdating, setIsUpdating] = useState(false)
+  const [role, setRole] = useState(currentRole)
 
   const handleRoleChange = async (newRole: string) => {
-    if (newRole === currentRole) return
+    if (newRole === role) return
 
+    const previousRole = role
     setIsUpdating(true)
+    setRole(newRole) // Optimistic update
+
     try {
       const result = await updateUserRole(userId, newRole as 'user' | 'admin')
       if (result.success) {
-        toast.success('Funcao atualizada')
+        toast.success('Função atualizada')
+        onUpdate?.(newRole)
       } else {
-        toast.error(result.error || 'Erro ao atualizar funcao')
+        setRole(previousRole) // Revert on error
+        toast.error(result.error || 'Erro ao atualizar função')
       }
     } catch (error) {
-      toast.error('Erro ao atualizar funcao')
+      setRole(previousRole) // Revert on error
+      toast.error('Erro ao atualizar função')
     } finally {
       setIsUpdating(false)
     }
@@ -99,7 +62,7 @@ export function RoleDropdown({ userId, currentRole, isCurrentUser }: RoleDropdow
 
   return (
     <Select
-      value={currentRole}
+      value={role}
       onValueChange={handleRoleChange}
       disabled={isUpdating || isCurrentUser}
     >
@@ -118,13 +81,56 @@ export function RoleDropdown({ userId, currentRole, isCurrentUser }: RoleDropdow
   )
 }
 
+interface ActiveToggleProps {
+  userId: string
+  isActive: boolean
+  isCurrentUser: boolean
+  onUpdate?: (approved_at: string | null, banned_until: string | null) => void
+}
+
+export function ActiveToggle({ userId, isActive, isCurrentUser, onUpdate }: ActiveToggleProps) {
+  const [isUpdating, setIsUpdating] = useState(false)
+  const [checked, setChecked] = useState(isActive)
+
+  const handleToggle = async (newValue: boolean) => {
+    setIsUpdating(true)
+    setChecked(newValue) // Optimistic update
+    try {
+      const result = await toggleUserActive(userId, newValue)
+      if (result.success) {
+        toast.success(newValue ? 'Utilizador ativado' : 'Utilizador desativado')
+        // Update parent state with the new values
+        onUpdate?.(result.approved_at ?? null, result.banned_until ?? null)
+      } else {
+        setChecked(!newValue) // Revert on error
+        toast.error(result.error || 'Erro ao alterar estado')
+      }
+    } catch (error) {
+      setChecked(!newValue) // Revert on error
+      toast.error('Erro ao alterar estado')
+    } finally {
+      setIsUpdating(false)
+    }
+  }
+
+  return (
+    <Checkbox
+      checked={checked}
+      onCheckedChange={handleToggle}
+      disabled={isUpdating || isCurrentUser}
+      aria-label="Ativar utilizador"
+    />
+  )
+}
+
 interface DeleteUserButtonProps {
   userId: string
   userEmail: string
   isCurrentUser: boolean
+  onDelete?: () => void
 }
 
-export function DeleteUserButton({ userId, userEmail, isCurrentUser }: DeleteUserButtonProps) {
+export function DeleteUserButton({ userId, userEmail, isCurrentUser, onDelete }: DeleteUserButtonProps) {
   const [isDeleting, setIsDeleting] = useState(false)
 
   const handleDelete = async () => {
@@ -133,6 +139,7 @@ export function DeleteUserButton({ userId, userEmail, isCurrentUser }: DeleteUse
       const result = await deleteUser(userId)
       if (result.success) {
         toast.success('Utilizador eliminado')
+        onDelete?.()
       } else {
         toast.error(result.error || 'Erro ao eliminar utilizador')
       }
@@ -163,7 +170,7 @@ export function DeleteUserButton({ userId, userEmail, isCurrentUser }: DeleteUse
           <AlertDialogTitle>Eliminar utilizador?</AlertDialogTitle>
           <AlertDialogDescription>
             Tem a certeza que pretende eliminar <strong>{userEmail}</strong>?
-            Esta acao nao pode ser revertida.
+            Esta ação não pode ser revertida.
           </AlertDialogDescription>
         </AlertDialogHeader>
         <AlertDialogFooter>

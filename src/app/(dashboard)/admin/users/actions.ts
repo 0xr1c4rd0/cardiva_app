@@ -71,6 +71,65 @@ export async function updateUserRole(userId: string, role: 'user' | 'admin') {
   return { success: true }
 }
 
+export async function toggleUserActive(userId: string, isActive: boolean) {
+  await requireAdmin()
+
+  const admin = createAdminClient()
+  const supabase = await createClient()
+
+  // Prevent changing own status
+  const { data: { user } } = await supabase.auth.getUser()
+  if (user?.id === userId) {
+    return { success: false, error: 'Nao pode alterar o seu proprio estado' }
+  }
+
+  const now = new Date().toISOString()
+
+  if (isActive) {
+    // Activate user: remove ban and set approved_at
+    const { error: banError } = await admin.auth.admin.updateUserById(userId, {
+      ban_duration: 'none',
+    })
+
+    if (banError) {
+      return { success: false, error: banError.message }
+    }
+
+    const { error: profileError } = await supabase
+      .from('profiles')
+      .update({ approved_at: now })
+      .eq('id', userId)
+
+    if (profileError) {
+      return { success: false, error: profileError.message }
+    }
+
+    revalidatePath('/admin/users')
+    return { success: true, approved_at: now, banned_until: null }
+  } else {
+    // Deactivate user: ban and clear approved_at
+    const { error: banError } = await admin.auth.admin.updateUserById(userId, {
+      ban_duration: '87600h', // 10 years
+    })
+
+    if (banError) {
+      return { success: false, error: banError.message }
+    }
+
+    const { error: profileError } = await supabase
+      .from('profiles')
+      .update({ approved_at: null })
+      .eq('id', userId)
+
+    if (profileError) {
+      return { success: false, error: profileError.message }
+    }
+
+    revalidatePath('/admin/users')
+    return { success: true, approved_at: null, banned_until: now }
+  }
+}
+
 export async function deleteUser(userId: string) {
   await requireAdmin()
 
