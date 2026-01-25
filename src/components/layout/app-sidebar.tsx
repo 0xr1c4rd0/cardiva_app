@@ -21,7 +21,10 @@ const navItems = [
   { title: 'Histórico', url: '/history', icon: History },
 ]
 
-const adminItems = [{ title: 'Utilizadores', url: '/admin/users', icon: Users }]
+const adminItems = [
+  { title: 'Utilizadores', url: '/admin/users', icon: Users },
+  { title: 'Definicoes', url: '/admin/settings', icon: Settings },
+]
 
 export async function AppSidebar() {
   const userIsAdmin = await isAdmin()
