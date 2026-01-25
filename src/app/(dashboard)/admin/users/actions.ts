@@ -45,3 +45,52 @@ export async function rejectUser(userId: string) {
   revalidatePath('/admin/users')
   return { success: true }
 }
+
+export async function updateUserRole(userId: string, role: 'user' | 'admin') {
+  await requireAdmin()
+
+  const supabase = await createClient()
+
+  // Prevent changing own role (safety)
+  const { data: { user } } = await supabase.auth.getUser()
+  if (user?.id === userId) {
+    return { error: 'Nao pode alterar a sua propria funcao' }
+  }
+
+  const { error } = await supabase
+    .from('profiles')
+    .update({ role })
+    .eq('id', userId)
+
+  if (error) {
+    console.error('updateUserRole error:', error)
+    return { error: error.message }
+  }
+
+  revalidatePath('/admin/users')
+  return { success: true }
+}
+
+export async function deleteUser(userId: string) {
+  await requireAdmin()
+
+  const supabase = await createClient()
+
+  // Prevent deleting self
+  const { data: { user } } = await supabase.auth.getUser()
+  if (user?.id === userId) {
+    return { error: 'Nao pode eliminar a sua propria conta' }
+  }
+
+  // Delete via admin API (cascades to profiles via FK)
+  const admin = createAdminClient()
+  const { error } = await admin.auth.admin.deleteUser(userId)
+
+  if (error) {
+    console.error('deleteUser error:', error)
+    return { error: error.message }
+  }
+
+  revalidatePath('/admin/users')
+  return { success: true }
+}
