@@ -12,6 +12,7 @@ import {
 import { Check, X, AlertCircle, Edit, Download, ChevronDown, Mail } from 'lucide-react'
 import type { RFPItemWithMatches } from '@/types/rfp'
 import { ExportDownloadDialog } from './export-download-dialog'
+import { ExportEmailDialog } from './export-email-dialog'
 
 interface ConfirmationSummaryProps {
   items: RFPItemWithMatches[]
@@ -141,10 +142,13 @@ export function ConfirmationSummary({ items, jobId }: ConfirmationSummaryProps) 
         items={items}
       />
 
-      {/* ExportEmailDialog - implemented in plan 09-03 */}
-      {emailDialogOpen && (
-        <div className="hidden">Email dialog placeholder - implemented in 09-03</div>
-      )}
+      {/* Export Email dialog */}
+      <ExportEmailDialog
+        open={emailDialogOpen}
+        onOpenChange={setEmailDialogOpen}
+        items={items}
+        jobId={jobId}
+      />
     </Card>
   )
 }
