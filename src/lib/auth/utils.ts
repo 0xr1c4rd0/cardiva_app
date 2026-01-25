@@ -4,26 +4,25 @@ import { redirect } from 'next/navigation'
 export type UserRole = 'user' | 'admin'
 
 /**
- * Get the current user's role from JWT claims
+ * Get the current user's role from profiles table
  * Returns null if not authenticated
  */
 export async function getUserRole(): Promise<UserRole | null> {
   const supabase = await createClient()
-  const { data: { session } } = await supabase.auth.getSession()
+  const { data: { user } } = await supabase.auth.getUser()
 
-  if (!session?.access_token) {
+  if (!user) {
     return null
   }
 
-  try {
-    // Decode JWT payload (middle part, base64)
-    const payload = JSON.parse(
-      Buffer.from(session.access_token.split('.')[1], 'base64').toString()
-    )
-    return payload.user_role || 'user'
-  } catch {
-    return null
-  }
+  // Query the profiles table for the user's role
+  const { data: profile } = await supabase
+    .from('profiles')
+    .select('role')
+    .eq('id', user.id)
+    .single()
+
+  return (profile?.role as UserRole) || 'user'
 }
 
 /**
