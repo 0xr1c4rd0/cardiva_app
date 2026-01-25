@@ -10,11 +10,11 @@ See: .planning/PROJECT.md (updated 2025-01-21)
 ## Current Position
 
 Phase: 9 (Export, Email & Admin)
-Plan: 5 of 6 in current phase
-Status: Wave 1 complete, Wave 2 in progress (09-03, 09-04 complete)
-Last activity: 2026-01-25 - Completed 09-03 (ExportEmailDialog with recipient modes)
+Plan: 6 of 6 in current phase
+Status: Phase complete
+Last activity: 2026-01-25 - Completed 09-05 (Admin settings page)
 
-Progress: [=========---] 88%
+Progress: [===========] 100%
 
 ## Performance Metrics
 
@@ -132,6 +132,8 @@ Recent decisions affecting current work:
 - [09-03]: 4 email recipient modes: no-defaults, locked, add-only, replaceable
 - [09-03]: Default emails as secondary badges, user-added as outline badges
 - [09-03]: Max 10 emails total, sendExportEmail uses comma-separated string
+- [09-05]: Collapsible sections for admin settings (Email/Export open, Inventory closed)
+- [09-05]: Added @radix-ui/react-collapsible via shadcn add collapsible
 
 ### Pending Todos
 
@@ -170,8 +172,8 @@ See `.planning/todos/pending/` for full details.
 ## Session Continuity
 
 Last session: 2026-01-25
-Stopped at: Completed 09-03-PLAN.md (ExportEmailDialog with recipient modes)
-Resume with: Continue Wave 2 (09-05 remaining)
+Stopped at: Completed 09-05-PLAN.md (Admin settings page)
+Resume with: /gsd:verify-work 9 (Phase 9 verification and UAT)
 
 ## Phase 9 Plans
 
@@ -181,12 +183,14 @@ Resume with: Continue Wave 2 (09-05 remaining)
 | 09-02 | 1 | Split ExportDialog -> dropdown + ExportDownloadDialog | Complete |
 | 09-03 | 2 | ExportEmailDialog with recipient configuration | Complete |
 | 09-04 | 2 | Export field configuration: update rfp-export.ts | Complete |
-| 09-05 | 2 | Admin settings page: email + export + inventory sections | Pending |
+| 09-05 | 2 | Admin settings page: email + export + inventory sections | Complete |
 | 09-06 | 1 | Admin users enhancements: role dropdown + delete button | Complete |
 
 **Wave execution:**
 - Wave 1: 09-01, 09-02, 09-06 (independent) - COMPLETE
-- Wave 2: 09-03, 09-04, 09-05 (depend on Wave 1) - IN PROGRESS
+- Wave 2: 09-03, 09-04, 09-05 (depend on Wave 1) - COMPLETE
+
+**Phase 9 complete.** All export, email, and admin requirements satisfied.
 
 ## Phase 1 Plans
 
