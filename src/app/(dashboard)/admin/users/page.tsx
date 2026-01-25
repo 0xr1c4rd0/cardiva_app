@@ -1,6 +1,6 @@
 import { createAdminClient } from '@/lib/supabase/admin'
 import { createClient } from '@/lib/supabase/server'
-import { ApproveButton, RejectButton } from './user-actions'
+import { ApproveButton, RejectButton, RoleDropdown, DeleteUserButton } from './user-actions'
 import { Badge } from '@/components/ui/badge'
 import {
   Table,
@@ -29,6 +29,10 @@ export default async function AdminUsersPage() {
   const { data: profiles } = await supabase
     .from('profiles')
     .select('id, email, role, approved_at, created_at')
+
+  // Get current user ID for comparison
+  const { data: { user: currentUser } } = await supabase.auth.getUser()
+  const currentUserId = currentUser?.id
 
   const profilesMap = new Map(profiles?.map((p) => [p.id, p]) || [])
 
@@ -111,27 +115,30 @@ export default async function AdminUsersPage() {
               <TableHeader>
                 <TableRow>
                   <TableHead>Email</TableHead>
-                  <TableHead className="w-[1%]">Função</TableHead>
+                  <TableHead className="w-[140px]">Funcao</TableHead>
                   <TableHead className="w-[1%]">Aprovado</TableHead>
                   <TableHead className="w-[1%]">Registado</TableHead>
+                  <TableHead className="w-[1%] text-right">Acoes</TableHead>
                 </TableRow>
               </TableHeader>
               <TableBody>
                 {approvedUsers.map((user) => {
                   const profile = profilesMap.get(user.id)
+                  const isCurrentUser = user.id === currentUserId
                   return (
                     <TableRow key={user.id}>
                       <TableCell className="font-medium">
                         {user.email}
+                        {isCurrentUser && (
+                          <span className="ml-2 text-xs text-muted-foreground">(voce)</span>
+                        )}
                       </TableCell>
                       <TableCell>
-                        <Badge
-                          variant={
-                            profile?.role === 'admin' ? 'default' : 'secondary'
-                          }
-                        >
-                          {profile?.role === 'admin' ? 'admin' : 'utilizador'}
-                        </Badge>
+                        <RoleDropdown
+                          userId={user.id}
+                          currentRole={profile?.role || 'user'}
+                          isCurrentUser={isCurrentUser}
+                        />
                       </TableCell>
                       <TableCell>
                         {profile?.approved_at
@@ -140,6 +147,13 @@ export default async function AdminUsersPage() {
                       </TableCell>
                       <TableCell>
                         {new Date(user.created_at).toLocaleDateString('pt-PT')}
+                      </TableCell>
+                      <TableCell className="text-right">
+                        <DeleteUserButton
+                          userId={user.id}
+                          userEmail={user.email || ''}
+                          isCurrentUser={isCurrentUser}
+                        />
                       </TableCell>
                     </TableRow>
                   )
