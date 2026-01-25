@@ -1,6 +1,9 @@
 import * as XLSX from 'xlsx'
 import { saveAs } from 'file-saver'
+import { createClient } from '@/lib/supabase/client'
 import type { RFPItemWithMatches, MatchSuggestion } from '@/types/rfp'
+import type { ExportColumnConfig, ExportColumnMapping } from '@/types/export-config'
+import { DEFAULT_EXPORT_COLUMNS } from '@/types/export-config'
 
 /**
  * Flat row structure for RFP export
@@ -33,22 +36,78 @@ export interface ExportSummary {
 }
 
 /**
- * Export column configuration with Portuguese headers
+ * @deprecated Use getExportColumnConfig() instead for database-driven configuration
+ * Export column configuration with Portuguese headers (kept for backward compatibility)
  */
 export const RFP_EXPORT_COLUMNS = [
   { key: 'lote' as const, header: 'Lote' },
-  { key: 'posicao' as const, header: 'Posição' },
+  { key: 'posicao' as const, header: 'Posicao' },
   { key: 'artigo_pedido' as const, header: 'Artigo Pedido' },
-  { key: 'descricao_pedido' as const, header: 'Descrição Pedido' },
+  { key: 'descricao_pedido' as const, header: 'Descricao Pedido' },
   { key: 'quantidade' as const, header: 'Quantidade' },
-  { key: 'codigo_spms' as const, header: 'Cód. SPMS' },
+  { key: 'codigo_spms' as const, header: 'Cod. SPMS' },
   { key: 'artigo_match' as const, header: 'Artigo Match' },
-  { key: 'descricao_match' as const, header: 'Descrição Match' },
-  { key: 'preco_unit' as const, header: 'Preço Unit.' },
+  { key: 'descricao_match' as const, header: 'Descricao Match' },
+  { key: 'preco_unit' as const, header: 'Preco Unit.' },
   { key: 'similaridade' as const, header: 'Similaridade' },
   { key: 'tipo_match' as const, header: 'Tipo' },
   { key: 'status' as const, header: 'Status' },
 ]
+
+/**
+ * Fetch export column configuration from database
+ * Returns visible columns ordered by display_order
+ */
+export async function getExportColumnConfig(): Promise<ExportColumnMapping[]> {
+  try {
+    const supabase = createClient()
+    const { data, error } = await supabase
+      .from('export_column_config')
+      .select('*')
+      .eq('visible', true)
+      .order('source_table')
+      .order('display_order')
+
+    if (error || !data || data.length === 0) {
+      console.warn('Using default export columns:', error?.message)
+      return DEFAULT_EXPORT_COLUMNS
+    }
+
+    // Transform to ExportColumnMapping
+    return data.map((col: ExportColumnConfig) => ({
+      key: col.column_name,
+      header: col.display_name,
+      source: col.source_table,
+      type: col.column_type,
+    }))
+  } catch (error) {
+    console.warn('Failed to fetch export config, using defaults:', error)
+    return DEFAULT_EXPORT_COLUMNS
+  }
+}
+
+/**
+ * Format a value based on column type
+ */
+function formatValue(value: unknown, type: ExportColumnMapping['type']): string | number | null {
+  if (value === null || value === undefined) return null
+
+  switch (type) {
+    case 'currency':
+      return typeof value === 'number' ? value : parseFloat(String(value)) || null
+    case 'number':
+      if (typeof value === 'number') {
+        // Format similarity score as percentage (values between 0 and 1)
+        return value <= 1 && value > 0 ? `${Math.round(value * 100)}%` : value
+      }
+      return parseFloat(String(value)) || null
+    case 'date':
+      if (value instanceof Date) return value.toISOString()
+      return String(value)
+    default:
+      return String(value)
+  }
+}
 
 /**
  * Get the selected/confirmed match for an RFP item
@@ -72,7 +131,7 @@ function getSelectedMatch(item: RFPItemWithMatches): MatchSuggestion | null {
 /**
  * Get human-readable status label in Portuguese
  * - accepted/manual both show as "Selecionado" (manual uses blue color as hint in UI)
- * - rejected shows as "Sem correspondência" (same as no AI match)
+ * - rejected shows as "Sem correspondencia" (same as no AI match)
  */
 function getStatusLabel(status: RFPItemWithMatches['review_status'], hasMatch: boolean): string {
   switch (status) {
@@ -80,9 +139,9 @@ function getStatusLabel(status: RFPItemWithMatches['review_status'], hasMatch: b
     case 'manual':
       return 'Selecionado'
     case 'rejected':
-      return 'Sem correspondência'
+      return 'Sem correspondencia'
     case 'pending':
-      return hasMatch ? 'Pendente' : 'Sem correspondência'
+      return hasMatch ? 'Pendente' : 'Sem correspondencia'
     default:
       return status
   }
@@ -92,34 +151,41 @@ function getStatusLabel(status: RFPItemWithMatches['review_status'], hasMatch: b
  * Transform RFP items to flat export rows
  * @param items - RFP items with match suggestions
  * @param confirmedOnly - If true, only include accepted/manual items
+ * @param columnConfig - Column configuration (uses defaults if not provided)
  * @returns Array of flat export rows
  */
 export function transformToExportRows(
   items: RFPItemWithMatches[],
-  confirmedOnly: boolean = false
-): RFPExportRow[] {
+  confirmedOnly: boolean = false,
+  columnConfig: ExportColumnMapping[] = DEFAULT_EXPORT_COLUMNS
+): Record<string, unknown>[] {
   const filteredItems = confirmedOnly
     ? items.filter((i) => i.review_status === 'accepted' || i.review_status === 'manual')
     : items
 
   return filteredItems.map((item) => {
     const match = getSelectedMatch(item)
-    const hasAnyMatch = item.rfp_match_suggestions.length > 0
+    const row: Record<string, unknown> = {}
 
-    return {
-      lote: item.lote_pedido,
-      posicao: item.posicao_pedido,
-      artigo_pedido: item.artigo_pedido,
-      descricao_pedido: item.descricao_pedido,
-      quantidade: item.quantidade_pedido,
-      codigo_spms: match?.codigo_spms || null,
-      artigo_match: match?.artigo || null,
-      descricao_match: match?.descricao || null,
-      preco_unit: match?.preco || null,
-      similaridade: match ? `${Math.round(match.similarity_score * 100)}%` : '-',
-      tipo_match: match?.match_type || null,
-      status: getStatusLabel(item.review_status, hasAnyMatch),
-    }
+    columnConfig.forEach((col) => {
+      let value: unknown
+
+      if (col.source === 'rfp_items') {
+        // Get value from item - use type assertion via unknown for dynamic access
+        value = (item as unknown as Record<string, unknown>)[col.key]
+      } else {
+        // Get value from match - use type assertion via unknown for dynamic access
+        value = match ? (match as unknown as Record<string, unknown>)[col.key] : null
+      }
+
+      row[col.header] = formatValue(value, col.type)
+    })
+
+    // Always add status column (not from config)
+    const hasAnyMatch = item.rfp_match_suggestions.length > 0
+    row['Status'] = getStatusLabel(item.review_status, hasAnyMatch)
+
+    return row
   })
 }
 
@@ -145,22 +211,18 @@ export function calculateExportSummary(items: RFPItemWithMatches[]): ExportSumma
  * @param items - RFP items with match suggestions
  * @param confirmedOnly - If true, only include accepted/manual items
  * @param filename - Base filename (without extension)
+ * @param columnConfig - Optional column config (fetches from DB if not provided)
  */
-export function exportRFPToExcel(
+export async function exportRFPToExcel(
   items: RFPItemWithMatches[],
   confirmedOnly: boolean = false,
-  filename: string = 'RFP_Resultados'
-): void {
-  const exportRows = transformToExportRows(items, confirmedOnly)
+  filename: string = 'RFP_Resultados',
+  columnConfig?: ExportColumnMapping[]
+): Promise<void> {
+  // Fetch config if not provided
+  const config = columnConfig || await getExportColumnConfig()
 
-  // Transform to include only specified columns with custom headers
-  const exportData = exportRows.map((row) => {
-    const exportRow: Record<string, unknown> = {}
-    RFP_EXPORT_COLUMNS.forEach((col) => {
-      exportRow[col.header] = row[col.key]
-    })
-    return exportRow
-  })
+  const exportData = transformToExportRows(items, confirmedOnly, config)
 
   // Create workbook and worksheet
   const worksheet = XLSX.utils.json_to_sheet(exportData)
@@ -168,9 +230,10 @@ export function exportRFPToExcel(
   XLSX.utils.book_append_sheet(workbook, worksheet, 'Resultados RFP')
 
   // Auto-size columns based on content
-  const maxWidths = RFP_EXPORT_COLUMNS.map((col) => {
-    const headerWidth = col.header.length
-    const dataWidths = exportData.map((row) => String(row[col.header] ?? '').length)
+  const headers = [...config.map(c => c.header), 'Status']
+  const maxWidths = headers.map((header) => {
+    const headerWidth = header.length
+    const dataWidths = exportData.map((row) => String(row[header] ?? '').length)
     return Math.min(Math.max(headerWidth, ...dataWidths) + 2, 50)
   })
   worksheet['!cols'] = maxWidths.map((w) => ({ wch: w }))
@@ -193,43 +256,30 @@ export function exportRFPToExcel(
  * Generate Excel file as base64 for email attachment
  * @param items - RFP items with match suggestions
  * @param confirmedOnly - If true, only include accepted/manual items
+ * @param columnConfig - Optional column config (fetches from DB if not provided)
  * @returns Base64 encoded Excel file
  */
-export function generateExcelBase64(
+export async function generateExcelBase64(
   items: RFPItemWithMatches[],
-  confirmedOnly: boolean = false
-): string {
-  const exportRows = transformToExportRows(items, confirmedOnly)
+  confirmedOnly: boolean = false,
+  columnConfig?: ExportColumnMapping[]
+): Promise<string> {
+  const config = columnConfig || await getExportColumnConfig()
+  const exportData = transformToExportRows(items, confirmedOnly, config)
 
-  // Transform to include only specified columns with custom headers
-  const exportData = exportRows.map((row) => {
-    const exportRow: Record<string, unknown> = {}
-    RFP_EXPORT_COLUMNS.forEach((col) => {
-      exportRow[col.header] = row[col.key]
-    })
-    return exportRow
-  })
-
-  // Create workbook and worksheet
   const worksheet = XLSX.utils.json_to_sheet(exportData)
   const workbook = XLSX.utils.book_new()
   XLSX.utils.book_append_sheet(workbook, worksheet, 'Resultados RFP')
 
-  // Auto-size columns
-  const maxWidths = RFP_EXPORT_COLUMNS.map((col) => {
-    const headerWidth = col.header.length
-    const dataWidths = exportData.map((row) => String(row[col.header] ?? '').length)
+  const headers = [...config.map(c => c.header), 'Status']
+  const maxWidths = headers.map((header) => {
+    const headerWidth = header.length
+    const dataWidths = exportData.map((row) => String(row[header] ?? '').length)
     return Math.min(Math.max(headerWidth, ...dataWidths) + 2, 50)
   })
   worksheet['!cols'] = maxWidths.map((w) => ({ wch: w }))
 
-  // Generate as base64
-  const excelBase64 = XLSX.write(workbook, {
-    bookType: 'xlsx',
-    type: 'base64',
-  })
-
-  return excelBase64
+  return XLSX.write(workbook, { bookType: 'xlsx', type: 'base64' })
 }
 
 /**
