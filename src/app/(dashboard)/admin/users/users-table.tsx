@@ -17,6 +17,8 @@ import {
   CardHeader,
   CardTitle,
 } from '@/components/ui/card'
+import { Badge } from '@/components/ui/badge'
+import { StatusDot } from '@/components/ui/status-dot'
 
 export interface UserWithProfile {
   id: string
@@ -103,9 +105,18 @@ export function UsersTable({ initialUsers, currentUserId }: UsersTableProps) {
                       />
                     </TableCell>
                     <TableCell>
-                      {user.approved_at
-                        ? new Date(user.approved_at).toLocaleDateString('pt-PT')
-                        : '-'}
+                      <div className="flex items-center gap-2">
+                        <StatusDot
+                          variant={user.approved_at ? 'success' : 'pending'}
+                          size="sm"
+                          label={user.approved_at ? 'Aprovado' : 'Pendente'}
+                        />
+                        <span>
+                          {user.approved_at
+                            ? new Date(user.approved_at).toLocaleDateString('pt-PT')
+                            : 'Pendente'}
+                        </span>
+                      </div>
                     </TableCell>
                     <TableCell>
                       {new Date(user.created_at).toLocaleDateString('pt-PT')}

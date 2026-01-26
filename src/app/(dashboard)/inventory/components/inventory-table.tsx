@@ -21,6 +21,7 @@ import {
 import { cn } from '@/lib/utils'
 import { Skeleton } from '@/components/ui/skeleton'
 import { PackageOpen } from 'lucide-react'
+import { EmptyState } from '@/components/empty-state'
 import { DataTablePagination } from './data-table-pagination'
 import { TableToolbar } from './table-toolbar'
 import { Artigo, InventoryColumnConfig } from '@/lib/supabase/types'
@@ -60,7 +61,7 @@ function createColumns(config: InventoryColumnConfig[]): ColumnDef<Artigo>[] {
             <button
               type="button"
               onClick={() => column.toggleSorting(column.getIsSorted() === 'asc')}
-              className="inline-flex items-center hover:text-slate-900 transition-colors"
+              className="inline-flex items-center hover:text-foreground transition-colors"
             >
               {col.display_name}
               {column.getIsSorted() === 'asc' ? (
@@ -68,7 +69,7 @@ function createColumns(config: InventoryColumnConfig[]): ColumnDef<Artigo>[] {
               ) : column.getIsSorted() === 'desc' ? (
                 <ArrowDown className="ml-1 h-3 w-3" />
               ) : (
-                <ArrowUpDown className="ml-1 h-3 w-3 text-slate-400" />
+                <ArrowUpDown className="ml-1 h-3 w-3 text-muted-foreground/60" />
               )}
             </button>
           )
@@ -252,15 +253,27 @@ export function InventoryTable({
         onSearchChange={handleSearchChange}
         isPending={isPending}
       />
-      <div className="rounded-lg border border-slate-200 shadow-xs overflow-hidden bg-white p-2">
+      <div className="rounded-lg border border-border shadow-xs overflow-hidden bg-white p-2">
         <Table className="[&_thead_tr]:border-0">
           <TableHeader>
             {table.getHeaderGroups().map((headerGroup) => (
               <TableRow key={headerGroup.id} className="hover:bg-transparent border-0">
-                {headerGroup.headers.map((header, index) => (
+                {headerGroup.headers.map((header, index) => {
+                  // Determine aria-sort value for accessibility
+                  const isSorted = header.column.getIsSorted()
+                  const ariaSort = header.column.getCanSort()
+                    ? isSorted === 'asc'
+                      ? 'ascending'
+                      : isSorted === 'desc'
+                        ? 'descending'
+                        : 'none'
+                    : undefined
+
+                  return (
                   <TableHead
                     key={header.id}
-                    className={`text-xs font-medium text-slate-700 tracking-wide bg-slate-100/70 py-2 px-3 ${
+                    aria-sort={ariaSort}
+                    className={`text-xs font-medium text-muted-foreground tracking-wide bg-muted/70 py-2 px-3 ${
                       index === 0 ? 'pl-4 rounded-l-md' : ''
                     } ${
                       index === headerGroup.headers.length - 1 ? 'pr-4 rounded-r-md' : ''
@@ -273,14 +286,14 @@ export function InventoryTable({
                           header.getContext()
                         )}
                   </TableHead>
-                ))}
+                )})}
               </TableRow>
             ))}
           </TableHeader>
           <TableBody>
             {isPending ? (
               Array.from({ length: 5 }).map((_, i) => (
-                <TableRow key={`skeleton-${i}`} className="hover:bg-slate-50 border-0">
+                <TableRow key={`skeleton-${i}`} className="hover:bg-muted/50 border-0">
                   {columns.map((_, j) => (
                     <TableCell
                       key={`skeleton-cell-${i}-${j}`}
@@ -293,11 +306,11 @@ export function InventoryTable({
               ))
             ) : table.getRowModel().rows?.length ? (
               table.getRowModel().rows.map((row) => (
-                <TableRow key={row.id} className="hover:bg-slate-50 border-0">
+                <TableRow key={row.id} className="hover:bg-muted/50 border-0">
                   {row.getVisibleCells().map((cell, index) => (
                     <TableCell
                       key={cell.id}
-                      className={`py-2 px-3 text-slate-700 text-sm ${
+                      className={`py-2 px-3 text-foreground text-sm ${
                         index === 0 ? 'pl-4' : ''
                       } ${
                         index === row.getVisibleCells().length - 1 ? 'pr-4' : ''
@@ -315,12 +328,13 @@ export function InventoryTable({
               <TableRow className="border-0">
                 <TableCell
                   colSpan={columns.length}
-                  className="h-48 text-center"
+                  className="h-48"
                 >
-                  <div className="flex flex-col items-center gap-2 text-muted-foreground">
-                    <PackageOpen className="h-10 w-10" />
-                    <p>Nenhum produto encontrado</p>
-                  </div>
+                  <EmptyState
+                    icon={PackageOpen}
+                    title="Nenhum produto encontrado"
+                    description="Tente ajustar os filtros de pesquisa ou adicione novos produtos ao inventário."
+                  />
                 </TableCell>
               </TableRow>
             )}

@@ -5,8 +5,8 @@ export default function DashboardPage() {
   return (
     <div className="flex flex-1 flex-col gap-6">
       <div>
-        <h1 className="text-3xl font-semibold text-gray-900">Dashboard</h1>
-        <p className="mt-2 text-gray-600">
+        <h1 className="text-3xl font-semibold text-foreground">Dashboard</h1>
+        <p className="mt-2 text-muted-foreground">
           Bem-vindo ao Cardiva - Correspondência de Concursos
         </p>
       </div>
@@ -18,8 +18,8 @@ export default function DashboardPage() {
         >
           <FileText className="h-8 w-8 text-primary" />
           <div>
-            <h2 className="font-semibold text-gray-900">Carregar Concurso</h2>
-            <p className="text-sm text-gray-600">
+            <h2 className="font-semibold text-foreground">Carregar Concurso</h2>
+            <p className="text-sm text-muted-foreground">
               Carregar PDF para iniciar correspondência
             </p>
           </div>
@@ -31,8 +31,8 @@ export default function DashboardPage() {
         >
           <Package className="h-8 w-8 text-primary" />
           <div>
-            <h2 className="font-semibold text-gray-900">Inventário</h2>
-            <p className="text-sm text-gray-600">
+            <h2 className="font-semibold text-foreground">Inventário</h2>
+            <p className="text-sm text-muted-foreground">
               Consultar e gerir produtos
             </p>
           </div>
@@ -44,8 +44,8 @@ export default function DashboardPage() {
         >
           <History className="h-8 w-8 text-primary" />
           <div>
-            <h2 className="font-semibold text-gray-900">Histórico</h2>
-            <p className="text-sm text-gray-600">
+            <h2 className="font-semibold text-foreground">Histórico</h2>
+            <p className="text-sm text-muted-foreground">
               Ver concursos anteriores
             </p>
           </div>

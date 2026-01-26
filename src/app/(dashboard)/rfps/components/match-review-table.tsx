@@ -18,6 +18,7 @@ import {
   PopoverTrigger,
 } from '@/components/ui/popover'
 import { cn } from '@/lib/utils'
+import { Badge } from '@/components/ui/badge'
 import { acceptMatch, rejectMatch, unselectMatch } from '../[id]/matches/actions'
 import { ManualMatchDialog } from './manual-match-dialog'
 import { MatchReviewToolbar } from './match-review-toolbar'
@@ -64,13 +65,13 @@ function SortableHeader({ column, label, sortBy, sortDir, onSort, className = ''
     <button
       type="button"
       onClick={() => onSort(column)}
-      className={cn("inline-flex items-center hover:text-slate-900 transition-colors", className)}
+      className={cn("inline-flex items-center hover:text-foreground transition-colors", className)}
     >
       {label}
       {isActive ? (
         isAsc ? <ArrowUp className="ml-1 h-3 w-3" /> : <ArrowDown className="ml-1 h-3 w-3" />
       ) : (
-        <ArrowUpDown className="ml-1 h-3 w-3 text-slate-400" />
+        <ArrowUpDown className="ml-1 h-3 w-3 text-muted-foreground/60" />
       )}
     </button>
   )
@@ -301,11 +302,14 @@ export function MatchReviewTable({ jobId, items, totalCount, initialState, onIte
       ) : (
         <>
           {/* Table */}
-          <div className="rounded-lg border border-slate-200 shadow-xs overflow-hidden bg-white p-2">
+          <div className="rounded-lg border border-border shadow-xs overflow-hidden bg-white p-2">
             <Table className="[&_thead_tr]:border-0">
               <TableHeader>
                 <TableRow className="hover:bg-transparent border-0">
-                  <TableHead className="pl-4 whitespace-nowrap text-xs font-medium text-slate-700 tracking-wide bg-slate-100/70 py-2 rounded-l-md">
+                  <TableHead
+                    aria-sort={sortBy === 'lote' ? (sortDir === 'asc' ? 'ascending' : 'descending') : 'none'}
+                    className="pl-4 whitespace-nowrap text-xs font-medium text-muted-foreground tracking-wide bg-muted/70 py-2 rounded-l-md"
+                  >
                     <SortableHeader
                       column="lote"
                       label="Lote"
@@ -314,7 +318,10 @@ export function MatchReviewTable({ jobId, items, totalCount, initialState, onIte
                       onSort={handleSortChange}
                     />
                   </TableHead>
-                  <TableHead className="whitespace-nowrap text-xs font-medium text-slate-700 tracking-wide bg-slate-100/70 py-2 px-3">
+                  <TableHead
+                    aria-sort={sortBy === 'pos' ? (sortDir === 'asc' ? 'ascending' : 'descending') : 'none'}
+                    className="whitespace-nowrap text-xs font-medium text-muted-foreground tracking-wide bg-muted/70 py-2 px-3"
+                  >
                     <SortableHeader
                       column="pos"
                       label="Posição"
@@ -323,7 +330,10 @@ export function MatchReviewTable({ jobId, items, totalCount, initialState, onIte
                       onSort={handleSortChange}
                     />
                   </TableHead>
-                  <TableHead className="whitespace-nowrap text-xs font-medium text-slate-700 tracking-wide bg-slate-100/70 py-2 px-3">
+                  <TableHead
+                    aria-sort={sortBy === 'artigo' ? (sortDir === 'asc' ? 'ascending' : 'descending') : 'none'}
+                    className="whitespace-nowrap text-xs font-medium text-muted-foreground tracking-wide bg-muted/70 py-2 px-3"
+                  >
                     <SortableHeader
                       column="artigo"
                       label="Artigo"
@@ -332,7 +342,10 @@ export function MatchReviewTable({ jobId, items, totalCount, initialState, onIte
                       onSort={handleSortChange}
                     />
                   </TableHead>
-                  <TableHead className="text-xs font-medium text-slate-700 tracking-wide bg-slate-100/70 py-2 px-3">
+                  <TableHead
+                    aria-sort={sortBy === 'descricao' ? (sortDir === 'asc' ? 'ascending' : 'descending') : 'none'}
+                    className="text-xs font-medium text-muted-foreground tracking-wide bg-muted/70 py-2 px-3"
+                  >
                     <SortableHeader
                       column="descricao"
                       label="Descrição"
@@ -341,16 +354,16 @@ export function MatchReviewTable({ jobId, items, totalCount, initialState, onIte
                       onSort={handleSortChange}
                     />
                   </TableHead>
-                  <TableHead className="whitespace-nowrap text-xs font-medium text-slate-700 tracking-wide bg-slate-100/70 py-2 px-3">
+                  <TableHead className="whitespace-nowrap text-xs font-medium text-muted-foreground tracking-wide bg-muted/70 py-2 px-3">
                     <span className="inline-flex items-center">Cód. SPMS</span>
                   </TableHead>
-                  <TableHead className="whitespace-nowrap text-xs font-medium text-slate-700 tracking-wide bg-slate-100/70 py-2 px-3">
+                  <TableHead className="whitespace-nowrap text-xs font-medium text-muted-foreground tracking-wide bg-muted/70 py-2 px-3">
                     <span className="inline-flex items-center">Artigo</span>
                   </TableHead>
-                  <TableHead className="text-xs font-medium text-slate-700 tracking-wide bg-slate-100/70 py-2 px-3">
+                  <TableHead className="text-xs font-medium text-muted-foreground tracking-wide bg-muted/70 py-2 px-3">
                     <span className="inline-flex items-center">Descrição</span>
                   </TableHead>
-                  <TableHead className="whitespace-nowrap pr-4 text-xs font-medium text-slate-700 tracking-wide bg-slate-100/70 py-2 text-right rounded-r-md">
+                  <TableHead className="whitespace-nowrap pr-4 text-xs font-medium text-muted-foreground tracking-wide bg-muted/70 py-2 text-right rounded-r-md">
                     <span className="inline-flex items-center">Estado</span>
                   </TableHead>
                 </TableRow>
@@ -432,20 +445,20 @@ function ItemRow({ jobId, item, isConfirmed, onItemUpdate }: ItemRowProps) {
     <TableRow
       className={cn(
         'transition-all duration-100',
-        'hover:bg-slate-50'
+        'hover:bg-muted/50'
       )}
     >
       {/* RFP Item columns */}
-      <TableCell className="pl-4 py-2 whitespace-nowrap font-mono text-slate-700 text-sm">
-        {item.lote_pedido ?? <span className="text-slate-300 italic">—</span>}
+      <TableCell className="pl-4 py-2 whitespace-nowrap font-mono text-foreground text-sm">
+        {item.lote_pedido ?? <span className="text-muted-foreground/40 italic">—</span>}
       </TableCell>
-      <TableCell className="py-2 px-3 whitespace-nowrap font-mono text-slate-700 text-sm">
-        {item.posicao_pedido ?? <span className="text-slate-300 italic">—</span>}
+      <TableCell className="py-2 px-3 whitespace-nowrap font-mono text-foreground text-sm">
+        {item.posicao_pedido ?? <span className="text-muted-foreground/40 italic">—</span>}
       </TableCell>
-      <TableCell className="py-2 px-3 whitespace-nowrap text-slate-700 text-sm">
-        {item.artigo_pedido ?? <span className="text-slate-300 italic">—</span>}
+      <TableCell className="py-2 px-3 whitespace-nowrap text-foreground text-sm">
+        {item.artigo_pedido ?? <span className="text-muted-foreground/40 italic">—</span>}
       </TableCell>
-      <TableCell className="py-2 px-3 text-slate-600 text-xs">
+      <TableCell className="py-2 px-3 text-muted-foreground text-xs">
         {item.descricao_pedido}
       </TableCell>
 
@@ -454,21 +467,21 @@ function ItemRow({ jobId, item, isConfirmed, onItemUpdate }: ItemRowProps) {
         {matchedCodigo ? (
           <span className="text-emerald-700 font-medium">{matchedCodigo}</span>
         ) : (
-          <span className="text-slate-300 italic">—</span>
+          <span className="text-muted-foreground/40 italic">—</span>
         )}
       </TableCell>
       <TableCell className="py-2 px-3 whitespace-nowrap text-sm">
         {matchedArtigo ? (
           <span className="text-emerald-700 font-medium">{matchedArtigo}</span>
         ) : (
-          <span className="text-slate-300 italic">—</span>
+          <span className="text-muted-foreground/40 italic">—</span>
         )}
       </TableCell>
       <TableCell className="py-2 px-3 text-sm">
         {matchedDescricao ? (
           <span className="text-emerald-600">{matchedDescricao}</span>
         ) : (
-          <span className="text-slate-300 italic">—</span>
+          <span className="text-muted-foreground/40 italic">—</span>
         )}
       </TableCell>
 
@@ -715,18 +728,18 @@ function SuggestionItem({ jobId, rfpItemId, match, isPerfectMatch, onActionCompl
           >
             {match.artigo ?? match.codigo_spms ?? '—'}
           </span>
-          <span
-            className={cn(
-              'text-xs px-1.5 py-0.5 rounded',
-              isManualMatch ? 'bg-blue-100 text-blue-700' :
-              confidencePercent >= 99 ? 'bg-emerald-100 text-emerald-700 font-mono' :
-              confidencePercent >= 80 ? 'bg-blue-100 text-blue-700 font-mono' :
-              confidencePercent >= 60 ? 'bg-amber-100 text-amber-700 font-mono' :
-              'bg-gray-100 text-gray-600 font-mono'
-            )}
+          <Badge
+            variant={
+              isManualMatch ? 'info' :
+              confidencePercent >= 99 ? 'success' :
+              confidencePercent >= 80 ? 'info' :
+              confidencePercent >= 60 ? 'warning' :
+              'secondary'
+            }
+            className={!isManualMatch ? 'font-mono' : undefined}
           >
             {isManualMatch ? 'Manual' : `${confidencePercent}%`}
-          </span>
+          </Badge>
           {isLocked && !isManualMatch && (
             <span className="text-[10px] text-muted-foreground uppercase tracking-wide">
               Auto

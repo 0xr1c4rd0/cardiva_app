@@ -1,6 +1,6 @@
 'use client'
 
-import { Suspense } from 'react'
+import { Suspense, useState } from 'react'
 import { useActionState } from 'react'
 import { useSearchParams } from 'next/navigation'
 import Link from 'next/link'
@@ -14,11 +14,14 @@ import {
 } from '@/components/ui/card'
 import { Input } from '@/components/ui/input'
 import { Button } from '@/components/ui/button'
+import { FormField } from '@/components/form-field'
+import { PasswordStrength } from '@/components/password-strength'
 
 function RegisterForm() {
   const [state, formAction, isPending] = useActionState(signup, null)
   const searchParams = useSearchParams()
   const message = searchParams.get('message')
+  const [password, setPassword] = useState('')
 
   return (
     <Card className="w-full max-w-md">
@@ -43,13 +46,7 @@ function RegisterForm() {
 
         <form action={formAction} className="space-y-4">
           <div className="grid grid-cols-2 gap-4">
-            <div className="space-y-2">
-              <label
-                htmlFor="firstName"
-                className="text-sm font-medium leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70"
-              >
-                Nome
-              </label>
+            <FormField label="Nome" htmlFor="firstName" required>
               <Input
                 id="firstName"
                 name="firstName"
@@ -59,14 +56,8 @@ function RegisterForm() {
                 autoComplete="given-name"
                 disabled={isPending}
               />
-            </div>
-            <div className="space-y-2">
-              <label
-                htmlFor="lastName"
-                className="text-sm font-medium leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70"
-              >
-                Apelido
-              </label>
+            </FormField>
+            <FormField label="Apelido" htmlFor="lastName" required>
               <Input
                 id="lastName"
                 name="lastName"
@@ -76,16 +67,10 @@ function RegisterForm() {
                 autoComplete="family-name"
                 disabled={isPending}
               />
-            </div>
+            </FormField>
           </div>
 
-          <div className="space-y-2">
-            <label
-              htmlFor="email"
-              className="text-sm font-medium leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70"
-            >
-              Email
-            </label>
+          <FormField label="Email" htmlFor="email" required>
             <Input
               id="email"
               name="email"
@@ -95,15 +80,9 @@ function RegisterForm() {
               autoComplete="email"
               disabled={isPending}
             />
-          </div>
+          </FormField>
 
-          <div className="space-y-2">
-            <label
-              htmlFor="password"
-              className="text-sm font-medium leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70"
-            >
-              Palavra-passe
-            </label>
+          <FormField label="Palavra-passe" htmlFor="password" required>
             <Input
               id="password"
               name="password"
@@ -112,19 +91,13 @@ function RegisterForm() {
               required
               autoComplete="new-password"
               disabled={isPending}
+              value={password}
+              onChange={(e) => setPassword(e.target.value)}
             />
-            <p className="text-xs text-muted-foreground">
-              Mínimo 8 caracteres com maiúscula, minúscula e número
-            </p>
-          </div>
+          </FormField>
+          <PasswordStrength password={password} />
 
-          <div className="space-y-2">
-            <label
-              htmlFor="confirmPassword"
-              className="text-sm font-medium leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70"
-            >
-              Confirmar Palavra-passe
-            </label>
+          <FormField label="Confirmar Palavra-passe" htmlFor="confirmPassword" required>
             <Input
               id="confirmPassword"
               name="confirmPassword"
@@ -134,7 +107,7 @@ function RegisterForm() {
               autoComplete="new-password"
               disabled={isPending}
             />
-          </div>
+          </FormField>
 
           <Button type="submit" className="w-full" disabled={isPending}>
             {isPending ? 'A criar conta...' : 'Criar Conta'}

@@ -7,7 +7,7 @@ import Link from 'next/link'
 import { login } from './actions'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
-import { Label } from '@/components/ui/label'
+import { FormField } from '@/components/form-field'
 import {
   Card,
   CardContent,
@@ -44,27 +44,27 @@ function LoginForm() {
               <AlertDescription>{state.error}</AlertDescription>
             </Alert>
           )}
-          <div className="space-y-2">
-            <Label htmlFor="email">Email</Label>
+          <FormField label="Email" htmlFor="email" required>
             <Input
               id="email"
               name="email"
               type="email"
               placeholder="exemplo@email.com"
               required
+              autoComplete="email"
               disabled={isPending}
             />
-          </div>
-          <div className="space-y-2">
-            <Label htmlFor="password">Palavra-passe</Label>
+          </FormField>
+          <FormField label="Palavra-passe" htmlFor="password" required>
             <Input
               id="password"
               name="password"
               type="password"
               required
+              autoComplete="current-password"
               disabled={isPending}
             />
-          </div>
+          </FormField>
           <div className="flex justify-end">
             <Link
               href="/reset-password"
@@ -103,14 +103,12 @@ function LoginFormFallback() {
         </CardDescription>
       </CardHeader>
       <CardContent className="space-y-4">
-        <div className="space-y-2">
-          <Label htmlFor="email">Email</Label>
+        <FormField label="Email" htmlFor="email" required>
           <Input id="email" type="email" placeholder="exemplo@email.com" disabled />
-        </div>
-        <div className="space-y-2">
-          <Label htmlFor="password">Palavra-passe</Label>
+        </FormField>
+        <FormField label="Palavra-passe" htmlFor="password" required>
           <Input id="password" type="password" disabled />
-        </div>
+        </FormField>
       </CardContent>
       <CardFooter>
         <Button className="w-full" disabled>

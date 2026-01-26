@@ -17,6 +17,7 @@ import {
 import { Badge } from '@/components/ui/badge'
 import { Button } from '@/components/ui/button'
 import { cn } from '@/lib/utils'
+import { EmptyState } from '@/components/empty-state'
 import { useRFPUploadStatus, type RFPUploadJob } from '@/contexts/rfp-upload-status-context'
 import { DeleteRFPDialog } from './delete-rfp-dialog'
 import { RFPListToolbar } from './rfp-list-toolbar'
@@ -123,6 +124,7 @@ const statusConfig = {
     variant: 'secondary' as const,
     className: 'text-muted-foreground',
     badgeClassName: '',
+    dotVariant: 'pending' as const,
   },
   processing: {
     label: 'A processar',
@@ -130,13 +132,15 @@ const statusConfig = {
     variant: 'default' as const,
     className: 'text-white animate-spin',
     badgeClassName: '',
+    dotVariant: 'processing' as const,
   },
   completed: {
     label: 'Concluído',
     icon: CheckCircle2,
-    variant: 'default' as const,
-    className: 'text-green-600',
+    variant: 'success' as const,
+    className: 'text-emerald-600',
     badgeClassName: '',
+    dotVariant: 'success' as const,
   },
   failed: {
     label: 'Falhou',
@@ -144,6 +148,7 @@ const statusConfig = {
     variant: 'destructive' as const,
     className: 'text-destructive',
     badgeClassName: '',
+    dotVariant: 'error' as const,
   },
 }
 
@@ -152,23 +157,26 @@ const reviewStatusConfig = {
   por_rever: {
     label: 'Por Rever',
     icon: Clock,
-    variant: 'secondary' as const,
+    variant: 'warning' as const,
     className: 'text-amber-600',
-    badgeClassName: 'bg-amber-100 text-amber-700 border-amber-200 hover:bg-amber-100',
+    badgeClassName: '',
+    dotVariant: 'warning' as const,
   },
   revisto: {
     label: 'Revisto',
     icon: CheckCircle2,
-    variant: 'secondary' as const,
+    variant: 'info' as const,
     className: 'text-blue-600',
-    badgeClassName: 'bg-blue-100 text-blue-700 border-blue-200 hover:bg-blue-100',
+    badgeClassName: '',
+    dotVariant: 'info' as const,
   },
   confirmado: {
     label: 'Confirmado',
     icon: CheckCircle2,
-    variant: 'secondary' as const,
+    variant: 'success' as const,
     className: 'text-emerald-600',
-    badgeClassName: 'bg-emerald-100 text-emerald-700 border-emerald-200 hover:bg-emerald-100',
+    badgeClassName: '',
+    dotVariant: 'success' as const,
   },
 }
 
@@ -254,9 +262,9 @@ function RFPJobRow({ job, isDeleting, onViewPDF, onDeleteClick, onAnimationCompl
       <div className="flex items-center gap-2">
         <Badge
           variant={displayStatus.variant}
-          className={cn("flex items-center gap-1", displayStatus.badgeClassName)}
+          className={cn("flex items-center gap-1.5", displayStatus.badgeClassName)}
         >
-          <StatusIcon className={cn('h-3 w-3', displayStatus.className)} />
+          <StatusIcon className={cn("h-4 w-4", displayStatus.className)} />
           {displayStatus.label}
         </Badge>
 
@@ -268,8 +276,9 @@ function RFPJobRow({ job, isDeleting, onViewPDF, onDeleteClick, onAnimationCompl
               className="h-8 w-8"
               onClick={(e) => onViewPDF(e, job.id)}
               title="Ver PDF"
+              aria-label="Ver PDF"
             >
-              <FileDown className="h-4 w-4" />
+              <FileDown className="h-4 w-4" aria-hidden="true" />
             </Button>
             <Button
               variant="outline"
@@ -277,8 +286,9 @@ function RFPJobRow({ job, isDeleting, onViewPDF, onDeleteClick, onAnimationCompl
               className="h-8 w-8 hover:bg-destructive hover:text-white hover:border-destructive"
               onClick={(e) => onDeleteClick(e, job)}
               title="Eliminar"
+              aria-label="Eliminar"
             >
-              <Trash2 className="h-4 w-4" />
+              <Trash2 className="h-4 w-4" aria-hidden="true" />
             </Button>
           </>
         )}
@@ -590,33 +600,29 @@ export function RFPJobsList({ initialJobs, totalCount, initialState }: RFPJobsLi
           <RFPListSkeleton />
         ) : isEmptyState ? (
           // Empty state - no jobs at all
-          <div className="flex flex-col items-center justify-center py-12 text-center">
-            <div className="mb-6 rounded-full bg-muted p-6">
-              <FileText className="h-12 w-12 text-muted-foreground" />
-            </div>
-            <h3 className="mb-2 text-lg font-medium">Ainda não há concursos</h3>
-            <p className="mb-6 max-w-sm text-muted-foreground">
-              Carregue o seu primeiro documento de concurso para começar a encontrar correspondências no inventário.
-            </p>
-            <Button onClick={handleUploadClick}>
-              <Upload className="mr-2 h-4 w-4" />
-              Carregar primeiro concurso
-            </Button>
-          </div>
+          <EmptyState
+            icon={FileText}
+            title="Ainda não há concursos"
+            description="Carregue o seu primeiro documento de concurso para começar a encontrar correspondências no inventário."
+            action={
+              <Button onClick={handleUploadClick}>
+                <Upload className="mr-2 h-4 w-4" />
+                Carregar primeiro concurso
+              </Button>
+            }
+          />
         ) : isSearchEmpty ? (
           // Search empty state
-          <div className="flex flex-col items-center justify-center py-12 text-center">
-            <div className="mb-6 rounded-full bg-muted p-6">
-              <SearchX className="h-12 w-12 text-muted-foreground" />
-            </div>
-            <h3 className="mb-2 text-lg font-medium">Nenhum concurso encontrado</h3>
-            <p className="mb-6 max-w-sm text-muted-foreground">
-              Não foram encontrados concursos para &quot;{search}&quot;. Tente outro termo de pesquisa.
-            </p>
-            <Button variant="outline" onClick={handleClearSearch}>
-              Limpar pesquisa
-            </Button>
-          </div>
+          <EmptyState
+            icon={SearchX}
+            title="Nenhum concurso encontrado"
+            description={`Não foram encontrados concursos para "${search}". Tente outro termo de pesquisa.`}
+            action={
+              <Button variant="outline" onClick={handleClearSearch}>
+                Limpar pesquisa
+              </Button>
+            }
+          />
         ) : (
           // Jobs list
           <div className="flex flex-col gap-2">
