@@ -1,11 +1,12 @@
 'use client'
 
-import { useState, useEffect, useTransition, useCallback } from 'react'
+import { useState, useEffect, useTransition, useCallback, useRef } from 'react'
 import Link from 'next/link'
 import { formatDistanceToNow } from 'date-fns'
 import { pt } from 'date-fns/locale'
 import { useQueryStates, parseAsInteger, parseAsString } from 'nuqs'
 import { FileText, Clock, CheckCircle2, XCircle, Loader2, FileDown, Trash2, Upload, SearchX } from 'lucide-react'
+import { createClient } from '@/lib/supabase/client'
 import {
   Card,
   CardContent,
@@ -81,6 +82,24 @@ function formatRelativeTime(date: Date): string {
   const result = formatDistanceToNow(date, { addSuffix: true, locale: pt })
   // Remove "aproximadamente " or "cerca de " prefixes
   return result.replace(/aproximadamente |cerca de /gi, '')
+}
+
+// Helper to fetch profile data for user IDs
+async function fetchProfilesForUserIds(userIds: string[]): Promise<Map<string, { email: string }>> {
+  const profilesMap = new Map<string, { email: string }>()
+  if (userIds.length === 0) return profilesMap
+
+  const supabase = createClient()
+  const { data: profiles } = await supabase
+    .from('profiles')
+    .select('id, email')
+    .in('id', userIds)
+
+  for (const profile of profiles ?? []) {
+    profilesMap.set(profile.id, { email: profile.email })
+  }
+
+  return profilesMap
 }
 
 // Processing status config (for pending/processing/failed jobs)
@@ -314,47 +333,89 @@ export function RFPJobsList({ initialJobs, totalCount, initialState }: RFPJobsLi
     })
   }
 
-  // Helper to update a job in the list (real-time updates from context)
-  // RFPUploadJob from context may not have uploader/editor profile joins,
-  // so we merge with existing data to preserve those fields
-  const updateJobInList = (job: RFPUploadJob) => {
-    setJobs((prev) => {
-      const index = prev.findIndex((j) => j.id === job.id)
-      let updated: RFPJob[]
+  // Track pending profile fetches to avoid duplicate requests
+  const pendingProfileFetches = useRef<Set<string>>(new Set())
 
-      if (index >= 0) {
-        // Update existing job - preserve profile data from initial server fetch
-        updated = [...prev]
+  // Track current jobs in a ref to avoid dependency issues in callbacks
+  const jobsRef = useRef<RFPJob[]>(jobs)
+  useEffect(() => {
+    jobsRef.current = jobs
+  }, [jobs])
+
+  // Helper to add a new job with fetched profile data (async)
+  const addNewJobWithProfiles = useCallback(async (job: RFPUploadJob) => {
+    // Collect user IDs that need profile fetching
+    const userIds: string[] = []
+    if (job.user_id) userIds.push(job.user_id)
+    if (job.last_edited_by) userIds.push(job.last_edited_by)
+
+    // Fetch profiles for these user IDs
+    const profilesMap = await fetchProfilesForUserIds(userIds)
+
+    // Create job with profile data
+    const jobWithProfiles: RFPJob = {
+      ...job,
+      uploader: job.user_id ? profilesMap.get(job.user_id) ?? null : null,
+      last_editor: job.last_edited_by ? profilesMap.get(job.last_edited_by) ?? null : null,
+    }
+
+    // Add to list
+    setJobs((prev) => {
+      // Double-check job wasn't added while we were fetching
+      if (prev.some((j) => j.id === job.id)) return prev
+
+      const updated = [jobWithProfiles, ...prev.slice(0, pageSize - 1)]
+      return sortJobs(updated, sortBy as 'file_name' | 'created_at', sortOrder as 'asc' | 'desc')
+    })
+  }, [pageSize, sortBy, sortOrder])
+
+  // Handle real-time job updates (both activeJob and lastCompletedJob)
+  // Uses ref for jobs to avoid infinite loops
+  const handleJobUpdate = useCallback(async (job: RFPUploadJob) => {
+    // Check if job already exists in the list (using ref to avoid dependency on jobs state)
+    const jobExists = jobsRef.current.some((j) => j.id === job.id)
+
+    if (jobExists) {
+      // Update existing job - use functional update to preserve profile data
+      setJobs((prev) => {
+        const index = prev.findIndex((j) => j.id === job.id)
+        if (index < 0) return prev
+
+        const updated = [...prev]
         updated[index] = {
           ...prev[index],  // Keep existing uploader/last_editor profile data
           ...job,          // Overlay with real-time status updates
         }
-      } else if (page === 1 && !search) {
-        // New job - prepend to list (only if on first page with no search filter)
-        // Note: new real-time jobs won't have profile data until page refresh
-        updated = [{ ...job } as RFPJob, ...prev.slice(0, pageSize - 1)]
-      } else {
-        return prev
-      }
 
-      // Sort to keep processing jobs at top, respecting current sort settings
-      return sortJobs(updated, sortBy as 'file_name' | 'created_at', sortOrder as 'asc' | 'desc')
-    })
-  }
+        return sortJobs(updated, sortBy as 'file_name' | 'created_at', sortOrder as 'asc' | 'desc')
+      })
+    } else if (page === 1 && !search) {
+      // New job - fetch profiles before adding (only on first page without search)
+      // Prevent duplicate fetches for the same job
+      if (pendingProfileFetches.current.has(job.id)) return
+      pendingProfileFetches.current.add(job.id)
+
+      try {
+        await addNewJobWithProfiles(job)
+      } finally {
+        pendingProfileFetches.current.delete(job.id)
+      }
+    }
+  }, [page, search, sortBy, sortOrder, addNewJobWithProfiles])
 
   // Update jobs list in real-time when activeJob changes (processing jobs)
   useEffect(() => {
     if (activeJob) {
-      updateJobInList(activeJob)
+      handleJobUpdate(activeJob)
     }
-  }, [activeJob])
+  }, [activeJob, handleJobUpdate])
 
   // Update jobs list when lastCompletedJob changes (completed/failed jobs)
   useEffect(() => {
     if (lastCompletedJob) {
-      updateJobInList(lastCompletedJob)
+      handleJobUpdate(lastCompletedJob)
     }
-  }, [lastCompletedJob])
+  }, [lastCompletedJob, handleJobUpdate])
 
   const handleViewPDF = async (e: React.MouseEvent, jobId: string) => {
     e.preventDefault()
