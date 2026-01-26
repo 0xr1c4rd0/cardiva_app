@@ -42,6 +42,43 @@ function RegisterForm() {
         )}
 
         <form action={formAction} className="space-y-4">
+          <div className="grid grid-cols-2 gap-4">
+            <div className="space-y-2">
+              <label
+                htmlFor="firstName"
+                className="text-sm font-medium leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70"
+              >
+                Nome
+              </label>
+              <Input
+                id="firstName"
+                name="firstName"
+                type="text"
+                placeholder="João"
+                required
+                autoComplete="given-name"
+                disabled={isPending}
+              />
+            </div>
+            <div className="space-y-2">
+              <label
+                htmlFor="lastName"
+                className="text-sm font-medium leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70"
+              >
+                Apelido
+              </label>
+              <Input
+                id="lastName"
+                name="lastName"
+                type="text"
+                placeholder="Silva"
+                required
+                autoComplete="family-name"
+                disabled={isPending}
+              />
+            </div>
+          </div>
+
           <div className="space-y-2">
             <label
               htmlFor="email"
@@ -126,6 +163,16 @@ function RegisterFormFallback() {
       </CardHeader>
       <CardContent>
         <div className="space-y-4">
+          <div className="grid grid-cols-2 gap-4">
+            <div className="space-y-2">
+              <label className="text-sm font-medium">Nome</label>
+              <Input type="text" placeholder="João" disabled />
+            </div>
+            <div className="space-y-2">
+              <label className="text-sm font-medium">Apelido</label>
+              <Input type="text" placeholder="Silva" disabled />
+            </div>
+          </div>
           <div className="space-y-2">
             <label className="text-sm font-medium">Email</label>
             <Input type="email" placeholder="exemplo@email.com" disabled />

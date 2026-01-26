@@ -11,6 +11,14 @@ export const loginSchema = z.object({
 
 export const signupSchema = z
   .object({
+    firstName: z
+      .string()
+      .min(2, 'O nome deve ter pelo menos 2 caracteres')
+      .max(50, 'O nome deve ter no máximo 50 caracteres'),
+    lastName: z
+      .string()
+      .min(2, 'O apelido deve ter pelo menos 2 caracteres')
+      .max(50, 'O apelido deve ter no máximo 50 caracteres'),
     email: z.string().email('Invalid email address'),
     password: z
       .string()

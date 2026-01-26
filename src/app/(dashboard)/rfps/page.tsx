@@ -217,15 +217,19 @@ export default async function RFPsPage({ searchParams }: RFPsPageProps) {
   }
 
   // Fetch profiles in a single query
-  const profilesMap = new Map<string, { email: string }>()
+  const profilesMap = new Map<string, { email: string; first_name: string; last_name: string }>()
   if (userIds.size > 0) {
     const { data: profiles } = await supabase
       .from('profiles')
-      .select('id, email')
+      .select('id, email, first_name, last_name')
       .in('id', Array.from(userIds))
 
     for (const profile of profiles ?? []) {
-      profilesMap.set(profile.id, { email: profile.email })
+      profilesMap.set(profile.id, {
+        email: profile.email,
+        first_name: profile.first_name ?? '',
+        last_name: profile.last_name ?? '',
+      })
     }
   }
 

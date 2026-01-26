@@ -29,6 +29,12 @@ import type { ReviewStatus } from '../page'
 // Animation duration for deletion (ms)
 const DELETE_ANIMATION_DURATION = 400
 
+interface ProfileInfo {
+  email: string
+  first_name: string
+  last_name: string
+}
+
 interface RFPJob {
   id: string
   file_name: string
@@ -43,12 +49,8 @@ interface RFPJob {
   // Optional fields for uploader/editor tracking (joined from profiles)
   user_id?: string
   last_edited_by?: string | null
-  uploader?: {
-    email: string
-  } | null
-  last_editor?: {
-    email: string
-  } | null
+  uploader?: ProfileInfo | null
+  last_editor?: ProfileInfo | null
 }
 
 interface RFPListState {
@@ -65,12 +67,19 @@ interface RFPJobsListProps {
   initialState: RFPListState
 }
 
-// Helper to format user email as readable name
-function formatUserEmail(profile: { email: string } | null | undefined): string | null {
+// Helper to format user name as "FirstName L." (first name + last initial + dot)
+function formatUserName(profile: ProfileInfo | null | undefined): string | null {
   if (!profile) return null
-  // Extract name portion before @ for cleaner display
+
+  // If we have first and last name, format as "FirstName L."
+  if (profile.first_name && profile.last_name) {
+    const firstName = profile.first_name.charAt(0).toUpperCase() + profile.first_name.slice(1).toLowerCase()
+    const lastInitial = profile.last_name.charAt(0).toUpperCase()
+    return `${firstName} ${lastInitial}.`
+  }
+
+  // Fallback to email if names not available
   const emailName = profile.email.split('@')[0]
-  // Capitalize first letter of each word (split on . _ -)
   return emailName
     .split(/[._-]/)
     .map(part => part.charAt(0).toUpperCase() + part.slice(1))
@@ -85,18 +94,22 @@ function formatRelativeTime(date: Date): string {
 }
 
 // Helper to fetch profile data for user IDs
-async function fetchProfilesForUserIds(userIds: string[]): Promise<Map<string, { email: string }>> {
-  const profilesMap = new Map<string, { email: string }>()
+async function fetchProfilesForUserIds(userIds: string[]): Promise<Map<string, ProfileInfo>> {
+  const profilesMap = new Map<string, ProfileInfo>()
   if (userIds.length === 0) return profilesMap
 
   const supabase = createClient()
   const { data: profiles } = await supabase
     .from('profiles')
-    .select('id, email')
+    .select('id, email, first_name, last_name')
     .in('id', userIds)
 
   for (const profile of profiles ?? []) {
-    profilesMap.set(profile.id, { email: profile.email })
+    profilesMap.set(profile.id, {
+      email: profile.email,
+      first_name: profile.first_name ?? '',
+      last_name: profile.last_name ?? '',
+    })
   }
 
   return profilesMap
@@ -220,14 +233,14 @@ function RFPJobRow({ job, isDeleting, onViewPDF, onDeleteClick, onAnimationCompl
           <div className="flex items-center gap-2 text-sm text-muted-foreground">
             <span>
               Criado {formatRelativeTime(new Date(job.created_at))}
-              {job.uploader && ` por ${formatUserEmail(job.uploader)}`}
+              {job.uploader && ` por ${formatUserName(job.uploader)}`}
             </span>
             {job.last_editor && job.last_edited_by && (
               <>
                 <span className="text-muted-foreground/40">•</span>
                 <span>
                   Editado {formatRelativeTime(new Date(job.updated_at))}
-                  {` por ${formatUserEmail(job.last_editor)}`}
+                  {` por ${formatUserName(job.last_editor)}`}
                 </span>
               </>
             )}

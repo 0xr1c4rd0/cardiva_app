@@ -6,12 +6,16 @@ import { redirect } from 'next/navigation'
 
 export async function signup(prevState: any, formData: FormData) {
   // Extract form data
+  const firstName = formData.get('firstName') as string
+  const lastName = formData.get('lastName') as string
   const email = formData.get('email') as string
   const password = formData.get('password') as string
   const confirmPassword = formData.get('confirmPassword') as string
 
   // Validate with Zod schema
   const result = signupSchema.safeParse({
+    firstName,
+    lastName,
     email,
     password,
     confirmPassword,
@@ -20,6 +24,8 @@ export async function signup(prevState: any, formData: FormData) {
   if (!result.success) {
     const errors = result.error.flatten().fieldErrors
     const errorMessage =
+      errors.firstName?.[0] ||
+      errors.lastName?.[0] ||
       errors.email?.[0] ||
       errors.password?.[0] ||
       errors.confirmPassword?.[0] ||
@@ -28,11 +34,17 @@ export async function signup(prevState: any, formData: FormData) {
     return { error: errorMessage }
   }
 
-  // Create user with Supabase
+  // Create user with Supabase, passing names as metadata
   const supabase = await createClient()
   const { data, error } = await supabase.auth.signUp({
     email: result.data.email,
     password: result.data.password,
+    options: {
+      data: {
+        first_name: result.data.firstName,
+        last_name: result.data.lastName,
+      },
+    },
   })
 
   if (error || !data.user) {

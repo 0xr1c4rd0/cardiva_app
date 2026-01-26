@@ -6,6 +6,12 @@ import { RFPJobsList } from './rfp-jobs-list'
 import { RFPProcessingCard } from './rfp-processing-card'
 import { RFPStats } from './rfp-stats'
 
+interface ProfileInfo {
+  email: string
+  first_name: string
+  last_name: string
+}
+
 interface RFPJob {
   id: string
   file_name: string
@@ -19,8 +25,8 @@ interface RFPJob {
   review_status?: 'por_rever' | 'revisto' | 'confirmado' | null
   user_id?: string
   last_edited_by?: string | null
-  uploader?: { email: string } | null
-  last_editor?: { email: string } | null
+  uploader?: ProfileInfo | null
+  last_editor?: ProfileInfo | null
 }
 
 interface RFPListState {
