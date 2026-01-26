@@ -19,8 +19,9 @@ test.describe('Phase 2: Authentication', () => {
       await page.waitForLoadState('networkidle')
 
       // Check page title - CardTitle renders as div with data-slot="card-title"
+      // Portuguese: "Criar Conta"
       const heading = page.locator('[data-slot="card-title"]').first()
-      await expect(heading).toContainText(/register|sign up|create|account/i)
+      await expect(heading).toContainText(/register|sign up|create|account|criar|conta/i)
     })
 
     test('should have email input field', async ({ page }) => {
@@ -79,8 +80,9 @@ test.describe('Phase 2: Authentication', () => {
       await page.waitForLoadState('networkidle')
 
       // CardTitle renders as div with data-slot="card-title"
+      // Portuguese: "Iniciar Sessão"
       const heading = page.locator('[data-slot="card-title"]').first()
-      await expect(heading).toContainText(/log\s*in|sign in|welcome/i)
+      await expect(heading).toContainText(/log\s*in|sign in|welcome|iniciar|sessão/i)
     })
 
     test('should have email input field', async ({ page }) => {
@@ -175,8 +177,9 @@ test.describe('Phase 2: Authentication', () => {
       await page.waitForLoadState('networkidle')
 
       // CardTitle renders as div with data-slot="card-title"
+      // Portuguese: "Recuperar Palavra-passe"
       const heading = page.locator('[data-slot="card-title"]').first()
-      await expect(heading).toContainText(/reset|password/i)
+      await expect(heading).toContainText(/reset|password|recuperar|palavra/i)
     })
 
     test('should have email input for password reset', async ({ page }) => {
