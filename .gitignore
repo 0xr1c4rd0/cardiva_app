@@ -47,6 +47,13 @@ next-env.d.ts
 playwright-report/
 test-results/
 .playwright-mcp/
+_antigravity_project
 
 # Debug API routes (development only)
 src/app/api/debug/
+
+# Bun
+bun.lockb
+.bun
+
+
