@@ -386,22 +386,45 @@ export function RFPJobsList({ initialJobs, totalCount, initialState }: RFPJobsLi
   // Uses ref for jobs to avoid infinite loops
   const handleJobUpdate = useCallback(async (job: RFPUploadJob) => {
     // Check if job already exists in the list (using ref to avoid dependency on jobs state)
-    const jobExists = jobsRef.current.some((j) => j.id === job.id)
+    const existingJob = jobsRef.current.find((j) => j.id === job.id)
 
-    if (jobExists) {
-      // Update existing job - use functional update to preserve profile data
-      setJobs((prev) => {
-        const index = prev.findIndex((j) => j.id === job.id)
-        if (index < 0) return prev
+    if (existingJob) {
+      // Check if last_edited_by changed - need to fetch new profile
+      const lastEditorChanged = job.last_edited_by && job.last_edited_by !== existingJob.last_edited_by
 
-        const updated = [...prev]
-        updated[index] = {
-          ...prev[index],  // Keep existing uploader/last_editor profile data
-          ...job,          // Overlay with real-time status updates
-        }
+      if (lastEditorChanged) {
+        // Fetch the new editor's profile
+        const profilesMap = await fetchProfilesForUserIds([job.last_edited_by!])
+        const newEditorProfile = profilesMap.get(job.last_edited_by!) ?? null
 
-        return sortJobs(updated, sortBy as 'file_name' | 'created_at', sortOrder as 'asc' | 'desc')
-      })
+        setJobs((prev) => {
+          const index = prev.findIndex((j) => j.id === job.id)
+          if (index < 0) return prev
+
+          const updated = [...prev]
+          updated[index] = {
+            ...prev[index],
+            ...job,
+            last_editor: newEditorProfile,  // Use freshly fetched profile
+          }
+
+          return sortJobs(updated, sortBy as 'file_name' | 'created_at', sortOrder as 'asc' | 'desc')
+        })
+      } else {
+        // No editor change - preserve existing profile data
+        setJobs((prev) => {
+          const index = prev.findIndex((j) => j.id === job.id)
+          if (index < 0) return prev
+
+          const updated = [...prev]
+          updated[index] = {
+            ...prev[index],
+            ...job,
+          }
+
+          return sortJobs(updated, sortBy as 'file_name' | 'created_at', sortOrder as 'asc' | 'desc')
+        })
+      }
     } else if (page === 1 && !search) {
       // New job - fetch profiles before adding (only on first page without search)
       // Prevent duplicate fetches for the same job
