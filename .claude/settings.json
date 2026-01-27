@@ -1,5 +1,28 @@
 {
   "model": "sonnet",
+  "hooks": {
+    "PostToolUse": [
+      {
+        "matcher": "Write|Edit",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "echo [Hook] File modified - remember to run tests before commit"
+          }
+        ]
+      }
+    ],
+    "Stop": [
+      {
+        "hooks": [
+          {
+            "type": "command",
+            "command": "echo [Hook] Session ending - consider creating a handoff if work is incomplete"
+          }
+        ]
+      }
+    ]
+  },
   "rules": [
     ".claude/rules/coding-style.md",
     ".claude/rules/testing.md",
