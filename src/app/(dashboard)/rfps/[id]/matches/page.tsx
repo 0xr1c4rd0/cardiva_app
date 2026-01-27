@@ -1,7 +1,5 @@
 import { createClient } from '@/lib/supabase/server'
 import { notFound, redirect } from 'next/navigation'
-import Link from 'next/link'
-import { ChevronRight } from 'lucide-react'
 import { MatchReviewContent } from '@/app/(dashboard)/rfps/components/match-review-content'
 import { autoAcceptExactMatches } from './actions'
 import type { RFPItemWithMatches, MatchSuggestion } from '@/types/rfp'
@@ -220,16 +218,6 @@ export default async function MatchReviewPage({ params, searchParams }: PageProp
 
   return (
     <div className="flex flex-1 flex-col">
-      {/* Breadcrumb */}
-      <nav className="flex items-center gap-1.5 text-sm text-muted-foreground">
-        <Link href="/rfps" className="hover:text-foreground transition-colors">
-          Concursos
-        </Link>
-        <ChevronRight className="h-4 w-4" />
-        <span className="text-foreground font-medium">Rever Correspondências</span>
-      </nav>
-
-      {/* Main content wrapped in context provider */}
       <MatchReviewContent
         jobId={jobId}
         fileName={job.file_name}
