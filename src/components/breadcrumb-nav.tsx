@@ -28,6 +28,9 @@ const hideBreadcrumbPatterns = [
   /^\/rfps\/[^/]+\/matches$/, // /rfps/[id]/matches - has its own header
 ]
 
+// Routes that are section labels only (no landing page)
+const nonClickableRoutes = ["/admin"]
+
 export function BreadcrumbNav() {
   const pathname = usePathname()
 
@@ -58,6 +61,7 @@ export function BreadcrumbNav() {
   const items = segments.slice(0, 2).map((segment, index) => {
     const href = "/" + segments.slice(0, index + 1).join("/")
     const isLast = index === segments.slice(0, 2).length - 1 || index === segments.length - 1
+    const isClickable = !nonClickableRoutes.includes(href)
 
     // Get label from mapping or capitalize
     let label = routeLabels[segment]
@@ -69,7 +73,7 @@ export function BreadcrumbNav() {
       }
     }
 
-    return { href, label, isLast }
+    return { href, label, isLast, isClickable }
   })
 
   return (
@@ -81,7 +85,7 @@ export function BreadcrumbNav() {
           )}
           {item.isLast ? (
             <span className="font-medium text-foreground">{item.label}</span>
-          ) : (
+          ) : item.isClickable ? (
             <Link
               href={item.href}
               className={cn(
@@ -90,6 +94,8 @@ export function BreadcrumbNav() {
             >
               {item.label}
             </Link>
+          ) : (
+            <span className="text-muted-foreground">{item.label}</span>
           )}
         </div>
       ))}
