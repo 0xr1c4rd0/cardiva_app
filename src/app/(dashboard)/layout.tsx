@@ -5,6 +5,8 @@ import { SidebarProvider, SidebarInset, SidebarTrigger } from '@/components/ui/s
 import { AppSidebar } from '@/components/layout/app-sidebar'
 import { UserMenu } from '@/components/layout/user-menu'
 import { MotionProvider } from '@/components/ui/motion-provider'
+import { BreadcrumbNav } from '@/components/breadcrumb-nav'
+import { CommandPalette } from '@/components/command-palette'
 
 // Force dynamic rendering to prevent caching of auth state
 export const dynamic = 'force-dynamic'
@@ -57,6 +59,7 @@ export default async function DashboardLayout({
 
   return (
     <SidebarProvider defaultOpen={defaultOpen}>
+      <CommandPalette />
       <AppSidebar />
       <SidebarInset>
         <header className="flex h-16 shrink-0 items-center gap-2 border-b px-4">
@@ -67,6 +70,7 @@ export default async function DashboardLayout({
         <main className="flex-1 overflow-auto">
           <div className="mx-auto max-w-[1600px] p-6 lg:p-8">
             <MotionProvider>
+              <BreadcrumbNav />
               {children}
             </MotionProvider>
           </div>

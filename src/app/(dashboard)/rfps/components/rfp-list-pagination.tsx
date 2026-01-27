@@ -74,9 +74,9 @@ export function RFPListPagination({
               className="h-8 w-8"
               onClick={() => onPageChange(page - 1)}
               disabled={!canGoPrevious || isPending}
+              aria-label="Página anterior"
             >
-              <ChevronLeft className="h-4 w-4" />
-              <span className="sr-only">Página anterior</span>
+              <ChevronLeft className="h-4 w-4" aria-hidden="true" />
             </Button>
             <Button
               variant="outline"
@@ -84,9 +84,9 @@ export function RFPListPagination({
               className="h-8 w-8"
               onClick={() => onPageChange(page + 1)}
               disabled={!canGoNext || isPending}
+              aria-label="Página seguinte"
             >
-              <ChevronRight className="h-4 w-4" />
-              <span className="sr-only">Página seguinte</span>
+              <ChevronRight className="h-4 w-4" aria-hidden="true" />
             </Button>
           </div>
         </div>
