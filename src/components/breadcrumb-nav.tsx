@@ -2,11 +2,12 @@
 
 import { usePathname } from "next/navigation"
 import Link from "next/link"
-import { ChevronRight } from "lucide-react"
+import { ChevronRight, Home } from "lucide-react"
 import { cn } from "@/lib/utils"
 
 // Portuguese route labels mapping
 const routeLabels: Record<string, string> = {
+  "": "Início",
   "rfps": "Concursos",
   "inventory": "Inventário",
   "admin": "Administração",
@@ -15,10 +16,10 @@ const routeLabels: Record<string, string> = {
   "matches": "Correspondências",
 }
 
-// Routes where breadcrumbs should be hidden (single-level pages)
-const hideBreadcrumbRoutes = ["/", "/rfps", "/inventory", "/admin/users"]
+// Single-level pages that show "Início" only
+const singleLevelRoutes = ["/", "/rfps", "/inventory"]
 
-// Route patterns where breadcrumbs should be hidden
+// Route patterns where breadcrumbs should be hidden entirely
 const hideBreadcrumbPatterns = [
   /^\/rfps\/[^/]+\/matches$/, // /rfps/[id]/matches - has its own header
 ]
@@ -26,24 +27,26 @@ const hideBreadcrumbPatterns = [
 export function BreadcrumbNav() {
   const pathname = usePathname()
 
-  // Hide on explicitly excluded routes
-  if (hideBreadcrumbRoutes.includes(pathname)) {
-    return null
-  }
-
   // Hide on pattern-matched routes
   if (hideBreadcrumbPatterns.some(pattern => pattern.test(pathname))) {
     return null
   }
 
-  const segments = pathname.split("/").filter(Boolean)
-
-  // Hide if only 1 segment
-  if (segments.length <= 1) {
-    return null
+  // Single-level pages: show just "Início" with home icon
+  if (singleLevelRoutes.includes(pathname)) {
+    return (
+      <nav className="flex items-center text-sm">
+        <div className="flex items-center gap-1.5">
+          <Home className="h-3.5 w-3.5 text-muted-foreground" />
+          <span className="font-medium text-foreground">Início</span>
+        </div>
+      </nav>
+    )
   }
 
-  // Build breadcrumb items (max 2 levels as requested)
+  const segments = pathname.split("/").filter(Boolean)
+
+  // Build breadcrumb items (max 2 levels)
   const items = segments.slice(0, 2).map((segment, index) => {
     const href = "/" + segments.slice(0, index + 1).join("/")
     const isLast = index === segments.slice(0, 2).length - 1 || index === segments.length - 1
