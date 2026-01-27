@@ -62,15 +62,15 @@ export default async function DashboardLayout({
       <CommandPalette />
       <AppSidebar />
       <SidebarInset>
-        <header className="flex h-16 shrink-0 items-center gap-2 border-b px-4">
+        <header className="flex h-14 shrink-0 items-center gap-4 border-b px-4">
           <SidebarTrigger className="-ml-1" />
+          <BreadcrumbNav />
           <div className="flex-1" />
           <UserMenu />
         </header>
         <main className="flex-1 overflow-auto">
           <div className="mx-auto max-w-[1600px] p-6 lg:p-8">
             <MotionProvider>
-              <BreadcrumbNav />
               {children}
             </MotionProvider>
           </div>

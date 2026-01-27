@@ -1,4 +1,4 @@
-import { Home, FileText, Package, History, Settings, Users } from 'lucide-react'
+import { Home, FileText, Package, Settings, Users } from 'lucide-react'
 import Link from 'next/link'
 import {
   Sidebar,
@@ -18,7 +18,6 @@ const navItems = [
   { title: 'Dashboard', url: '/', icon: Home },
   { title: 'Concursos', url: '/rfps', icon: FileText },
   { title: 'Inventário', url: '/inventory', icon: Package },
-  { title: 'Histórico', url: '/history', icon: History },
 ]
 
 const adminItems = [
@@ -39,7 +38,6 @@ export async function AppSidebar() {
       </SidebarHeader>
       <SidebarContent>
         <SidebarGroup>
-          <SidebarGroupLabel>Navegação</SidebarGroupLabel>
           <SidebarGroupContent>
             <SidebarMenu>
               {navItems.map((item) => (
