@@ -1,75 +1,10 @@
 {
-  "hooks": {
-    "PreToolUse": [
-      {
-        "matcher": "tool == \"Write\" && tool_input.file_path matches \"\\.md$\" && !(tool_input.file_path matches \"(README|CLAUDE|PLAN|ROADMAP|PROJECT|REQUIREMENTS)\")",
-        "hooks": [
-          {
-            "type": "message",
-            "message": "[Hook] Creating .md file - ensure this is necessary and not duplicate documentation"
-          }
-        ]
-      },
-      {
-        "matcher": "tool == \"Bash\" && tool_input.command matches \"(git push|git commit)\"",
-        "hooks": [
-          {
-            "type": "message",
-            "message": "[Hook] Git operation detected - ensure user has approved this action"
-          }
-        ]
-      }
-    ],
-    "PostToolUse": [
-      {
-        "matcher": "tool == \"Edit\" && tool_input.file_path matches \"\\.(ts|tsx|js|jsx)$\"",
-        "hooks": [
-          {
-            "type": "command",
-            "command": "grep -n 'console\\.log' \"$TOOL_INPUT_FILE_PATH\" 2>/dev/null && echo '[Hook] Warning: console.log detected - remove before commit' >&2 || true"
-          }
-        ]
-      },
-      {
-        "matcher": "tool == \"Write\" && tool_input.file_path matches \"\\.(ts|tsx)$\"",
-        "hooks": [
-          {
-            "type": "command",
-            "command": "grep -c 'any' \"$TOOL_INPUT_FILE_PATH\" 2>/dev/null | grep -v '^0$' && echo '[Hook] Warning: TypeScript `any` type detected - consider explicit types' >&2 || true"
-          }
-        ]
-      }
-    ],
-    "Stop": [
-      {
-        "matcher": "*",
-        "hooks": [
-          {
-            "type": "message",
-            "message": "Session ending - consider running /gsd:pause-work if mid-task"
-          }
-        ]
-      }
-    ]
-  },
   "model": "sonnet",
   "rules": [
     ".claude/rules/coding-style.md",
     ".claude/rules/testing.md",
     ".claude/rules/security.md",
     ".claude/rules/git-workflow.md"
-  ],
-  "agents": [
-    ".claude/agents/code-reviewer.md",
-    ".claude/agents/planner.md",
-    ".claude/agents/tdd-guide.md",
-    ".claude/agents/build-error-resolver.md"
-  ],
-  "commands": [
-    ".claude/commands/tdd.md",
-    ".claude/commands/code-review.md",
-    ".claude/commands/build-fix.md",
-    ".claude/commands/plan.md"
   ],
   "context": {
     "alwaysLoad": [
