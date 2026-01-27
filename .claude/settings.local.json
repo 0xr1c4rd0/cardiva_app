@@ -1,0 +1,13 @@
+{
+  "permissions": {
+    "allow": [
+      "Skill(frontend-design)",
+      "Bash(find:*)",
+      "mcp__plugin_serena_serena__list_dir",
+      "WebFetch(domain:github.com)",
+      "WebFetch(domain:raw.githubusercontent.com)",
+      "Bash(git add:*)",
+      "Bash(git commit -m \"$\\(cat <<''EOF''\ndocs: add CLAUDE.md with GSD framework integration\n\n- Add comprehensive project overview and architecture documentation\n- Integrate Get Shit Done \\(GSD\\) framework as mandatory workflow\n- Include request classification decision tree \\(quick vs full project\\)\n- Document phase execution loop \\(discuss → plan → execute → verify\\)\n- Add testing strategy with agent-browser, chrome-devtools, playwright\n- Include skill/MCP integration guide for each GSD phase\n- Document verification checklist and git workflow conventions\n\nCo-Authored-By: Claude Opus 4.5 <noreply@anthropic.com>\nEOF\n\\)\")"
+    ]
+  }
+}
