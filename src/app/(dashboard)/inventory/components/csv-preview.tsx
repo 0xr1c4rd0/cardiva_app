@@ -13,7 +13,7 @@ export function CSVPreview({ validation, isValidating }: CSVPreviewProps) {
   if (isValidating) {
     return (
       <div className="flex items-center gap-2 text-muted-foreground">
-        <div className="h-4 w-4 animate-spin rounded-full border-2 border-primary border-t-transparent" />
+        <div className="h-4 w-4 animate-spin rounded-sm border-2 border-primary border-t-transparent" />
         <span>A validar CSV...</span>
       </div>
     )

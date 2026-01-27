@@ -92,7 +92,7 @@ export function InventoryHeroCard({
         <CardContent className="p-8">
           <div className="flex flex-col items-center text-center space-y-6">
             {/* Icon */}
-            <div className="rounded-full bg-primary/10 p-4">
+            <div className="rounded-sm bg-primary/10 p-4">
               <Package className="h-10 w-10 text-primary" />
             </div>
 

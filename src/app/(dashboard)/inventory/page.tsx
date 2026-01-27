@@ -3,7 +3,6 @@ import { getUserRole } from '@/lib/auth/utils'
 import { InventoryColumnConfig } from '@/lib/supabase/types'
 import { InventoryHeroCard } from './components/inventory-hero-card'
 import { CollapsibleInventoryTable } from './components/collapsible-inventory-table'
-import { InventorySearchBar } from './components/inventory-search-bar'
 
 // Force dynamic rendering
 export const dynamic = 'force-dynamic'
@@ -112,9 +111,6 @@ export default async function InventoryPage({
         lastUpdated={lastUpdated}
         userRole={userRole}
       />
-
-      {/* Search Bar */}
-      <InventorySearchBar initialSearch={search} />
 
       {/* Collapsible Table */}
       <CollapsibleInventoryTable
