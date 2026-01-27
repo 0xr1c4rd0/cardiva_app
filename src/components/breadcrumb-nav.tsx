@@ -2,12 +2,12 @@
 
 import { usePathname } from "next/navigation"
 import Link from "next/link"
-import { ChevronRight, Home } from "lucide-react"
+import { ChevronRight } from "lucide-react"
 import { cn } from "@/lib/utils"
 
 // Portuguese route labels mapping
 const routeLabels: Record<string, string> = {
-  "": "Início",
+  "": "Dashboard",
   "rfps": "Concursos",
   "inventory": "Inventário",
   "admin": "Administração",
@@ -16,8 +16,12 @@ const routeLabels: Record<string, string> = {
   "matches": "Correspondências",
 }
 
-// Single-level pages that show "Início" only
-const singleLevelRoutes = ["/", "/rfps", "/inventory"]
+// Pages under "Geral" section - show "Geral > Page"
+const geralRoutes: Record<string, string> = {
+  "/": "Dashboard",
+  "/rfps": "Concursos",
+  "/inventory": "Inventário",
+}
 
 // Route patterns where breadcrumbs should be hidden entirely
 const hideBreadcrumbPatterns = [
@@ -32,19 +36,23 @@ export function BreadcrumbNav() {
     return null
   }
 
-  // Single-level pages: show just "Início" with home icon
-  if (singleLevelRoutes.includes(pathname)) {
+  // "Geral" section pages: show "Geral > Page Name"
+  if (geralRoutes[pathname]) {
     return (
       <nav className="flex items-center text-sm">
-        <div className="flex items-center gap-1.5">
-          <Home className="h-3.5 w-3.5 text-muted-foreground" />
-          <span className="font-medium text-foreground">Início</span>
-        </div>
+        <span className="text-muted-foreground">Geral</span>
+        <ChevronRight className="mx-1.5 h-3.5 w-3.5 text-muted-foreground/60" />
+        <span className="font-medium text-foreground">{geralRoutes[pathname]}</span>
       </nav>
     )
   }
 
   const segments = pathname.split("/").filter(Boolean)
+
+  // Hide if no segments
+  if (segments.length === 0) {
+    return null
+  }
 
   // Build breadcrumb items (max 2 levels)
   const items = segments.slice(0, 2).map((segment, index) => {
