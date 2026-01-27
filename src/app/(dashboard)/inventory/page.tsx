@@ -1,11 +1,9 @@
 import { createClient } from '@/lib/supabase/server'
 import { getUserRole } from '@/lib/auth/utils'
-import { InventoryTable } from './components/inventory-table'
-import { PermissionGate } from './components/permission-gate'
-import { ExportButton } from './components/export-button'
-import { CSVUploadButton } from './components/csv-upload-button'
 import { InventoryColumnConfig } from '@/lib/supabase/types'
-import { InventoryStats } from './components/inventory-stats'
+import { InventoryHeroCard } from './components/inventory-hero-card'
+import { CollapsibleInventoryTable } from './components/collapsible-inventory-table'
+import { InventorySearchBar } from './components/inventory-search-bar'
 
 // Force dynamic rendering
 export const dynamic = 'force-dynamic'
@@ -82,31 +80,44 @@ export default async function InventoryPage({
     throw new Error(`Failed to fetch inventory: ${error.message}`)
   }
 
+  // Fetch last successful inventory upload
+  const { data: lastUpload } = await supabase
+    .from('inventory_upload_jobs')
+    .select('completed_at')
+    .eq('status', 'completed')
+    .order('completed_at', { ascending: false })
+    .limit(1)
+    .single()
+
+  const lastUpdated = lastUpload?.completed_at
+    ? new Date(lastUpload.completed_at)
+    : null
+
+  // Determine if search is active (to force table open)
+  const hasActiveSearch = search.length > 0
+
   return (
     <div className="flex flex-1 flex-col gap-6">
-      <div className="flex items-center justify-between">
-        <div>
-          <h1 className="text-2xl font-semibold">Inventário</h1>
-          <p className="text-muted-foreground">
-            Consultar e gerir o catálogo de produtos
-          </p>
-        </div>
-
-        <div className="flex items-center gap-2">
-          {/* Export hidden for now - functionality preserved in export-button.tsx */}
-          {/* <ExportButton data={data ?? []} columnConfig={visibleColumns} /> */}
-
-          {/* Upload only for admin users */}
-          <PermissionGate requiredRole="admin" userRole={userRole}>
-            <CSVUploadButton />
-          </PermissionGate>
-        </div>
+      {/* Header */}
+      <div>
+        <h1 className="text-2xl font-semibold">Inventário</h1>
+        <p className="text-muted-foreground">
+          Gerir o catálogo de produtos
+        </p>
       </div>
-      <InventoryStats
+
+      {/* Hero Card with Upload */}
+      <InventoryHeroCard
         totalCount={count ?? 0}
-        columnCount={columns.length}
+        lastUpdated={lastUpdated}
+        userRole={userRole}
       />
-      <InventoryTable
+
+      {/* Search Bar */}
+      <InventorySearchBar initialSearch={search} />
+
+      {/* Collapsible Table */}
+      <CollapsibleInventoryTable
         data={data ?? []}
         totalCount={count ?? 0}
         columnConfig={visibleColumns}
@@ -117,6 +128,7 @@ export default async function InventoryPage({
           sortBy: actualSortBy,
           sortOrder,
         }}
+        forceOpen={hasActiveSearch}
       />
     </div>
   )
