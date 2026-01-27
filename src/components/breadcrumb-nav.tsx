@@ -24,8 +24,18 @@ const geralRoutes: Record<string, string> = {
 }
 
 // Route patterns where breadcrumbs should be hidden entirely
-const hideBreadcrumbPatterns = [
-  /^\/rfps\/[^/]+\/matches$/, // /rfps/[id]/matches - has its own header
+const hideBreadcrumbPatterns: RegExp[] = []
+
+// Special route patterns with custom breadcrumbs
+const specialRoutes: Array<{ pattern: RegExp; breadcrumb: Array<{ label: string; href?: string }> }> = [
+  {
+    pattern: /^\/rfps\/[^/]+\/matches$/,
+    breadcrumb: [
+      { label: "Geral" },
+      { label: "Concursos", href: "/rfps" },
+      { label: "Rever Correspondências" },
+    ],
+  },
 ]
 
 // Routes that are section labels only (no landing page)
@@ -37,6 +47,37 @@ export function BreadcrumbNav() {
   // Hide on pattern-matched routes
   if (hideBreadcrumbPatterns.some(pattern => pattern.test(pathname))) {
     return null
+  }
+
+  // Check for special routes with custom breadcrumbs
+  const specialRoute = specialRoutes.find(route => route.pattern.test(pathname))
+  if (specialRoute) {
+    return (
+      <nav className="flex items-center text-sm">
+        {specialRoute.breadcrumb.map((item, index) => {
+          const isLast = index === specialRoute.breadcrumb.length - 1
+          return (
+            <div key={item.label} className="flex items-center">
+              {index > 0 && (
+                <ChevronRight className="mx-1.5 h-3.5 w-3.5 text-muted-foreground/60" />
+              )}
+              {isLast ? (
+                <span className="font-medium text-foreground">{item.label}</span>
+              ) : item.href ? (
+                <Link
+                  href={item.href}
+                  className="text-muted-foreground hover:text-foreground transition-colors"
+                >
+                  {item.label}
+                </Link>
+              ) : (
+                <span className="text-muted-foreground">{item.label}</span>
+              )}
+            </div>
+          )
+        })}
+      </nav>
+    )
   }
 
   // "Geral" section pages: show "Geral > Page Name"
