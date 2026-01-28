@@ -10,6 +10,7 @@ interface ProfileInfo {
   email: string
   first_name: string
   last_name: string
+  role?: 'user' | 'admin' | 'automation'
 }
 
 interface RFPJob {

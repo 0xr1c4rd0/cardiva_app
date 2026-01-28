@@ -34,6 +34,7 @@ interface ProfileInfo {
   email: string
   first_name: string
   last_name: string
+  role?: 'user' | 'admin' | 'automation'
 }
 
 interface RFPJob {
@@ -68,13 +69,23 @@ interface RFPJobsListProps {
   initialState: RFPListState
 }
 
-// Helper to format user name as "FirstName L." (first name + last initial + dot)
+// Helper to format user name
+// - Automation accounts: "FirstName LastName" (full name)
+// - Regular users: "FirstName L." (first name + last initial + dot)
 function formatUserName(profile: ProfileInfo | null | undefined): string | null {
   if (!profile) return null
 
-  // If we have first and last name, format as "FirstName L."
+  // If we have first and last name
   if (profile.first_name && profile.last_name) {
     const firstName = profile.first_name.charAt(0).toUpperCase() + profile.first_name.slice(1).toLowerCase()
+
+    // For automation accounts, show full name (e.g., "Gmail Bot")
+    if (profile.role === 'automation') {
+      const lastName = profile.last_name.charAt(0).toUpperCase() + profile.last_name.slice(1).toLowerCase()
+      return `${firstName} ${lastName}`
+    }
+
+    // For regular users, show first name + last initial (e.g., "Ricardo C.")
     const lastInitial = profile.last_name.charAt(0).toUpperCase()
     return `${firstName} ${lastInitial}.`
   }
