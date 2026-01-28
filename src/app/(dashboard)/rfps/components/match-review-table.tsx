@@ -94,7 +94,7 @@ function SortableHeader({ column, label, sortBy, sortDir, onSort, className = ''
     <button
       type="button"
       onClick={() => onSort(column)}
-      className={cn("inline-flex items-center hover:text-foreground transition-colors", className)}
+      className={cn("inline-flex items-center hover:text-foreground transition-colors cursor-pointer", className)}
     >
       {label}
       {isActive ? (
@@ -592,10 +592,10 @@ function ItemRow({ jobId, item, isConfirmed, onItemUpdate, columnWidths }: ItemR
       </TableCell>
       <TableCell
         style={{ width: columnWidths[COLUMN_IDS.DESCRICAO_MATCH] }}
-        className="py-2 px-3 text-sm break-words"
+        className="py-2 px-3 text-xs break-words"
       >
         {matchedDescricao ? (
-          <span className="text-emerald-600">{matchedDescricao}</span>
+          <span className="text-emerald-600 uppercase">{matchedDescricao}</span>
         ) : (
           <span className="text-muted-foreground/40 italic">—</span>
         )}

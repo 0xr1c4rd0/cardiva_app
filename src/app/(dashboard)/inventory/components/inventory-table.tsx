@@ -86,7 +86,7 @@ function createColumns(config: InventoryColumnConfig[]): ColumnDef<Artigo>[] {
             <button
               type="button"
               onClick={() => column.toggleSorting(column.getIsSorted() === 'asc')}
-              className="inline-flex items-center hover:text-foreground transition-colors"
+              className="inline-flex items-center hover:text-foreground transition-colors cursor-pointer"
             >
               {col.display_name}
               {column.getIsSorted() === 'asc' ? (

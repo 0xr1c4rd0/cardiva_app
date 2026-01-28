@@ -9,7 +9,7 @@ interface TableResizeHandleProps {
 
 /**
  * Reusable column resize handle component
- * Provides visual feedback and consistent styling across all tables
+ * Invisible but interactive area for resizing columns
  */
 export function TableResizeHandle({
   onMouseDown,
@@ -22,17 +22,10 @@ export function TableResizeHandle({
       onMouseDown={onMouseDown}
       onTouchStart={onTouchStart}
       className={cn(
-        'absolute right-0 top-0 h-full w-1 cursor-col-resize',
-        'border-r border-border transition-colors',
-        'hover:border-primary/70 hover:bg-primary/10',
-        'touch-none select-none -mr-0.5',
-        isResizing && 'border-primary bg-primary/20',
+        'absolute right-0 top-0 h-full w-3 cursor-pointer',
+        'touch-none select-none -mr-1.5',
         className
       )}
-      style={{
-        paddingLeft: '2px',
-        paddingRight: '2px',
-      }}
       aria-label="Redimensionar coluna"
       role="separator"
     />
