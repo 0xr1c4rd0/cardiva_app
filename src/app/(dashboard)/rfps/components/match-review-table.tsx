@@ -121,7 +121,7 @@ export function MatchReviewTable({ jobId, items, totalCount, initialState, onIte
   const { columnWidths, getResizeHandler, isResizingColumn } = useColumnResize({
     storageKey: COLUMN_WIDTHS_STORAGE_KEY,
     defaultWidths: DEFAULT_COLUMN_WIDTHS,
-    minWidth: 80,
+    minWidth: 50,
     maxWidth: 600,
   })
 

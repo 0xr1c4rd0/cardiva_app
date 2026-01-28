@@ -56,6 +56,9 @@ function getDefaultColumnSize(columnType: string): number {
   }
 }
 
+// Minimum column width (50px allows more flexibility)
+const MIN_COLUMN_WIDTH = 50
+
 interface InventoryTableProps {
   data: Artigo[]
   totalCount: number
@@ -76,7 +79,7 @@ function createColumns(config: InventoryColumnConfig[]): ColumnDef<Artigo>[] {
       accessorKey: col.column_name,
       enableSorting: col.sortable,
       size: getDefaultColumnSize(col.column_type),
-      minSize: 80,
+      minSize: MIN_COLUMN_WIDTH,
       maxSize: 600,
       header: col.sortable
         ? ({ column }) => (
