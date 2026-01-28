@@ -230,8 +230,22 @@ export async function deleteRFPJob(
     return { success: false, error: 'Job not found' }
   }
 
-  // Verify user owns this job
-  if (job.user_id !== user.id) {
+  // Get user's profile to check admin role
+  const { data: profile } = await supabase
+    .from('profiles')
+    .select('role')
+    .eq('id', user.id)
+    .single()
+
+  const isAdmin = profile?.role === 'admin'
+  const isOwner = job.user_id === user.id
+  const isEmailJob = job.user_id === null
+
+  // Allow deletion if:
+  // - User owns the job
+  // - User is admin
+  // - Job is an email-triggered job (no owner)
+  if (!isOwner && !isAdmin && !isEmailJob) {
     return { success: false, error: 'Unauthorized' }
   }
 
@@ -362,8 +376,18 @@ export async function getRFPFileUrl(
     return { success: false, error: 'Job not found' }
   }
 
-  // Verify user owns this job
-  if (job.user_id !== user.id) {
+  // Get user's profile to check admin role
+  const { data: profile } = await supabase
+    .from('profiles')
+    .select('role')
+    .eq('id', user.id)
+    .single()
+
+  const isAdmin = profile?.role === 'admin'
+  const isOwner = job.user_id === user.id
+
+  // Allow access if user owns the job or is admin
+  if (!isOwner && !isAdmin) {
     return { success: false, error: 'Unauthorized' }
   }
 
