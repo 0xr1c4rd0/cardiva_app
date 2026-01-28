@@ -308,7 +308,7 @@ export function InventoryTable({
         <Table className="[&_thead_tr]:border-0 table-fixed">
           <TableHeader>
             {table.getHeaderGroups().map((headerGroup) => (
-              <TableRow key={headerGroup.id} className="hover:bg-transparent border-0">
+              <TableRow key={headerGroup.id} className="hover:bg-transparent border-0 cursor-default">
                 {headerGroup.headers.map((header, index) => {
                   // Determine aria-sort value for accessibility
                   const isSorted = header.column.getIsSorted()

@@ -342,7 +342,7 @@ export function MatchReviewTable({ jobId, items, totalCount, initialState, onIte
           <div className="rounded border border-border shadow-xs overflow-hidden bg-white p-2">
             <Table className="[&_thead_tr]:border-0 table-fixed">
               <TableHeader>
-                <TableRow className="hover:bg-transparent border-0">
+                <TableRow className="hover:bg-transparent border-0 cursor-default">
                   <TableHead
                     aria-sort={sortBy === 'lote' ? (sortDir === 'asc' ? 'ascending' : 'descending') : 'none'}
                     style={{ width: columnWidths[COLUMN_IDS.LOTE] }}
