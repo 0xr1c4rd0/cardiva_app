@@ -691,18 +691,18 @@ function ItemRow({ jobId, item, isConfirmed, onItemUpdate, columnWidths }: ItemR
               {!isConfirmed && (
                 <PopoverContent
                   align="end"
-                  className="w-[420px] p-0 shadow-lg border-border/50"
+                  className="p-0 shadow-lg border-border/50 w-fit max-w-[800px]"
                   sideOffset={8}
                 >
                   <div className="p-4 border-b border-border/40">
                     <p className="text-sm font-medium">
                       {showAsMatched ? 'Alterar seleção' : showAsRejected ? 'Rever sugestões' : 'Selecionar correspondência'}
                     </p>
-                    <p className="text-xs text-muted-foreground mt-0.5 line-clamp-2">
+                    <p className="text-xs text-muted-foreground mt-0.5 whitespace-nowrap">
                       {item.descricao_pedido}
                     </p>
                   </div>
-                  <div className="max-h-[280px] overflow-y-auto">
+                  <div className="max-h-[280px] overflow-y-auto overflow-x-auto">
                     {item.rfp_match_suggestions.map((match) => (
                       <SuggestionItem
                         key={match.id}
@@ -842,7 +842,7 @@ function SuggestionItem({ jobId, rfpItemId, match, isPerfectMatch, onActionCompl
       <div className="flex-1 min-w-0">
         <div className="flex items-center gap-2">
           <span
-            className="text-sm font-medium truncate"
+            className="text-sm font-medium whitespace-nowrap"
             title={match.artigo ?? match.codigo_spms ?? undefined}
           >
             {match.artigo ?? match.codigo_spms ?? '—'}
@@ -866,7 +866,7 @@ function SuggestionItem({ jobId, rfpItemId, match, isPerfectMatch, onActionCompl
           )}
         </div>
         <p
-          className="text-xs text-muted-foreground truncate mt-0.5"
+          className="text-xs text-muted-foreground whitespace-nowrap mt-0.5"
           title={match.descricao ?? undefined}
         >
           {match.descricao ?? '—'}
