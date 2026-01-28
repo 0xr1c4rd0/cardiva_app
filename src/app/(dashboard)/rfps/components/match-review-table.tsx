@@ -339,8 +339,8 @@ export function MatchReviewTable({ jobId, items, totalCount, initialState, onIte
       ) : (
         <>
           {/* Table */}
-          <div className="rounded border border-border shadow-xs overflow-hidden bg-white p-2">
-            <Table className="[&_thead_tr]:border-0 table-fixed">
+          <div className="rounded border border-border shadow-xs overflow-hidden bg-white p-2 overflow-x-hidden">
+            <Table className="[&_thead_tr]:border-0 table-fixed w-full">
               <TableHeader>
                 <TableRow className="hover:bg-transparent border-0 cursor-default">
                   <TableHead

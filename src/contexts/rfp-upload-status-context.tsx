@@ -181,6 +181,13 @@ export function RFPUploadStatusProvider({ children }: RFPUploadStatusProviderPro
   // Handle new job insertions (when upload is triggered)
   const handleJobInsert = useCallback((payload: { new: RFPUploadJob }) => {
     const newJob = payload.new
+    console.log('[RFP Realtime] Job INSERT event received:', {
+      id: newJob.id,
+      file_name: newJob.file_name,
+      status: newJob.status,
+      user_id: newJob.user_id,
+      created_at: newJob.created_at,
+    })
 
     if (newJob.status === 'pending' || newJob.status === 'processing') {
       setActiveJob(newJob)
@@ -188,13 +195,30 @@ export function RFPUploadStatusProvider({ children }: RFPUploadStatusProviderPro
       // Also add to upload queue so the processing animation shows
       // This handles email-triggered uploads that didn't go through queueFiles
       setUploadQueue(prev => {
+        console.log('[RFP Realtime] Current queue before insert:', prev.map(q => ({
+          id: q.id,
+          jobId: q.jobId,
+          fileName: q.fileName,
+          status: q.status,
+        })))
+
         // Check if job already exists in queue (avoid duplicates)
         // Check both by jobId AND by fileName + uploading status (for race condition with manual uploads)
         const exists = prev.some(q =>
           q.jobId === newJob.id ||
           (q.fileName === newJob.file_name && (q.status === 'uploading' || q.status === 'processing'))
         )
-        if (exists) return prev
+
+        if (exists) {
+          console.log('[RFP Realtime] Job already in queue, skipping:', {
+            jobId: newJob.id,
+            fileName: newJob.file_name,
+            reason: prev.find(q => q.jobId === newJob.id) ? 'jobId match' : 'fileName+status match',
+          })
+          return prev
+        }
+
+        console.log('[RFP Realtime] Adding job to queue:', newJob.id, newJob.file_name)
 
         // Add new item to queue for display in processing card
         const startTime = new Date(newJob.created_at)
@@ -214,6 +238,8 @@ export function RFPUploadStatusProvider({ children }: RFPUploadStatusProviderPro
 
         return [newItem, ...prev]
       })
+    } else {
+      console.log('[RFP Realtime] Job INSERT skipped - status not pending/processing:', newJob.status)
     }
   }, [])
 
@@ -455,7 +481,12 @@ export function RFPUploadStatusProvider({ children }: RFPUploadStatusProviderPro
             }
           }
         )
-        .subscribe()
+        .subscribe((status) => {
+          console.log('[RFP Realtime] Subscription status:', status)
+          if (status === 'SUBSCRIBED') {
+            console.log('[RFP Realtime] Successfully subscribed to rfp_upload_jobs changes')
+          }
+        })
 
       channelRef.current = channel
     }

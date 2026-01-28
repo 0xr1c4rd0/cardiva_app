@@ -22,7 +22,7 @@ export function TableResizeHandle({
       onMouseDown={onMouseDown}
       onTouchStart={onTouchStart}
       className={cn(
-        'absolute right-0 top-0 h-full w-3 cursor-pointer',
+        'absolute right-0 top-0 h-full w-3 cursor-col-resize',
         'touch-none select-none -mr-1.5',
         className
       )}
