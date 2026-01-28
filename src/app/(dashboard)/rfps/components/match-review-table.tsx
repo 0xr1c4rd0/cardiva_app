@@ -302,13 +302,13 @@ export function MatchReviewTable({ jobId, items, totalCount, initialState, onIte
       ) : (
         <>
           {/* Table */}
-          <div className="rounded-lg border border-border shadow-xs overflow-hidden bg-white p-2">
+          <div className="rounded border border-border shadow-xs overflow-hidden bg-white p-2">
             <Table className="[&_thead_tr]:border-0">
               <TableHeader>
                 <TableRow className="hover:bg-transparent border-0">
                   <TableHead
                     aria-sort={sortBy === 'lote' ? (sortDir === 'asc' ? 'ascending' : 'descending') : 'none'}
-                    className="pl-4 whitespace-nowrap text-xs font-medium text-muted-foreground tracking-wide bg-muted/70 py-2 rounded-l-md"
+                    className="pl-4 whitespace-nowrap text-xs font-medium text-muted-foreground tracking-wide bg-muted/70 py-2 rounded-l"
                   >
                     <SortableHeader
                       column="lote"
@@ -363,7 +363,7 @@ export function MatchReviewTable({ jobId, items, totalCount, initialState, onIte
                   <TableHead className="text-xs font-medium text-muted-foreground tracking-wide bg-muted/70 py-2 px-3">
                     <span className="inline-flex items-center">Descrição</span>
                   </TableHead>
-                  <TableHead className="whitespace-nowrap pr-4 text-xs font-medium text-muted-foreground tracking-wide bg-muted/70 py-2 text-right rounded-r-md">
+                  <TableHead className="whitespace-nowrap pr-4 text-xs font-medium text-muted-foreground tracking-wide bg-muted/70 py-2 text-right rounded-r">
                     <span className="inline-flex items-center">Estado</span>
                   </TableHead>
                 </TableRow>

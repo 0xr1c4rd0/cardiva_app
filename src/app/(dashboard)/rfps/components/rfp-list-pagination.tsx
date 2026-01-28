@@ -51,7 +51,7 @@ export function RFPListPagination({
             onValueChange={(value) => onPageSizeChange(Number(value))}
             disabled={isPending}
           >
-            <SelectTrigger className="h-6 w-[70px]">
+            <SelectTrigger className="!h-6 w-[70px]">
               <SelectValue placeholder={pageSize} />
             </SelectTrigger>
             <SelectContent side="top">
@@ -71,7 +71,7 @@ export function RFPListPagination({
             <Button
               variant="outline"
               size="icon"
-              className="h-6 w-6"
+              className="h-7 w-7"
               onClick={() => onPageChange(page - 1)}
               disabled={!canGoPrevious || isPending}
               aria-label="Página anterior"
@@ -81,7 +81,7 @@ export function RFPListPagination({
             <Button
               variant="outline"
               size="icon"
-              className="h-6 w-6"
+              className="h-7 w-7"
               onClick={() => onPageChange(page + 1)}
               disabled={!canGoNext || isPending}
               aria-label="Página seguinte"
