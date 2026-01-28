@@ -833,7 +833,7 @@ function SuggestionItem({ jobId, rfpItemId, match, isPerfectMatch, onActionCompl
   return (
     <div
       className={cn(
-        'flex items-center gap-3 px-4 py-3 border-b border-border/20 last:border-0 transition-colors',
+        'flex items-center gap-6 px-4 py-3 border-b border-border/20 last:border-0 transition-colors',
         'hover:bg-muted/40',
         showAsSelected && 'bg-emerald-50/20 border-l-2 border-l-emerald-400',
         isRejected && 'opacity-75'
@@ -880,10 +880,10 @@ function SuggestionItem({ jobId, rfpItemId, match, isPerfectMatch, onActionCompl
           <>
             <Button
               size="sm"
-              variant={showAsSelected ? 'default' : 'ghost'}
+              variant={showAsSelected ? 'default' : 'outline'}
               className={cn(
                 "h-7 w-7 p-0",
-                showAsSelected && "bg-emerald-600 hover:bg-emerald-700 disabled:opacity-100",
+                showAsSelected && "bg-emerald-600 hover:bg-emerald-700 border-emerald-600 disabled:opacity-100",
                 isLocked && showAsSelected && "cursor-default"
               )}
               onClick={handleAcceptOrToggle}
@@ -893,11 +893,11 @@ function SuggestionItem({ jobId, rfpItemId, match, isPerfectMatch, onActionCompl
             </Button>
             <Button
               size="sm"
-              variant="ghost"
+              variant="outline"
               className={cn(
                 "h-7 w-7 p-0",
                 isRejected
-                  ? "bg-gray-200 text-gray-700 hover:bg-gray-200"
+                  ? "bg-gray-200 text-gray-700 hover:bg-gray-200 border-gray-300"
                   : "text-muted-foreground hover:text-gray-600 hover:bg-gray-100"
               )}
               onClick={handleRejectOrToggle}
