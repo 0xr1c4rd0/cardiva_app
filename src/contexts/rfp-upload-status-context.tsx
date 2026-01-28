@@ -189,7 +189,11 @@ export function RFPUploadStatusProvider({ children }: RFPUploadStatusProviderPro
       // This handles email-triggered uploads that didn't go through queueFiles
       setUploadQueue(prev => {
         // Check if job already exists in queue (avoid duplicates)
-        const exists = prev.some(q => q.jobId === newJob.id)
+        // Check both by jobId AND by fileName + uploading status (for race condition with manual uploads)
+        const exists = prev.some(q =>
+          q.jobId === newJob.id ||
+          (q.fileName === newJob.file_name && (q.status === 'uploading' || q.status === 'processing'))
+        )
         if (exists) return prev
 
         // Add new item to queue for display in processing card
@@ -232,6 +236,7 @@ export function RFPUploadStatusProvider({ children }: RFPUploadStatusProviderPro
       const newItems: QueuedUpload[] = filesToQueue.map(file => ({
         id: crypto.randomUUID(),
         file,
+        fileName: file.name,
         status: 'queued' as const
       }))
 
