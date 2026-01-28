@@ -170,6 +170,27 @@ export function RFPUploadStatusProvider({ children }: RFPUploadStatusProviderPro
 
     if (newJob.status === 'pending' || newJob.status === 'processing') {
       setActiveJob(newJob)
+
+      // Also add to upload queue so the processing animation shows
+      // This handles email-triggered uploads that didn't go through queueFiles
+      setUploadQueue(prev => {
+        // Check if job already exists in queue (avoid duplicates)
+        const exists = prev.some(q => q.jobId === newJob.id)
+        if (exists) return prev
+
+        // Add new item to queue for display in processing card
+        const newItem: QueuedUpload = {
+          id: newJob.id,
+          file: null,
+          status: newJob.status === 'pending' ? 'uploading' as const : 'processing' as const,
+          jobId: newJob.id,
+          startedAt: new Date(newJob.created_at),
+          isRestored: false,
+          fileName: newJob.file_name,
+        }
+
+        return [newItem, ...prev]
+      })
     }
   }, [])
 

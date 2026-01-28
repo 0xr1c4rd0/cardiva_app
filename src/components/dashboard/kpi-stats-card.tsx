@@ -29,14 +29,14 @@ export function KPIStatsCard({
 
     return (
         <Card className={cn("overflow-hidden", className)}>
-            <CardContent className="p-6">
-                <div className="flex items-center gap-4">
-                    <div className={cn("rounded-full p-3", iconContainerClassName)}>
-                        <Icon className={cn("h-6 w-6", iconClassName)} />
+            <CardContent className="p-4">
+                <div className="flex items-center gap-3">
+                    <div className={cn("rounded-sm p-2", iconContainerClassName)}>
+                        <Icon className={cn("h-5 w-5", iconClassName)} />
                     </div>
                     <div>
                         <p className="text-sm font-medium text-muted-foreground">{label}</p>
-                        <h3 className="text-2xl font-bold tracking-tight mt-1">
+                        <h3 className="text-xl font-bold tracking-tight mt-0.5">
                             {isNumeric ? (
                                 <AnimatedNumber value={value} duration={400} />
                             ) : (
@@ -44,7 +44,7 @@ export function KPIStatsCard({
                             )}
                         </h3>
                         {description && (
-                            <p className="text-xs text-muted-foreground mt-1">{description}</p>
+                            <p className="text-xs text-muted-foreground mt-0.5">{description}</p>
                         )}
                     </div>
                 </div>
