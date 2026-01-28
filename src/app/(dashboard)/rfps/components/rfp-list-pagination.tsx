@@ -51,7 +51,7 @@ export function RFPListPagination({
             onValueChange={(value) => onPageSizeChange(Number(value))}
             disabled={isPending}
           >
-            <SelectTrigger className="!h-6 w-[70px]">
+            <SelectTrigger className="!h-7 w-[70px]">
               <SelectValue placeholder={pageSize} />
             </SelectTrigger>
             <SelectContent side="top">
