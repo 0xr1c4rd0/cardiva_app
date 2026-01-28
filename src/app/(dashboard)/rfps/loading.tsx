@@ -39,7 +39,7 @@ export default function RFPsLoading() {
             {Array.from({ length: 5 }).map((_, i) => (
               <div
                 key={`skeleton-${i}`}
-                className="flex items-center justify-between p-4 border rounded-lg"
+                className="flex items-center justify-between p-4 border rounded"
               >
                 <div className="flex items-center gap-4">
                   <Skeleton className="h-8 w-8 rounded-sm" />
