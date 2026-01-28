@@ -385,18 +385,31 @@ export async function getRFPFileUrl(
     return { success: false, error: 'Job not found' }
   }
 
-  // Get user's profile to check admin role
+  // Get user's profile to check role
   const { data: profile } = await supabase
     .from('profiles')
     .select('role')
     .eq('id', user.id)
     .single()
 
+  // Check if job was uploaded by automation (Gmail bot)
+  const { data: jobOwnerProfile } = job.user_id
+    ? await supabase
+        .from('profiles')
+        .select('role')
+        .eq('id', job.user_id)
+        .single()
+    : { data: null }
+
   const isAdmin = profile?.role === 'admin'
   const isOwner = job.user_id === user.id
+  const isAutomationJob = jobOwnerProfile?.role === 'automation'
 
-  // Allow access if user owns the job or is admin
-  if (!isOwner && !isAdmin) {
+  // Allow access if:
+  // - User owns the job
+  // - User is admin
+  // - Job was uploaded by automation (Gmail bot)
+  if (!isOwner && !isAdmin && !isAutomationJob) {
     return { success: false, error: 'Unauthorized' }
   }
 
