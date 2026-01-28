@@ -24,11 +24,40 @@ import { ManualMatchDialog } from './manual-match-dialog'
 import { MatchReviewToolbar } from './match-review-toolbar'
 import { MatchReviewPagination } from './match-review-pagination'
 import { useRFPConfirmation } from './rfp-confirmation-context'
+import { useColumnResize } from '@/hooks/use-column-resize'
+import { TableResizeHandle } from '@/components/table-resize-handle'
 import type { RFPItemWithMatches, MatchSuggestion } from '@/types/rfp'
 
 type StatusFilter = 'all' | 'pending' | 'matched' | 'no_match'
 type SortColumn = 'lote' | 'pos' | 'artigo' | 'descricao' | 'status'
 type SortDirection = 'asc' | 'desc'
+
+// Column IDs for resize tracking
+const COLUMN_IDS = {
+  LOTE: 'lote',
+  POS: 'pos',
+  ARTIGO_PEDIDO: 'artigo_pedido',
+  DESCRICAO_PEDIDO: 'descricao_pedido',
+  COD_SPMS: 'cod_spms',
+  ARTIGO_MATCH: 'artigo_match',
+  DESCRICAO_MATCH: 'descricao_match',
+  STATUS: 'status',
+} as const
+
+// Default column widths
+const DEFAULT_COLUMN_WIDTHS = {
+  [COLUMN_IDS.LOTE]: 100,
+  [COLUMN_IDS.POS]: 90,
+  [COLUMN_IDS.ARTIGO_PEDIDO]: 120,
+  [COLUMN_IDS.DESCRICAO_PEDIDO]: 250,
+  [COLUMN_IDS.COD_SPMS]: 120,
+  [COLUMN_IDS.ARTIGO_MATCH]: 120,
+  [COLUMN_IDS.DESCRICAO_MATCH]: 250,
+  [COLUMN_IDS.STATUS]: 140,
+}
+
+// Storage key for column widths
+const COLUMN_WIDTHS_STORAGE_KEY = 'cardiva-matches-column-widths'
 
 interface MatchReviewState {
   page: number
@@ -87,6 +116,14 @@ export function MatchReviewTable({ jobId, items, totalCount, initialState, onIte
   // Local state for instant client-side updates
   const [localItems, setLocalItems] = useState<RFPItemWithMatches[]>(items)
   const [originalItems, setOriginalItems] = useState<RFPItemWithMatches[]>(items)
+
+  // Column resizing
+  const { columnWidths, getResizeHandler, isResizingColumn } = useColumnResize({
+    storageKey: COLUMN_WIDTHS_STORAGE_KEY,
+    defaultWidths: DEFAULT_COLUMN_WIDTHS,
+    minWidth: 80,
+    maxWidth: 600,
+  })
 
   // Update local state when server data arrives
   useEffect(() => {
@@ -303,12 +340,13 @@ export function MatchReviewTable({ jobId, items, totalCount, initialState, onIte
         <>
           {/* Table */}
           <div className="rounded border border-border shadow-xs overflow-hidden bg-white p-2">
-            <Table className="[&_thead_tr]:border-0">
+            <Table className="[&_thead_tr]:border-0 table-fixed">
               <TableHeader>
                 <TableRow className="hover:bg-transparent border-0">
                   <TableHead
                     aria-sort={sortBy === 'lote' ? (sortDir === 'asc' ? 'ascending' : 'descending') : 'none'}
-                    className="pl-4 whitespace-nowrap text-xs font-medium text-muted-foreground tracking-wide bg-muted/70 py-2 rounded-l"
+                    style={{ width: columnWidths[COLUMN_IDS.LOTE] }}
+                    className="relative pl-4 whitespace-nowrap text-xs font-medium text-muted-foreground tracking-wide bg-muted/70 py-2 rounded-l"
                   >
                     <SortableHeader
                       column="lote"
@@ -317,10 +355,16 @@ export function MatchReviewTable({ jobId, items, totalCount, initialState, onIte
                       sortDir={sortDir}
                       onSort={handleSortChange}
                     />
+                    <TableResizeHandle
+                      onMouseDown={getResizeHandler(COLUMN_IDS.LOTE)}
+                      onTouchStart={getResizeHandler(COLUMN_IDS.LOTE)}
+                      isResizing={isResizingColumn === COLUMN_IDS.LOTE}
+                    />
                   </TableHead>
                   <TableHead
                     aria-sort={sortBy === 'pos' ? (sortDir === 'asc' ? 'ascending' : 'descending') : 'none'}
-                    className="whitespace-nowrap text-xs font-medium text-muted-foreground tracking-wide bg-muted/70 py-2 px-3"
+                    style={{ width: columnWidths[COLUMN_IDS.POS] }}
+                    className="relative whitespace-nowrap text-xs font-medium text-muted-foreground tracking-wide bg-muted/70 py-2 px-3"
                   >
                     <SortableHeader
                       column="pos"
@@ -329,10 +373,16 @@ export function MatchReviewTable({ jobId, items, totalCount, initialState, onIte
                       sortDir={sortDir}
                       onSort={handleSortChange}
                     />
+                    <TableResizeHandle
+                      onMouseDown={getResizeHandler(COLUMN_IDS.POS)}
+                      onTouchStart={getResizeHandler(COLUMN_IDS.POS)}
+                      isResizing={isResizingColumn === COLUMN_IDS.POS}
+                    />
                   </TableHead>
                   <TableHead
                     aria-sort={sortBy === 'artigo' ? (sortDir === 'asc' ? 'ascending' : 'descending') : 'none'}
-                    className="whitespace-nowrap text-xs font-medium text-muted-foreground tracking-wide bg-muted/70 py-2 px-3"
+                    style={{ width: columnWidths[COLUMN_IDS.ARTIGO_PEDIDO] }}
+                    className="relative whitespace-nowrap text-xs font-medium text-muted-foreground tracking-wide bg-muted/70 py-2 px-3"
                   >
                     <SortableHeader
                       column="artigo"
@@ -341,10 +391,16 @@ export function MatchReviewTable({ jobId, items, totalCount, initialState, onIte
                       sortDir={sortDir}
                       onSort={handleSortChange}
                     />
+                    <TableResizeHandle
+                      onMouseDown={getResizeHandler(COLUMN_IDS.ARTIGO_PEDIDO)}
+                      onTouchStart={getResizeHandler(COLUMN_IDS.ARTIGO_PEDIDO)}
+                      isResizing={isResizingColumn === COLUMN_IDS.ARTIGO_PEDIDO}
+                    />
                   </TableHead>
                   <TableHead
                     aria-sort={sortBy === 'descricao' ? (sortDir === 'asc' ? 'ascending' : 'descending') : 'none'}
-                    className="text-xs font-medium text-muted-foreground tracking-wide bg-muted/70 py-2 px-3"
+                    style={{ width: columnWidths[COLUMN_IDS.DESCRICAO_PEDIDO] }}
+                    className="relative text-xs font-medium text-muted-foreground tracking-wide bg-muted/70 py-2 px-3"
                   >
                     <SortableHeader
                       column="descricao"
@@ -353,18 +409,55 @@ export function MatchReviewTable({ jobId, items, totalCount, initialState, onIte
                       sortDir={sortDir}
                       onSort={handleSortChange}
                     />
+                    <TableResizeHandle
+                      onMouseDown={getResizeHandler(COLUMN_IDS.DESCRICAO_PEDIDO)}
+                      onTouchStart={getResizeHandler(COLUMN_IDS.DESCRICAO_PEDIDO)}
+                      isResizing={isResizingColumn === COLUMN_IDS.DESCRICAO_PEDIDO}
+                    />
                   </TableHead>
-                  <TableHead className="whitespace-nowrap text-xs font-medium text-muted-foreground tracking-wide bg-muted/70 py-2 px-3">
+                  <TableHead
+                    style={{ width: columnWidths[COLUMN_IDS.COD_SPMS] }}
+                    className="relative whitespace-nowrap text-xs font-medium text-muted-foreground tracking-wide bg-muted/70 py-2 px-3"
+                  >
                     <span className="inline-flex items-center">Cód. SPMS</span>
+                    <TableResizeHandle
+                      onMouseDown={getResizeHandler(COLUMN_IDS.COD_SPMS)}
+                      onTouchStart={getResizeHandler(COLUMN_IDS.COD_SPMS)}
+                      isResizing={isResizingColumn === COLUMN_IDS.COD_SPMS}
+                    />
                   </TableHead>
-                  <TableHead className="whitespace-nowrap text-xs font-medium text-muted-foreground tracking-wide bg-muted/70 py-2 px-3">
+                  <TableHead
+                    style={{ width: columnWidths[COLUMN_IDS.ARTIGO_MATCH] }}
+                    className="relative whitespace-nowrap text-xs font-medium text-muted-foreground tracking-wide bg-muted/70 py-2 px-3"
+                  >
                     <span className="inline-flex items-center">Artigo</span>
+                    <TableResizeHandle
+                      onMouseDown={getResizeHandler(COLUMN_IDS.ARTIGO_MATCH)}
+                      onTouchStart={getResizeHandler(COLUMN_IDS.ARTIGO_MATCH)}
+                      isResizing={isResizingColumn === COLUMN_IDS.ARTIGO_MATCH}
+                    />
                   </TableHead>
-                  <TableHead className="text-xs font-medium text-muted-foreground tracking-wide bg-muted/70 py-2 px-3">
+                  <TableHead
+                    style={{ width: columnWidths[COLUMN_IDS.DESCRICAO_MATCH] }}
+                    className="relative text-xs font-medium text-muted-foreground tracking-wide bg-muted/70 py-2 px-3"
+                  >
                     <span className="inline-flex items-center">Descrição</span>
+                    <TableResizeHandle
+                      onMouseDown={getResizeHandler(COLUMN_IDS.DESCRICAO_MATCH)}
+                      onTouchStart={getResizeHandler(COLUMN_IDS.DESCRICAO_MATCH)}
+                      isResizing={isResizingColumn === COLUMN_IDS.DESCRICAO_MATCH}
+                    />
                   </TableHead>
-                  <TableHead className="whitespace-nowrap pr-4 text-xs font-medium text-muted-foreground tracking-wide bg-muted/70 py-2 text-right rounded-r">
+                  <TableHead
+                    style={{ width: columnWidths[COLUMN_IDS.STATUS] }}
+                    className="relative whitespace-nowrap pr-4 text-xs font-medium text-muted-foreground tracking-wide bg-muted/70 py-2 text-right rounded-r"
+                  >
                     <span className="inline-flex items-center">Estado</span>
+                    <TableResizeHandle
+                      onMouseDown={getResizeHandler(COLUMN_IDS.STATUS)}
+                      onTouchStart={getResizeHandler(COLUMN_IDS.STATUS)}
+                      isResizing={isResizingColumn === COLUMN_IDS.STATUS}
+                    />
                   </TableHead>
                 </TableRow>
               </TableHeader>
