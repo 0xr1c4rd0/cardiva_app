@@ -404,61 +404,50 @@ export function RFPJobsList({ initialJobs, totalCount, initialState }: RFPJobsLi
   }, [pageSize, sortBy, sortOrder])
 
   // Handle real-time job updates (both activeJob and lastCompletedJob)
-  // Uses ref for jobs to avoid infinite loops
+  // Always checks for existing job inside setJobs for accurate state
   const handleJobUpdate = useCallback(async (job: RFPUploadJob) => {
-    // Check if job already exists in the list (using ref to avoid dependency on jobs state)
+    // Check if last_edited_by changed - need to fetch new profile
     const existingJob = jobsRef.current.find((j) => j.id === job.id)
+    const lastEditorChanged = existingJob && job.last_edited_by && job.last_edited_by !== existingJob.last_edited_by
 
-    if (existingJob) {
-      // Check if last_edited_by changed - need to fetch new profile
-      const lastEditorChanged = job.last_edited_by && job.last_edited_by !== existingJob.last_edited_by
-
-      if (lastEditorChanged) {
-        // Fetch the new editor's profile
-        const profilesMap = await fetchProfilesForUserIds([job.last_edited_by!])
-        const newEditorProfile = profilesMap.get(job.last_edited_by!) ?? null
-
-        setJobs((prev) => {
-          const index = prev.findIndex((j) => j.id === job.id)
-          if (index < 0) return prev
-
-          const updated = [...prev]
-          updated[index] = {
-            ...prev[index],
-            ...job,
-            last_editor: newEditorProfile,  // Use freshly fetched profile
-          }
-
-          return sortJobs(updated, sortBy as 'file_name' | 'created_at', sortOrder as 'asc' | 'desc')
-        })
-      } else {
-        // No editor change - preserve existing profile data
-        setJobs((prev) => {
-          const index = prev.findIndex((j) => j.id === job.id)
-          if (index < 0) return prev
-
-          const updated = [...prev]
-          updated[index] = {
-            ...prev[index],
-            ...job,
-          }
-
-          return sortJobs(updated, sortBy as 'file_name' | 'created_at', sortOrder as 'asc' | 'desc')
-        })
-      }
-    } else if (page === 1 && !search) {
-      // New job - fetch profiles before adding (only on first page without search)
-      // Prevent duplicate fetches for the same job
-      if (pendingProfileFetches.current.has(job.id)) return
-      pendingProfileFetches.current.add(job.id)
-
-      try {
-        await addNewJobWithProfiles(job)
-      } finally {
-        pendingProfileFetches.current.delete(job.id)
-      }
+    // Fetch new editor profile if needed
+    let newEditorProfile: ReturnType<typeof fetchProfilesForUserIds> extends Promise<infer T> ? T extends Map<string, infer V> ? V | null : null : null = null
+    if (lastEditorChanged) {
+      const profilesMap = await fetchProfilesForUserIds([job.last_edited_by!])
+      newEditorProfile = profilesMap.get(job.last_edited_by!) ?? null
     }
-  }, [page, search, sortBy, sortOrder, addNewJobWithProfiles])
+
+    // Update or add job - always check existence inside setJobs for race condition safety
+    setJobs((prev) => {
+      const index = prev.findIndex((j) => j.id === job.id)
+
+      if (index >= 0) {
+        // Job exists - update it
+        const updated = [...prev]
+        updated[index] = {
+          ...prev[index],
+          ...job,
+          // Preserve or update editor profile
+          last_editor: lastEditorChanged ? newEditorProfile : prev[index].last_editor,
+        }
+        return sortJobs(updated, sortBy as 'file_name' | 'created_at', sortOrder as 'asc' | 'desc')
+      } else if (page === 1 && !search) {
+        // Job doesn't exist yet - add it (only on first page without search)
+        // This handles the case where UPDATE event arrives before INSERT finishes processing
+        // For new jobs from email, we'll add them without profile data initially
+        // (profile will be added when INSERT completes)
+        const jobWithProfile: RFPJob = {
+          ...job,
+          uploader: existingJob?.uploader ?? null,
+          last_editor: existingJob?.last_editor ?? null,
+        }
+        const updated = [jobWithProfile, ...prev.slice(0, pageSize - 1)]
+        return sortJobs(updated, sortBy as 'file_name' | 'created_at', sortOrder as 'asc' | 'desc')
+      }
+
+      return prev
+    })
+  }, [page, search, sortBy, sortOrder, pageSize])
 
   // Update jobs list in real-time when activeJob changes (processing jobs)
   useEffect(() => {
