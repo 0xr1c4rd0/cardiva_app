@@ -32,6 +32,7 @@ export interface QueuedUpload {
   error?: string
   isRestored?: boolean    // True when restored from DB after page refresh
   fileName?: string       // For display when file is null (restored jobs)
+  uploadingUntil?: Date   // Minimum time to show 'uploading' state (for pulsing animation)
 }
 
 interface RFPUploadStatusContextValue {
@@ -65,6 +66,7 @@ const MAX_PARALLEL_UPLOADS = 3 // Max simultaneous uploads showing progress anim
 const UPLOAD_STAGGER_MS = 2000 // 2s delay between starting each upload
 const WEBHOOK_DELAY_MS = 2500 // 2.5s between n8n triggers
 const COMPLETED_CLEANUP_DELAY_MS = 5000 // Remove completed items after 5s
+const MIN_UPLOADING_DURATION_MS = 800 // Minimum time to show pulsing 'uploading' state
 
 /**
  * Provider that manages RFP upload job status via Supabase Realtime
@@ -136,6 +138,18 @@ export function RFPUploadStatusProvider({ children }: RFPUploadStatusProviderPro
         } else if (newJob.status === 'failed') {
           return { ...q, status: 'failed' as const, error: newJob.error_message || 'Processing failed' }
         } else if (newJob.status === 'processing') {
+          // Check if minimum uploading duration has elapsed
+          if (q.uploadingUntil && new Date() < q.uploadingUntil) {
+            // Not enough time has passed, schedule transition for later
+            const remainingMs = q.uploadingUntil.getTime() - Date.now()
+            setTimeout(() => {
+              setUploadQueue(prevQueue => prevQueue.map(item =>
+                item.jobId === newJob.id ? { ...item, status: 'processing' as const } : item
+              ))
+            }, remainingMs)
+            // Keep current status for now
+            return q
+          }
           return { ...q, status: 'processing' as const }
         }
       }
@@ -179,14 +193,19 @@ export function RFPUploadStatusProvider({ children }: RFPUploadStatusProviderPro
         if (exists) return prev
 
         // Add new item to queue for display in processing card
+        const startTime = new Date(newJob.created_at)
         const newItem: QueuedUpload = {
           id: newJob.id,
           file: null,
           status: newJob.status === 'pending' ? 'uploading' as const : 'processing' as const,
           jobId: newJob.id,
-          startedAt: new Date(newJob.created_at),
+          startedAt: startTime,
           isRestored: false,
           fileName: newJob.file_name,
+          // Set minimum duration for 'uploading' state (for pulsing animation visibility)
+          uploadingUntil: newJob.status === 'pending'
+            ? new Date(startTime.getTime() + MIN_UPLOADING_DURATION_MS)
+            : undefined,
         }
 
         return [newItem, ...prev]
@@ -237,15 +256,22 @@ export function RFPUploadStatusProvider({ children }: RFPUploadStatusProviderPro
         const existingJobIds = new Set(prev.filter(q => q.jobId).map(q => q.jobId))
         const newItems: QueuedUpload[] = activeJobs
           .filter(job => !existingJobIds.has(job.id))
-          .map(job => ({
-            id: job.id,
-            file: null,
-            status: job.status === 'pending' ? 'uploading' as const : 'processing' as const,
-            jobId: job.id,
-            startedAt: new Date(job.created_at),
-            isRestored: true,
-            fileName: job.file_name,
-          }))
+          .map(job => {
+            const startTime = new Date(job.created_at)
+            return {
+              id: job.id,
+              file: null,
+              status: job.status === 'pending' ? 'uploading' as const : 'processing' as const,
+              jobId: job.id,
+              startedAt: startTime,
+              isRestored: true,
+              fileName: job.file_name,
+              // Set minimum duration for 'uploading' state (for pulsing animation visibility)
+              uploadingUntil: job.status === 'pending'
+                ? new Date(startTime.getTime() + MIN_UPLOADING_DURATION_MS)
+                : undefined,
+            }
+          })
 
         return newItems.length > 0 ? [...newItems, ...prev] : prev
       })
@@ -275,8 +301,14 @@ export function RFPUploadStatusProvider({ children }: RFPUploadStatusProviderPro
       isProcessingQueueRef.current = true
 
       // Mark as uploading FIRST (before stagger delay)
+      const uploadStartTime = new Date()
       setUploadQueue(prev => prev.map(q =>
-        q.id === nextQueued.id ? { ...q, status: 'uploading' as const, startedAt: new Date() } : q
+        q.id === nextQueued.id ? {
+          ...q,
+          status: 'uploading' as const,
+          startedAt: uploadStartTime,
+          uploadingUntil: new Date(uploadStartTime.getTime() + MIN_UPLOADING_DURATION_MS),
+        } : q
       ))
 
       // Stagger uploads - wait if there are other active uploads

@@ -177,7 +177,7 @@ function UploadProgressItem({ upload, onRemoveComplete }: UploadProgressItemProp
           <span>Em fila...</span>
         </div>
       ) : isUploading ? (
-        <div className="relative h-1.5 w-full overflow-hidden rounded-full bg-primary/20">
+        <div className="relative h-1.5 w-full overflow-hidden rounded-md bg-primary/20">
           <div
             className="bg-primary h-full w-1/3"
             style={{
