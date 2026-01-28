@@ -235,7 +235,7 @@ function RFPJobRow({ job, isDeleting, onViewPDF, onDeleteClick, onAnimationCompl
     <div
       onTransitionEnd={handleTransitionEnd}
       className={cn(
-        "flex items-center justify-between p-4 border rounded transition-all ease-out",
+        "flex items-center justify-between px-4 py-2 border rounded transition-all ease-out",
         isClickable ? "hover:bg-muted/50 cursor-pointer" : "",
         animationPhase === 'collapsing' && "opacity-0 max-h-0 py-0 px-4 my-0 overflow-hidden border-transparent"
       )}
