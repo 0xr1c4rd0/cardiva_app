@@ -577,7 +577,7 @@ export function RFPJobsList({ initialJobs, totalCount, initialState }: RFPJobsLi
   const isSearchEmpty = jobs.length === 0 && search
 
   return (
-    <Card>
+    <Card className="py-6">
       <CardHeader>
         <CardTitle>Histórico de Concursos</CardTitle>
         <CardDescription>Os seus documentos de concurso carregados</CardDescription>

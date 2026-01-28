@@ -22,7 +22,7 @@ export default function RFPsLoading() {
       </div>
 
       {/* Jobs list skeleton */}
-      <Card>
+      <Card className="py-6">
         <CardHeader>
           <CardTitle>Histórico de Concursos</CardTitle>
           <CardDescription>Os seus documentos de concurso carregados</CardDescription>
