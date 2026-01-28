@@ -3,7 +3,7 @@
 import { createContext, useContext, useEffect, useState, useCallback, useRef, type ReactNode } from 'react'
 import { createClient } from '@/lib/supabase/client'
 import { toast } from 'sonner'
-import { triggerRFPUpload, getJobReviewStatus } from '@/app/(dashboard)/rfps/actions'
+import { triggerRFPUpload, getJobReviewStatus, checkDuplicateFileName } from '@/app/(dashboard)/rfps/actions'
 
 export type ReviewStatus = 'por_rever' | 'revisto' | 'confirmado' | null
 
@@ -218,22 +218,64 @@ export function RFPUploadStatusProvider({ children }: RFPUploadStatusProviderPro
   }, [])
 
   // Queue files for upload (max 10 total active)
-  const queueFiles = useCallback((files: File[]) => {
+  const queueFiles = useCallback(async (files: File[]) => {
+    // Check for duplicates in queue first
+    const queuedFileNames = new Set(uploadQueue.map(q => q.fileName))
+    const duplicatesInQueue = files.filter(f => queuedFileNames.has(f.name))
+
+    if (duplicatesInQueue.length > 0) {
+      toast.error('Ficheiros duplicados na fila', {
+        description: `Os seguintes ficheiros já estão em processamento: ${duplicatesInQueue.map(f => f.name).join(', ')}`,
+      })
+    }
+
+    // Filter out duplicates already in queue
+    const uniqueFiles = files.filter(f => !queuedFileNames.has(f.name))
+
+    if (uniqueFiles.length === 0) return
+
+    // Check for duplicates in database
+    const duplicateChecks = await Promise.all(
+      uniqueFiles.map(file => checkDuplicateFileName(file.name))
+    )
+
+    const duplicatesInDB: string[] = []
+    const filesToQueue: File[] = []
+
+    uniqueFiles.forEach((file, index) => {
+      if (duplicateChecks[index].isDuplicate) {
+        duplicatesInDB.push(file.name)
+      } else {
+        filesToQueue.push(file)
+      }
+    })
+
+    // Show error for database duplicates
+    if (duplicatesInDB.length > 0) {
+      toast.error('Ficheiros já carregados', {
+        description: duplicatesInDB.length === 1
+          ? `O ficheiro "${duplicatesInDB[0]}" já foi carregado anteriormente.`
+          : `${duplicatesInDB.length} ficheiros já foram carregados: ${duplicatesInDB.slice(0, 3).join(', ')}${duplicatesInDB.length > 3 ? '...' : ''}`,
+      })
+    }
+
+    if (filesToQueue.length === 0) return
+
     setUploadQueue(prev => {
       // Count current active uploads (queued + uploading + processing)
       const currentCount = prev.filter(
         q => q.status === 'queued' || q.status === 'uploading' || q.status === 'processing'
       ).length
       const available = MAX_CONCURRENT - currentCount
-      const filesToQueue = files.slice(0, Math.max(0, available))
+      const finalFilesToQueue = filesToQueue.slice(0, Math.max(0, available))
 
-      if (filesToQueue.length < files.length) {
+      if (finalFilesToQueue.length < filesToQueue.length) {
         toast.warning('Limite de ficheiros', {
-          description: `Apenas ${filesToQueue.length} de ${files.length} ficheiros foram adicionados. Maximo de ${MAX_CONCURRENT} em processamento simultaneo.`,
+          description: `Apenas ${finalFilesToQueue.length} de ${filesToQueue.length} ficheiros foram adicionados. Máximo de ${MAX_CONCURRENT} em processamento simultâneo.`,
         })
       }
 
-      const newItems: QueuedUpload[] = filesToQueue.map(file => ({
+      const newItems: QueuedUpload[] = finalFilesToQueue.map(file => ({
         id: crypto.randomUUID(),
         file,
         fileName: file.name,
@@ -242,7 +284,7 @@ export function RFPUploadStatusProvider({ children }: RFPUploadStatusProviderPro
 
       return [...prev, ...newItems]
     })
-  }, [])
+  }, [uploadQueue])
 
   // Restore processing jobs from DB on mount (for page refresh persistence)
   useEffect(() => {

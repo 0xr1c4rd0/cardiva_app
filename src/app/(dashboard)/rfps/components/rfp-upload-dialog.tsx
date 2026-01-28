@@ -21,17 +21,24 @@ interface RFPUploadDialogProps {
 
 export function RFPUploadDialog({ open, onOpenChange }: RFPUploadDialogProps) {
   const [files, setFiles] = useState<File[]>([])
+  const [isUploading, setIsUploading] = useState(false)
   const { queueFiles } = useRFPUploadStatus()
 
-  const handleUpload = () => {
+  const handleUpload = async () => {
     if (files.length === 0) return
 
-    // Queue all selected files for processing
-    queueFiles(files)
+    setIsUploading(true)
 
-    // Clear selection and close dialog immediately
-    setFiles([])
-    onOpenChange(false)
+    try {
+      // Queue all selected files for processing (checks for duplicates)
+      await queueFiles(files)
+
+      // Clear selection and close dialog
+      setFiles([])
+      onOpenChange(false)
+    } finally {
+      setIsUploading(false)
+    }
   }
 
   const handleClose = () => {
@@ -70,15 +77,16 @@ export function RFPUploadDialog({ open, onOpenChange }: RFPUploadDialogProps) {
           <Button
             variant="outline"
             onClick={handleClose}
+            disabled={isUploading}
           >
             Cancelar
           </Button>
           <Button
             onClick={handleUpload}
-            disabled={files.length === 0}
+            disabled={files.length === 0 || isUploading}
           >
             <Upload className="mr-2 h-4 w-4" />
-            {buttonLabel}
+            {isUploading ? 'A verificar...' : buttonLabel}
           </Button>
         </DialogFooter>
       </DialogContent>

@@ -34,6 +34,43 @@ export interface RFPUploadResult {
 }
 
 /**
+ * Check if a file with the given name already exists
+ * Returns true if duplicate exists
+ */
+export async function checkDuplicateFileName(
+  fileName: string
+): Promise<{ isDuplicate: boolean; error?: string }> {
+  const supabase = await createClient()
+
+  // Verify user is authenticated
+  const {
+    data: { user },
+  } = await supabase.auth.getUser()
+  if (!user) {
+    return { isDuplicate: false, error: 'Not authenticated' }
+  }
+
+  try {
+    const { data, error } = await supabase
+      .from('rfp_upload_jobs')
+      .select('id')
+      .eq('file_name', fileName)
+      .limit(1)
+      .maybeSingle()
+
+    if (error) {
+      console.error('Error checking duplicate:', error)
+      return { isDuplicate: false, error: 'Error checking duplicate' }
+    }
+
+    return { isDuplicate: !!data }
+  } catch (error) {
+    console.error('Error checking duplicate:', error)
+    return { isDuplicate: false, error: 'Error checking duplicate' }
+  }
+}
+
+/**
  * Create an RFP upload job, store file in Supabase Storage, and trigger n8n webhook
  * Fire-and-forget pattern: returns immediately, n8n processes async
  */
@@ -59,6 +96,15 @@ export async function triggerRFPUpload(
 
   if (!file.name.toLowerCase().endsWith('.pdf')) {
     return { success: false, error: 'Only PDF files are accepted' }
+  }
+
+  // Check for duplicate file name
+  const duplicateCheck = await checkDuplicateFileName(file.name)
+  if (duplicateCheck.isDuplicate) {
+    return {
+      success: false,
+      error: `O ficheiro "${file.name}" já foi carregado anteriormente. Por favor, escolha outro ficheiro.`,
+    }
   }
 
   // Create upload job record first
