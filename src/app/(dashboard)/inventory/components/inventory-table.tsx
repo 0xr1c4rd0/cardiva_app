@@ -253,7 +253,7 @@ export function InventoryTable({
         onSearchChange={handleSearchChange}
         isPending={isPending}
       />
-      <div className="rounded-lg border border-border shadow-xs overflow-hidden bg-white p-2">
+      <div className="rounded border border-border shadow-xs overflow-hidden bg-white p-2">
         <Table className="[&_thead_tr]:border-0">
           <TableHeader>
             {table.getHeaderGroups().map((headerGroup) => (
@@ -274,9 +274,9 @@ export function InventoryTable({
                     key={header.id}
                     aria-sort={ariaSort}
                     className={`text-xs font-medium text-muted-foreground tracking-wide bg-muted/70 py-2 px-3 ${
-                      index === 0 ? 'pl-4 rounded-l-md' : ''
+                      index === 0 ? 'pl-4 rounded-l' : ''
                     } ${
-                      index === headerGroup.headers.length - 1 ? 'pr-4 rounded-r-md' : ''
+                      index === headerGroup.headers.length - 1 ? 'pr-4 rounded-r' : ''
                     }`}
                   >
                     {header.isPlaceholder
