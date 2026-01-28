@@ -55,7 +55,7 @@ export function PDFDropzone({ onFilesSelect, files, disabled }: PDFDropzoneProps
       {...getRootProps()}
       onClick={handleClick}
       className={cn(
-        'border-2 border-dashed rounded-lg p-8 text-center cursor-pointer transition-colors',
+        'border-2 border-dashed rounded p-8 text-center cursor-pointer transition-colors',
         isDragActive && !isDragReject && 'border-primary bg-primary/5',
         isDragReject && 'border-destructive bg-destructive/5',
         files.length > 0 && 'border-green-500 bg-green-50 dark:bg-green-950/20',

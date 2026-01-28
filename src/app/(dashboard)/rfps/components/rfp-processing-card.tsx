@@ -263,6 +263,7 @@ export function RFPProcessingCard() {
 
   return (
     <Card className={cn(
+      "py-6",
       hasFailures
         ? "border-red-200 bg-red-50/50"
         : "border-green-200 bg-green-50/50"
