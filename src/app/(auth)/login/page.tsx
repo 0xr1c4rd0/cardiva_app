@@ -8,14 +8,6 @@ import { login } from './actions'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { FormField } from '@/components/form-field'
-import {
-  Card,
-  CardContent,
-  CardDescription,
-  CardFooter,
-  CardHeader,
-  CardTitle,
-} from '@/components/ui/card'
 import { Alert, AlertDescription } from '@/components/ui/alert'
 
 function LoginForm() {
@@ -25,36 +17,41 @@ function LoginForm() {
   const [state, formAction, isPending] = useActionState(login, null)
 
   return (
-    <Card className="w-full max-w-md">
-      <CardHeader>
-        <CardTitle>Iniciar Sessão</CardTitle>
-        <CardDescription>
-          Introduza as suas credenciais para aceder à sua conta
-        </CardDescription>
-      </CardHeader>
-      <form action={formAction}>
-        <CardContent className="space-y-4">
-          {message && (
-            <Alert className="border-green-500 bg-green-50 text-green-900 dark:bg-green-950 dark:text-green-100">
-              <AlertDescription>{message}</AlertDescription>
-            </Alert>
-          )}
-          {state?.error && (
-            <Alert variant="destructive">
-              <AlertDescription>{state.error}</AlertDescription>
-            </Alert>
-          )}
-          <FormField label="Email" htmlFor="email" required>
-            <Input
-              id="email"
-              name="email"
-              type="email"
-              placeholder="exemplo@email.com"
-              required
-              autoComplete="email"
-              disabled={isPending}
-            />
-          </FormField>
+    <div className="w-full bg-white dark:bg-gray-950 rounded-lg shadow-lg border border-gray-200 dark:border-gray-800 p-8">
+      {/* Header */}
+      <div className="mb-8">
+        <h1 className="text-3xl font-bold text-emerald-600 mb-2">cardiva AI</h1>
+        <h2 className="text-2xl font-semibold">Iniciar Sessão</h2>
+      </div>
+
+      {/* Alerts */}
+      {message && (
+        <Alert className="mb-6 border-emerald-200 bg-emerald-50 text-emerald-900 dark:bg-emerald-950 dark:text-emerald-100">
+          <AlertDescription>{message}</AlertDescription>
+        </Alert>
+      )}
+      {state?.error && (
+        <Alert variant="destructive" className="mb-6">
+          <AlertDescription>{state.error}</AlertDescription>
+        </Alert>
+      )}
+
+      {/* Form */}
+      <form action={formAction} className="space-y-5">
+        <FormField label="Email" htmlFor="email" required>
+          <Input
+            id="email"
+            name="email"
+            type="email"
+            placeholder="exemplo@email.com"
+            required
+            autoComplete="email"
+            disabled={isPending}
+            className="h-11"
+          />
+        </FormField>
+
+        <div className="space-y-2">
           <FormField label="Palavra-passe" htmlFor="password" required>
             <Input
               id="password"
@@ -63,68 +60,76 @@ function LoginForm() {
               required
               autoComplete="current-password"
               disabled={isPending}
+              className="h-11"
             />
           </FormField>
           <div className="flex justify-end">
             <Link
               href="/reset-password"
-              className="text-sm text-muted-foreground hover:text-foreground"
+              className="text-sm text-emerald-600 hover:text-emerald-700 hover:underline"
             >
               Esqueceu a palavra-passe?
             </Link>
           </div>
-        </CardContent>
-        <CardFooter className="flex flex-col space-y-4">
-          <Button type="submit" className="w-full" disabled={isPending}>
-            {isPending ? 'A entrar...' : 'Entrar'}
-          </Button>
-          <p className="text-center text-sm text-muted-foreground">
-            Não tem conta?{' '}
-            <Link
-              href="/register"
-              className="font-medium text-primary hover:underline"
-            >
-              Criar conta
-            </Link>
-          </p>
-        </CardFooter>
+        </div>
+
+        <Button
+          type="submit"
+          className="w-full h-11 bg-emerald-600 hover:bg-emerald-700 text-white font-medium"
+          disabled={isPending}
+        >
+          {isPending ? 'A entrar...' : 'Entrar'}
+        </Button>
       </form>
-    </Card>
+
+      {/* Footer */}
+      <div className="mt-8 text-center">
+        <p className="text-sm text-muted-foreground">
+          Não tem conta?{' '}
+          <Link
+            href="/register"
+            className="font-medium text-emerald-600 hover:text-emerald-700 hover:underline"
+          >
+            Criar conta
+          </Link>
+        </p>
+      </div>
+    </div>
   )
 }
 
 function LoginFormFallback() {
   return (
-    <Card className="w-full max-w-md">
-      <CardHeader>
-        <CardTitle>Iniciar Sessão</CardTitle>
-        <CardDescription>
-          Introduza as suas credenciais para aceder à sua conta
-        </CardDescription>
-      </CardHeader>
-      <CardContent className="space-y-4">
+    <div className="w-full bg-white dark:bg-gray-950 rounded-lg shadow-lg border border-gray-200 dark:border-gray-800 p-8">
+      <div className="mb-8">
+        <h1 className="text-3xl font-bold text-emerald-600 mb-2">cardiva AI</h1>
+        <h2 className="text-2xl font-semibold">Iniciar Sessão</h2>
+      </div>
+      <div className="space-y-5">
         <FormField label="Email" htmlFor="email" required>
-          <Input id="email" type="email" placeholder="exemplo@email.com" disabled />
+          <Input
+            id="email"
+            type="email"
+            placeholder="exemplo@email.com"
+            disabled
+            className="h-11"
+          />
         </FormField>
         <FormField label="Palavra-passe" htmlFor="password" required>
-          <Input id="password" type="password" disabled />
+          <Input id="password" type="password" disabled className="h-11" />
         </FormField>
-      </CardContent>
-      <CardFooter>
-        <Button className="w-full" disabled>
+        <Button className="w-full h-11 bg-emerald-600" disabled>
           A carregar...
         </Button>
-      </CardFooter>
-    </Card>
+      </div>
+    </div>
   )
 }
 
 export default function LoginPage() {
   return (
-    <div className="flex min-h-screen items-center justify-center">
-      <Suspense fallback={<LoginFormFallback />}>
-        <LoginForm />
-      </Suspense>
-    </div>
+    <Suspense fallback={<LoginFormFallback />}>
+      <LoginForm />
+    </Suspense>
   )
 }

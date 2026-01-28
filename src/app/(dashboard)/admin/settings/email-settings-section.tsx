@@ -106,7 +106,7 @@ export function EmailSettingsSection({ initialSettings }: EmailSettingsSectionPr
                       <button
                         type="button"
                         onClick={() => handleRemoveEmail(email)}
-                        className="ml-1 hover:text-destructive rounded-full"
+                        className="ml-1 hover:text-destructive rounded-sm"
                       >
                         <X className="h-3 w-3" />
                       </button>
@@ -123,8 +123,8 @@ export function EmailSettingsSection({ initialSettings }: EmailSettingsSectionPr
                   onKeyDown={(e) => e.key === 'Enter' && (e.preventDefault(), handleAddEmail())}
                   className="flex-1"
                 />
-                <Button type="button" variant="outline" size="icon" onClick={handleAddEmail}>
-                  <Plus className="h-4 w-4" />
+                <Button type="button" variant="outline" size="icon" onClick={handleAddEmail} aria-label="Adicionar email">
+                  <Plus className="h-4 w-4" aria-hidden="true" />
                 </Button>
               </div>
             </div>

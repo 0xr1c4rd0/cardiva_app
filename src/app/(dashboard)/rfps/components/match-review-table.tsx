@@ -286,7 +286,7 @@ export function MatchReviewTable({ jobId, items, totalCount, initialState, onIte
       {isSearchEmpty ? (
         // Search/filter empty state
         <div className="flex flex-col items-center justify-center py-12 text-center border rounded-lg border-border/40">
-          <div className="mb-6 rounded-full bg-muted p-6">
+          <div className="mb-6 rounded-sm bg-muted p-6">
             <SearchX className="h-12 w-12 text-muted-foreground" />
           </div>
           <h3 className="mb-2 text-lg font-medium">Nenhum produto encontrado</h3>

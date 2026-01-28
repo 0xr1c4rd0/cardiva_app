@@ -20,7 +20,7 @@ export function ConfidenceBar({ score, className }: ConfidenceBarProps) {
   return (
     <div className={cn('flex items-center gap-2', className)}>
       {/* Bar container (track) */}
-      <div className="h-2 flex-1 overflow-hidden rounded-full bg-muted">
+      <div className="h-2 flex-1 overflow-hidden rounded-sm bg-muted">
         {/* Inner bar (fill) with smooth transition */}
         <div
           className="h-full bg-primary transition-all duration-300"

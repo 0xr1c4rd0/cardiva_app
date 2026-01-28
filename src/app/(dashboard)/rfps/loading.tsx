@@ -42,7 +42,7 @@ export default function RFPsLoading() {
                 className="flex items-center justify-between p-4 border rounded-lg"
               >
                 <div className="flex items-center gap-4">
-                  <Skeleton className="h-8 w-8 rounded" />
+                  <Skeleton className="h-8 w-8 rounded-sm" />
                   <div className="space-y-2">
                     <Skeleton className="h-4 w-48" />
                     <div className="flex items-center gap-2">
@@ -52,9 +52,9 @@ export default function RFPsLoading() {
                   </div>
                 </div>
                 <div className="flex items-center gap-2">
-                  <Skeleton className="h-6 w-20 rounded-full" />
-                  <Skeleton className="h-8 w-8 rounded" />
-                  <Skeleton className="h-8 w-8 rounded" />
+                  <Skeleton className="h-6 w-20 rounded-sm" />
+                  <Skeleton className="h-8 w-8 rounded-sm" />
+                  <Skeleton className="h-8 w-8 rounded-sm" />
                 </div>
               </div>
             ))}

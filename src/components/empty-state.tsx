@@ -30,7 +30,7 @@ export function EmptyState({
       {...props}
     >
       {Icon && (
-        <div className="mb-4 rounded-full bg-muted p-4">
+        <div className="mb-4 rounded-sm bg-muted p-4">
           <Icon className="h-8 w-8 text-muted-foreground" aria-hidden="true" />
         </div>
       )}

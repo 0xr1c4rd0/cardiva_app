@@ -205,7 +205,7 @@ export function ExportEmailDialog({ open, onOpenChange, items, jobId, rfpFileNam
             {/* Summary stats */}
             <div className="flex items-center justify-center gap-6 py-3">
               <div className="flex items-center gap-2">
-                <div className="flex items-center justify-center h-6 w-6 rounded-full bg-emerald-100">
+                <div className="flex items-center justify-center h-6 w-6 rounded-sm bg-emerald-100">
                   <Check className="h-3.5 w-3.5 text-emerald-600" />
                 </div>
                 <span className="text-lg font-semibold text-emerald-700">{matchedCount}</span>
@@ -213,7 +213,7 @@ export function ExportEmailDialog({ open, onOpenChange, items, jobId, rfpFileNam
               </div>
               <div className="h-5 w-px bg-border" />
               <div className="flex items-center gap-2">
-                <div className="flex items-center justify-center h-6 w-6 rounded-full bg-gray-100">
+                <div className="flex items-center justify-center h-6 w-6 rounded-sm bg-gray-100">
                   <AlertCircle className="h-3.5 w-3.5 text-gray-500" />
                 </div>
                 <span className="text-lg font-semibold text-gray-700">{noMatchCount}</span>
@@ -260,7 +260,7 @@ export function ExportEmailDialog({ open, onOpenChange, items, jobId, rfpFileNam
                         <button
                           type="button"
                           onClick={() => handleRemoveDefault(email)}
-                          className="ml-1 hover:text-destructive rounded-full"
+                          className="ml-1 hover:text-destructive rounded-sm"
                         >
                           <X className="h-3 w-3" />
                         </button>
@@ -273,7 +273,7 @@ export function ExportEmailDialog({ open, onOpenChange, items, jobId, rfpFileNam
                       <button
                         type="button"
                         onClick={() => handleRemoveAdditional(email)}
-                        className="ml-1 hover:text-destructive rounded-full"
+                        className="ml-1 hover:text-destructive rounded-sm"
                       >
                         <X className="h-3 w-3" />
                       </button>
@@ -300,8 +300,9 @@ export function ExportEmailDialog({ open, onOpenChange, items, jobId, rfpFileNam
                     size="icon"
                     onClick={handleAddEmail}
                     disabled={!newEmail || isSending}
+                    aria-label="Adicionar email"
                   >
-                    <Plus className="h-4 w-4" />
+                    <Plus className="h-4 w-4" aria-hidden="true" />
                   </Button>
                 </div>
               )}
