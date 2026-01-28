@@ -353,9 +353,10 @@ export function InventoryTable({
             {isPending ? (
               Array.from({ length: 5 }).map((_, i) => (
                 <TableRow key={`skeleton-${i}`} className="hover:bg-muted/50 border-0">
-                  {columns.map((_, j) => (
+                  {table.getAllColumns().map((column, j) => (
                     <TableCell
-                      key={`skeleton-cell-${i}-${j}`}
+                      key={`skeleton-cell-${i}-${column.id}`}
+                      style={{ width: column.getSize() }}
                       className={`py-2 px-3 ${j === 0 ? 'pl-4' : ''} ${j === columns.length - 1 ? 'pr-4' : ''}`}
                     >
                       <Skeleton className="h-4 w-full" />
@@ -369,6 +370,7 @@ export function InventoryTable({
                   {row.getVisibleCells().map((cell, index) => (
                     <TableCell
                       key={cell.id}
+                      style={{ width: cell.column.getSize() }}
                       className={`py-2 px-3 text-foreground text-sm ${
                         index === 0 ? 'pl-4' : ''
                       } ${

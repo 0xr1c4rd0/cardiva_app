@@ -469,6 +469,7 @@ export function MatchReviewTable({ jobId, items, totalCount, initialState, onIte
                     item={item}
                     isConfirmed={isConfirmed}
                     onItemUpdate={handleItemUpdate}
+                    columnWidths={columnWidths}
                   />
                 ))}
                 {localItems.length === 0 && (
@@ -504,9 +505,10 @@ interface ItemRowProps {
   item: RFPItemWithMatches
   isConfirmed: boolean
   onItemUpdate: (updatedItem: RFPItemWithMatches) => void
+  columnWidths: Record<string, number>
 }
 
-function ItemRow({ jobId, item, isConfirmed, onItemUpdate }: ItemRowProps) {
+function ItemRow({ jobId, item, isConfirmed, onItemUpdate, columnWidths }: ItemRowProps) {
   const [isPopoverOpen, setIsPopoverOpen] = useState(false)
   const [showManualDialog, setShowManualDialog] = useState(false)
 
@@ -542,35 +544,56 @@ function ItemRow({ jobId, item, isConfirmed, onItemUpdate }: ItemRowProps) {
       )}
     >
       {/* RFP Item columns */}
-      <TableCell className="pl-4 py-2 whitespace-nowrap font-mono text-foreground text-sm">
+      <TableCell
+        style={{ width: columnWidths[COLUMN_IDS.LOTE] }}
+        className="pl-4 py-2 whitespace-nowrap font-mono text-foreground text-sm"
+      >
         {item.lote_pedido ?? <span className="text-muted-foreground/40 italic">—</span>}
       </TableCell>
-      <TableCell className="py-2 px-3 whitespace-nowrap font-mono text-foreground text-sm">
+      <TableCell
+        style={{ width: columnWidths[COLUMN_IDS.POS] }}
+        className="py-2 px-3 whitespace-nowrap font-mono text-foreground text-sm"
+      >
         {item.posicao_pedido ?? <span className="text-muted-foreground/40 italic">—</span>}
       </TableCell>
-      <TableCell className="py-2 px-3 whitespace-nowrap text-foreground text-sm">
+      <TableCell
+        style={{ width: columnWidths[COLUMN_IDS.ARTIGO_PEDIDO] }}
+        className="py-2 px-3 text-foreground text-sm break-words"
+      >
         {item.artigo_pedido ?? <span className="text-muted-foreground/40 italic">—</span>}
       </TableCell>
-      <TableCell className="py-2 px-3 text-muted-foreground text-xs">
+      <TableCell
+        style={{ width: columnWidths[COLUMN_IDS.DESCRICAO_PEDIDO] }}
+        className="py-2 px-3 text-muted-foreground text-xs break-words"
+      >
         {item.descricao_pedido}
       </TableCell>
 
       {/* Matched product columns - Cardiva zone */}
-      <TableCell className="py-2 px-3 whitespace-nowrap font-mono text-sm">
+      <TableCell
+        style={{ width: columnWidths[COLUMN_IDS.COD_SPMS] }}
+        className="py-2 px-3 whitespace-nowrap font-mono text-sm"
+      >
         {matchedCodigo ? (
           <span className="text-emerald-700 font-medium">{matchedCodigo}</span>
         ) : (
           <span className="text-muted-foreground/40 italic">—</span>
         )}
       </TableCell>
-      <TableCell className="py-2 px-3 whitespace-nowrap text-sm">
+      <TableCell
+        style={{ width: columnWidths[COLUMN_IDS.ARTIGO_MATCH] }}
+        className="py-2 px-3 text-sm break-words"
+      >
         {matchedArtigo ? (
           <span className="text-emerald-700 font-medium">{matchedArtigo}</span>
         ) : (
           <span className="text-muted-foreground/40 italic">—</span>
         )}
       </TableCell>
-      <TableCell className="py-2 px-3 text-sm">
+      <TableCell
+        style={{ width: columnWidths[COLUMN_IDS.DESCRICAO_MATCH] }}
+        className="py-2 px-3 text-sm break-words"
+      >
         {matchedDescricao ? (
           <span className="text-emerald-600">{matchedDescricao}</span>
         ) : (
@@ -579,7 +602,10 @@ function ItemRow({ jobId, item, isConfirmed, onItemUpdate }: ItemRowProps) {
       </TableCell>
 
       {/* Status / Action column */}
-      <TableCell className="py-2 whitespace-nowrap text-right pr-4">
+      <TableCell
+        style={{ width: columnWidths[COLUMN_IDS.STATUS] }}
+        className="py-2 text-right pr-4"
+      >
         <div className="flex items-center justify-end gap-2">
           {/* Status button / Popover */}
           {hasNoSuggestions ? (
