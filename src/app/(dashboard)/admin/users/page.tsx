@@ -9,10 +9,11 @@ export default async function AdminUsersPage() {
   // Fetch all users
   const { data: authUsers } = await admin.auth.admin.listUsers()
 
-  // Fetch all profiles
+  // Fetch all profiles (exclude automation users like Gmail bot)
   const { data: profiles } = await supabase
     .from('profiles')
     .select('id, email, role, approved_at, created_at')
+    .neq('role', 'automation')
 
   // Get current user ID for comparison
   const { data: { user: currentUser } } = await supabase.auth.getUser()
@@ -21,17 +22,24 @@ export default async function AdminUsersPage() {
   const profilesMap = new Map(profiles?.map((p) => [p.id, p]) || [])
 
   // Merge auth users with profiles into a single structure
-  const usersWithProfiles: UserWithProfile[] = (authUsers?.users || []).map((user) => {
-    const profile = profilesMap.get(user.id)
-    return {
-      id: user.id,
-      email: user.email || '',
-      created_at: user.created_at,
-      banned_until: user.banned_until ? String(user.banned_until) : null,
-      role: profile?.role || 'user',
-      approved_at: profile?.approved_at || null,
-    }
-  })
+  // Filter out automation users (they won't be in profilesMap due to .neq filter above)
+  const usersWithProfiles: UserWithProfile[] = (authUsers?.users || [])
+    .filter((user) => {
+      const profile = profilesMap.get(user.id)
+      // Only include users that have a profile (excludes automation users)
+      return profile !== undefined
+    })
+    .map((user) => {
+      const profile = profilesMap.get(user.id)!
+      return {
+        id: user.id,
+        email: user.email || '',
+        created_at: user.created_at,
+        banned_until: user.banned_until ? String(user.banned_until) : null,
+        role: profile.role,
+        approved_at: profile.approved_at || null,
+      }
+    })
 
   return (
     <div className="flex flex-1 flex-col gap-6">

@@ -230,22 +230,31 @@ export async function deleteRFPJob(
     return { success: false, error: 'Job not found' }
   }
 
-  // Get user's profile to check admin role
+  // Get user's profile to check role
   const { data: profile } = await supabase
     .from('profiles')
     .select('role')
     .eq('id', user.id)
     .single()
 
+  // Check if job was uploaded by automation (Gmail bot)
+  const { data: jobOwnerProfile } = job.user_id
+    ? await supabase
+        .from('profiles')
+        .select('role')
+        .eq('id', job.user_id)
+        .single()
+    : { data: null }
+
   const isAdmin = profile?.role === 'admin'
   const isOwner = job.user_id === user.id
-  const isEmailJob = job.user_id === null
+  const isAutomationJob = jobOwnerProfile?.role === 'automation'
 
   // Allow deletion if:
   // - User owns the job
   // - User is admin
-  // - Job is an email-triggered job (no owner)
-  if (!isOwner && !isAdmin && !isEmailJob) {
+  // - Job was uploaded by automation (Gmail bot)
+  if (!isOwner && !isAdmin && !isAutomationJob) {
     return { success: false, error: 'Unauthorized' }
   }
 
