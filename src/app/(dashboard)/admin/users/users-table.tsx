@@ -50,7 +50,7 @@ export function UsersTable({ initialUsers, currentUserId }: UsersTableProps) {
   }, [])
 
   return (
-    <Card>
+    <Card className="py-6">
       <CardHeader>
         <CardTitle>Utilizadores</CardTitle>
         <CardDescription>

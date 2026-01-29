@@ -76,7 +76,7 @@ export function EmailSettingsSection({ initialSettings }: EmailSettingsSectionPr
 
   return (
     <Collapsible open={isOpen} onOpenChange={setIsOpen}>
-      <Card>
+      <Card className="py-6">
         <CollapsibleTrigger asChild>
           <CardHeader className="cursor-pointer hover:bg-muted/50 transition-colors">
             <div className="flex items-center justify-between">
