@@ -17,6 +17,11 @@ import {
   PopoverContent,
   PopoverTrigger,
 } from '@/components/ui/popover'
+import {
+  Tooltip,
+  TooltipTrigger,
+  TooltipContent,
+} from '@/components/ui/tooltip'
 import { cn } from '@/lib/utils'
 import { Badge } from '@/components/ui/badge'
 import { acceptMatch, rejectMatch, unselectMatch } from '../[id]/matches/actions'
@@ -887,12 +892,19 @@ function SuggestionItem({ jobId, rfpItemId, match, isPerfectMatch, onActionCompl
             </span>
           )}
         </div>
-        <p
-          className="text-xs text-muted-foreground whitespace-nowrap mt-0.5 uppercase"
-          title={match.descricao_comercial ?? match.descricao ?? undefined}
-        >
-          {match.descricao ?? '—'}
-        </p>
+        <Tooltip>
+          <TooltipTrigger asChild>
+            <p className="text-xs text-muted-foreground whitespace-nowrap mt-0.5 uppercase cursor-help">
+              {match.descricao ?? '—'}
+            </p>
+          </TooltipTrigger>
+          <TooltipContent
+            className="bg-white text-muted-foreground border border-border rounded uppercase max-w-md"
+            sideOffset={5}
+          >
+            {match.descricao_comercial ?? match.descricao ?? '—'}
+          </TooltipContent>
+        </Tooltip>
       </div>
 
       <div className="flex items-center gap-1">
