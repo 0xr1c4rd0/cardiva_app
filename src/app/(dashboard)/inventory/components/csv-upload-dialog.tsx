@@ -140,7 +140,7 @@ export function CSVUploadDialog({ open, onOpenChange, onUpload }: CSVUploadDialo
             onOpenChange={setIsCollapsibleOpen}
             className="border-t border-border pt-4"
           >
-            <CollapsibleTrigger className="flex items-center gap-2 text-sm text-primary hover:text-primary-hover transition-colors w-full justify-center group">
+            <CollapsibleTrigger className="flex items-center gap-2 text-sm text-muted-foreground hover:text-foreground transition-colors w-full justify-center group">
               <span className="font-medium">Outras formas de adicionar inventário</span>
               <ChevronDown className={`h-4 w-4 transition-transform ${isCollapsibleOpen ? 'rotate-180' : ''}`} />
             </CollapsibleTrigger>
