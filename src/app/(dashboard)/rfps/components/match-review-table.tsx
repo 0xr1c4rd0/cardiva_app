@@ -792,7 +792,8 @@ interface SuggestionItemProps {
 }
 
 function SuggestionItem({ jobId, rfpItemId, match, isPerfectMatch, onActionComplete }: SuggestionItemProps) {
-  const [isPending, startTransition] = useTransition()
+  const [isAcceptPending, setIsAcceptPending] = useState(false)
+  const [isRejectPending, setIsRejectPending] = useState(false)
 
   const isAccepted = match.status === 'accepted'
   const isRejected = match.status === 'rejected'
@@ -811,10 +812,14 @@ function SuggestionItem({ jobId, rfpItemId, match, isPerfectMatch, onActionCompl
     // If locked (perfect match), do nothing
     if (isLocked) return
 
+    setIsAcceptPending(true)
+
     // Call server action directly
     const result = isAccepted
       ? await unselectMatch(jobId, rfpItemId, match.id)
       : await acceptMatch(jobId, rfpItemId, match.id)
+
+    setIsAcceptPending(false)
 
     if (!result.success) {
       console.error('[handleAcceptOrToggle] Action failed:', result.error)
@@ -829,10 +834,14 @@ function SuggestionItem({ jobId, rfpItemId, match, isPerfectMatch, onActionCompl
     // If locked (perfect match), do nothing
     if (isLocked) return
 
+    setIsRejectPending(true)
+
     // Call server action directly
     const result = isRejected
       ? await unselectMatch(jobId, rfpItemId, match.id)
       : await rejectMatch(jobId, rfpItemId, match.id)
+
+    setIsRejectPending(false)
 
     if (!result.success) {
       console.error('[handleRejectOrToggle] Action failed:', result.error)
@@ -879,7 +888,7 @@ function SuggestionItem({ jobId, rfpItemId, match, isPerfectMatch, onActionCompl
           )}
         </div>
         <p
-          className="text-xs text-muted-foreground whitespace-nowrap mt-0.5"
+          className="text-xs text-muted-foreground whitespace-nowrap mt-0.5 uppercase"
           title={match.descricao ?? undefined}
         >
           {match.descricao ?? '—'}
@@ -887,39 +896,41 @@ function SuggestionItem({ jobId, rfpItemId, match, isPerfectMatch, onActionCompl
       </div>
 
       <div className="flex items-center gap-1">
-        {isPending ? (
-          <Loader2 className="h-4 w-4 animate-spin text-muted-foreground" />
-        ) : (
-          <>
-            <Button
-              size="sm"
-              variant={showAsSelected ? 'default' : 'outline'}
-              className={cn(
-                "h-7 w-7 p-0 rounded",
-                showAsSelected && "bg-emerald-600 hover:bg-emerald-700 border-emerald-600 disabled:opacity-100",
-                isLocked && showAsSelected && "cursor-default"
-              )}
-              onClick={handleAcceptOrToggle}
-              disabled={isLocked && showAsSelected}
-            >
-              <Check className="h-3.5 w-3.5" />
-            </Button>
-            <Button
-              size="sm"
-              variant="outline"
-              className={cn(
-                "h-7 w-7 p-0 rounded",
-                isRejected
-                  ? "bg-gray-200 text-gray-700 hover:bg-gray-200 border-gray-300"
-                  : "text-muted-foreground hover:text-gray-600 hover:bg-gray-100"
-              )}
-              onClick={handleRejectOrToggle}
-              disabled={isLocked}
-            >
-              <X className="h-3.5 w-3.5" />
-            </Button>
-          </>
-        )}
+        <Button
+          size="sm"
+          variant={showAsSelected ? 'default' : 'outline'}
+          className={cn(
+            "h-7 w-7 p-0 rounded",
+            showAsSelected && "bg-emerald-600 hover:bg-emerald-700 border-emerald-600 disabled:opacity-100",
+            isLocked && showAsSelected && "cursor-default"
+          )}
+          onClick={handleAcceptOrToggle}
+          disabled={isAcceptPending || (isLocked && showAsSelected)}
+        >
+          {isAcceptPending ? (
+            <Loader2 className="h-3.5 w-3.5 animate-spin" />
+          ) : (
+            <Check className="h-3.5 w-3.5" />
+          )}
+        </Button>
+        <Button
+          size="sm"
+          variant="outline"
+          className={cn(
+            "h-7 w-7 p-0 rounded",
+            isRejected
+              ? "bg-gray-200 text-gray-700 hover:bg-gray-200 border-gray-300"
+              : "text-muted-foreground hover:text-gray-600 hover:bg-gray-100"
+          )}
+          onClick={handleRejectOrToggle}
+          disabled={isRejectPending || isLocked}
+        >
+          {isRejectPending ? (
+            <Loader2 className="h-3.5 w-3.5 animate-spin" />
+          ) : (
+            <X className="h-3.5 w-3.5" />
+          )}
+        </Button>
       </div>
     </div>
   )
