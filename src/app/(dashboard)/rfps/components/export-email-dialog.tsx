@@ -217,7 +217,7 @@ export function ExportEmailDialog({ open, onOpenChange, items, jobId, rfpFileNam
                   <AlertCircle className="h-3.5 w-3.5 text-gray-500" />
                 </div>
                 <span className="text-lg font-semibold text-gray-700">{noMatchCount}</span>
-                <span className="text-xs text-muted-foreground">Sem correspondencia</span>
+                <span className="text-xs text-muted-foreground whitespace-nowrap">Sem correspondência</span>
               </div>
             </div>
 
@@ -227,19 +227,19 @@ export function ExportEmailDialog({ open, onOpenChange, items, jobId, rfpFileNam
               <RadioGroup
                 value={exportMode}
                 onValueChange={(value) => setExportMode(value as 'matched' | 'all')}
-                className="space-y-2"
+                className="space-y-1"
               >
                 <div className="flex items-center space-x-3">
                   <RadioGroupItem value="matched" id="email-matched" />
-                  <Label htmlFor="email-matched" className="cursor-pointer font-normal">
-                    Apenas correspondencias ({matchedCount})
-                  </Label>
+                  <span className="text-xs text-muted-foreground cursor-pointer">
+                    Apenas correspondências ({matchedCount})
+                  </span>
                 </div>
                 <div className="flex items-center space-x-3">
                   <RadioGroupItem value="all" id="email-all" />
-                  <Label htmlFor="email-all" className="cursor-pointer font-normal">
+                  <span className="text-xs text-muted-foreground cursor-pointer">
                     Todos os produtos ({items.length})
-                  </Label>
+                  </span>
                 </div>
               </RadioGroup>
             </div>
