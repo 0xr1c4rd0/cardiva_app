@@ -889,7 +889,7 @@ function SuggestionItem({ jobId, rfpItemId, match, isPerfectMatch, onActionCompl
         </div>
         <p
           className="text-xs text-muted-foreground whitespace-nowrap mt-0.5 uppercase"
-          title={match.descricao ?? undefined}
+          title={match.descricao_comercial ?? match.descricao ?? undefined}
         >
           {match.descricao ?? '—'}
         </p>

@@ -15,6 +15,7 @@ export interface ActionResult {
 /**
  * Helper function to fetch an RFP item with its match suggestions.
  * Used to return updated data after mutations for optimistic UI updates.
+ * Enriches match suggestions with descricao_comercial from artigos table.
  */
 async function fetchItemWithMatches(
   supabase: SupabaseClient,
@@ -34,10 +35,30 @@ async function fetchItemWithMatches(
     return null
   }
 
+  // Enrich match suggestions with descricao_comercial from artigos table
+  const enrichedMatches = await Promise.all(
+    (data.rfp_match_suggestions || []).map(async (match: MatchSuggestion) => {
+      // Skip if no artigo code to join on
+      if (!match.artigo) return match
+
+      // Fetch descricao_comercial from artigos table
+      const { data: artigoData } = await supabase
+        .from('artigos')
+        .select('descricao_comercial')
+        .eq('artigo', match.artigo)
+        .maybeSingle()
+
+      return {
+        ...match,
+        descricao_comercial: artigoData?.descricao_comercial ?? null,
+      }
+    })
+  )
+
   // Sort match suggestions by similarity_score DESC
   return {
     ...data,
-    rfp_match_suggestions: (data.rfp_match_suggestions || []).sort(
+    rfp_match_suggestions: enrichedMatches.sort(
       (a: MatchSuggestion, b: MatchSuggestion) => b.similarity_score - a.similarity_score
     ),
   } as RFPItemWithMatches
