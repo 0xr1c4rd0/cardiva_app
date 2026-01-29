@@ -34,17 +34,19 @@ export function KPIStatsCard({
                     <div className={cn("rounded-sm p-2", iconContainerClassName)}>
                         <Icon className={cn("h-5 w-5", iconClassName)} />
                     </div>
-                    <div>
-                        <p className="text-sm font-medium text-muted-foreground">{label}</p>
-                        <h3 className="text-xl font-bold tracking-tight mt-0.5">
-                            {isNumeric ? (
-                                <AnimatedNumber value={value} duration={400} />
-                            ) : (
-                                value
-                            )}
-                        </h3>
+                    <div className="flex-1 min-w-0">
+                        <div className="flex items-baseline justify-between gap-2">
+                            <p className="text-sm font-medium text-muted-foreground">{label}</p>
+                            <h3 className="text-xl font-bold tracking-tight">
+                                {isNumeric ? (
+                                    <AnimatedNumber value={value} duration={400} />
+                                ) : (
+                                    value
+                                )}
+                            </h3>
+                        </div>
                         {description && (
-                            <p className="text-xs text-muted-foreground mt-0.5">{description}</p>
+                            <p className="text-xs text-muted-foreground mt-1">{description}</p>
                         )}
                     </div>
                 </div>
