@@ -892,19 +892,25 @@ function SuggestionItem({ jobId, rfpItemId, match, isPerfectMatch, onActionCompl
             </span>
           )}
         </div>
-        <Tooltip>
-          <TooltipTrigger asChild>
-            <p className="text-xs text-muted-foreground whitespace-nowrap mt-0.5 uppercase cursor-help">
-              {match.descricao ?? '—'}
-            </p>
-          </TooltipTrigger>
-          <TooltipContent
-            className="bg-white text-muted-foreground border border-border rounded uppercase max-w-md"
-            sideOffset={5}
-          >
-            {match.descricao_comercial ?? match.descricao ?? '—'}
-          </TooltipContent>
-        </Tooltip>
+        {match.descricao_comercial && match.descricao_comercial !== match.descricao ? (
+          <Tooltip>
+            <TooltipTrigger asChild>
+              <p className="text-xs text-muted-foreground whitespace-nowrap mt-0.5 uppercase">
+                {match.descricao ?? '—'}
+              </p>
+            </TooltipTrigger>
+            <TooltipContent
+              className="bg-white text-muted-foreground border border-border rounded uppercase max-w-md shadow-md"
+              sideOffset={5}
+            >
+              {match.descricao_comercial}
+            </TooltipContent>
+          </Tooltip>
+        ) : (
+          <p className="text-xs text-muted-foreground whitespace-nowrap mt-0.5 uppercase">
+            {match.descricao ?? '—'}
+          </p>
+        )}
       </div>
 
       <div className="flex items-center gap-1">
