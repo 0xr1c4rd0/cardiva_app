@@ -31,8 +31,8 @@ export function KPIStatsCard({
         <Card className={cn("overflow-hidden", className)}>
             <CardContent className="p-4">
                 <div className="flex items-center gap-3">
-                    <div className={cn("rounded-sm p-2", iconContainerClassName)}>
-                        <Icon className={cn("h-5 w-5", iconClassName)} />
+                    <div className={cn("rounded p-2.5", iconContainerClassName)}>
+                        <Icon className={cn("h-7 w-7", iconClassName)} />
                     </div>
                     <div>
                         <p className="text-sm font-medium text-muted-foreground">{label}</p>

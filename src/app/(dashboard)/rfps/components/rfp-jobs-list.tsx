@@ -246,7 +246,7 @@ function RFPJobRow({ job, isDeleting, onViewPDF, onDeleteClick, onAnimationCompl
       }}
     >
       <div className="flex items-center gap-4">
-        <FileText className="h-8 w-8 text-muted-foreground" />
+        <FileText className="h-8 w-8 text-muted-foreground" strokeWidth={1.5} />
         <div>
           <p className="font-medium">{job.file_name}</p>
           <div className="flex items-center gap-2 text-sm text-muted-foreground">
@@ -275,7 +275,7 @@ function RFPJobRow({ job, isDeleting, onViewPDF, onDeleteClick, onAnimationCompl
           variant={displayStatus.variant}
           className={cn("flex items-center gap-1.5", displayStatus.badgeClassName)}
         >
-          <StatusIcon className={cn("h-4 w-4", displayStatus.className)} />
+          <StatusIcon className={cn("h-4 w-4", displayStatus.className)} strokeWidth={1.5} />
           {displayStatus.label}
         </Badge>
 
@@ -289,7 +289,7 @@ function RFPJobRow({ job, isDeleting, onViewPDF, onDeleteClick, onAnimationCompl
               title="Ver PDF"
               aria-label="Ver PDF"
             >
-              <FileDown className="h-4 w-4" aria-hidden="true" />
+              <FileDown className="h-4 w-4" strokeWidth={1.5} aria-hidden="true" />
             </Button>
             <Button
               variant="outline"
@@ -299,7 +299,7 @@ function RFPJobRow({ job, isDeleting, onViewPDF, onDeleteClick, onAnimationCompl
               title="Eliminar"
               aria-label="Eliminar"
             >
-              <Trash2 className="h-4 w-4" aria-hidden="true" />
+              <Trash2 className="h-4 w-4" strokeWidth={1.5} aria-hidden="true" />
             </Button>
           </>
         )}
