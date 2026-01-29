@@ -44,8 +44,12 @@ export function CSVUploadDialog({ open, onOpenChange, onUpload }: CSVUploadDialo
     })
   }
 
-  const handleFileSelect = useCallback(async (selectedFile: File) => {
+  const handleFileSelect = useCallback(async (selectedFile: File | null) => {
     setFile(selectedFile)
+    if (!selectedFile) {
+      setValidation(null)
+      return
+    }
     setValidation(null)
     setUploadError(null)
     setIsValidating(true)

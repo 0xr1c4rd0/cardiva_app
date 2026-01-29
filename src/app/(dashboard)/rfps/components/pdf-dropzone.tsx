@@ -159,7 +159,7 @@ export function PDFDropzone({ onFilesSelect, files, disabled }: PDFDropzoneProps
                 </div>
 
                 {/* File name */}
-                <p className="text-xs font-medium max-w-24 truncate" title={file.name}>
+                <p className={cn("text-xs font-medium", files.length > 1 && "max-w-24 truncate")} title={file.name}>
                   {file.name}
                 </p>
               </div>

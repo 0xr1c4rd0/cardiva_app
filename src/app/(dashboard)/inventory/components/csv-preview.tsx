@@ -1,7 +1,7 @@
 'use client'
 
 import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert'
-import { CheckCircle2, AlertCircle, AlertTriangle } from 'lucide-react'
+import { AlertCircle, AlertTriangle } from 'lucide-react'
 import { ValidationResult } from '@/lib/csv/validation'
 
 interface CSVPreviewProps {
@@ -19,18 +19,15 @@ export function CSVPreview({ validation, isValidating }: CSVPreviewProps) {
     )
   }
 
+  // Don't show anything if validation passed (no errors or warnings)
+  if (validation.valid && validation.warnings.length === 0) {
+    return null
+  }
+
   return (
     <div className="space-y-4">
-      {/* Summary */}
-      {validation.valid ? (
-        <Alert className="border-green-500 bg-green-50 dark:bg-green-950/20">
-          <CheckCircle2 className="h-4 w-4 text-green-600" />
-          <AlertTitle>Validação Aprovada</AlertTitle>
-          <AlertDescription>
-            {validation.validRowCount} de {validation.totalRowCount} linhas prontas para carregar
-          </AlertDescription>
-        </Alert>
-      ) : (
+      {/* Show error summary only when validation fails */}
+      {!validation.valid && (
         <Alert variant="destructive">
           <AlertCircle className="h-4 w-4" />
           <AlertTitle>Validação Falhou</AlertTitle>
