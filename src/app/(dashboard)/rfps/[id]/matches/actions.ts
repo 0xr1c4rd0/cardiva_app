@@ -156,10 +156,10 @@ export async function acceptMatch(
 }
 
 /**
- * Unselect (toggle off) an accepted match suggestion.
+ * Unselect (toggle off) an accepted or rejected match suggestion.
  * - For manual matches: DELETE the match (it was user-created and might be an error)
- * - For regular matches: Sets the match's status back to 'pending'
- * - Restores all other matches to 'pending' as well
+ * - For regular matches: Sets only this specific match's status back to 'pending'
+ * - Other matches remain unchanged (keeps their accepted/rejected/pending status)
  * - Resets the RFP item's review_status to 'pending' and clears selected_match_id
  */
 export async function unselectMatch(
@@ -197,23 +197,12 @@ export async function unselectMatch(
       if (deleteError) {
         return { success: false, error: deleteError.message }
       }
-
-      // Restore other matches to pending
-      const { error: restoreError } = await supabase
-        .from('rfp_match_suggestions')
-        .update({ status: 'pending' })
-        .eq('rfp_item_id', rfpItemId)
-
-      if (restoreError) {
-        console.error('Failed to restore other matches:', restoreError)
-        // Non-fatal: continue
-      }
     } else {
-      // For regular matches: Reset all matches for this RFP item to 'pending'
+      // For regular matches: Set only this specific match to 'pending'
       const { error: matchError } = await supabase
         .from('rfp_match_suggestions')
         .update({ status: 'pending' })
-        .eq('rfp_item_id', rfpItemId)
+        .eq('id', matchId)
 
       if (matchError) {
         return { success: false, error: matchError.message }
