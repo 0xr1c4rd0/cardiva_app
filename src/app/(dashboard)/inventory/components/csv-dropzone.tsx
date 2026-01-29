@@ -2,7 +2,7 @@
 
 import { useCallback } from 'react'
 import { useDropzone, FileRejection } from 'react-dropzone'
-import { Upload, FileSpreadsheet } from 'lucide-react'
+import { CloudUpload, FileSpreadsheet, Sparkles } from 'lucide-react'
 import { cn } from '@/lib/utils'
 
 interface CSVDropzoneProps {
@@ -64,14 +64,22 @@ export function CSVDropzone({ onFileSelect, file, disabled }: CSVDropzoneProps) 
         </div>
       ) : isDragActive ? (
         <div className="space-y-2">
-          <Upload className="h-8 w-8 mx-auto text-primary" />
+          <CloudUpload className="h-10 w-10 mx-auto text-primary" />
           <p className="text-primary font-medium">Largue o ficheiro CSV aqui...</p>
         </div>
       ) : (
-        <div className="space-y-2">
-          <Upload className="h-8 w-8 mx-auto text-muted-foreground" />
-          <p>Arraste e largue um ficheiro CSV, ou clique para selecionar</p>
-          <p className="text-sm text-muted-foreground">Tamanho máximo: 10MB</p>
+        <div className="space-y-2.5">
+          <CloudUpload className="h-10 w-10 mx-auto text-muted-foreground/70" />
+          <div className="space-y-1.5">
+            <div className="flex items-center justify-center gap-1.5">
+              <Sparkles className="h-3.5 w-3.5 text-primary shrink-0 fill-primary" />
+              <p className="text-[15px] text-primary font-medium">Carregar inventário e atualizar produtos</p>
+            </div>
+            <p className="text-sm text-foreground">Arraste e largue ou clique para carregar</p>
+            <p className="text-xs text-muted-foreground">
+              Ficheiro suportado: CSV • Tamanho máx: 10MB
+            </p>
+          </div>
         </div>
       )}
     </div>
