@@ -58,7 +58,7 @@ export function PDFDropzone({ onFilesSelect, files, disabled }: PDFDropzoneProps
         'border-2 border-dashed rounded p-8 text-center cursor-pointer transition-colors',
         isDragActive && !isDragReject && 'border-primary bg-primary/5',
         isDragReject && 'border-destructive bg-destructive/5',
-        files.length > 0 && 'border-green-500 bg-green-50 dark:bg-green-950/20',
+        files.length > 0 && 'border-primary bg-primary/5',
         disabled && 'opacity-50 cursor-not-allowed',
         !isDragActive && files.length === 0 && 'border-primary/30 hover:border-primary/50'
       )}
@@ -67,7 +67,7 @@ export function PDFDropzone({ onFilesSelect, files, disabled }: PDFDropzoneProps
       {files.length > 0 ? (
         <div className="space-y-2">
           <div className="flex items-center justify-center gap-2">
-            <FileText className="h-8 w-8 text-green-600 dark:text-green-400 shrink-0" />
+            <FileText className="h-8 w-8 text-primary shrink-0" />
             <p className="font-medium text-left text-sm">
               {files.length === 1
                 ? files[0].name

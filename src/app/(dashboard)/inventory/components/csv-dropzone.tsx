@@ -46,7 +46,7 @@ export function CSVDropzone({ onFileSelect, file, disabled }: CSVDropzoneProps) 
         'border-2 border-dashed rounded p-8 text-center cursor-pointer transition-colors',
         isDragActive && !isDragReject && 'border-primary bg-primary/5',
         isDragReject && 'border-destructive bg-destructive/5',
-        file && 'border-green-500 bg-green-50 dark:bg-green-950/20',
+        file && 'border-primary bg-primary/5',
         disabled && 'opacity-50 cursor-not-allowed',
         !isDragActive && !file && 'border-primary/30 hover:border-primary/50'
       )}
@@ -54,7 +54,7 @@ export function CSVDropzone({ onFileSelect, file, disabled }: CSVDropzoneProps) 
       <input {...getInputProps()} />
       {file ? (
         <div className="flex items-center justify-center gap-2">
-          <FileSpreadsheet className="h-8 w-8 text-green-600 dark:text-green-400" />
+          <FileSpreadsheet className="h-8 w-8 text-primary" />
           <div className="text-left">
             <p className="font-medium">{file.name}</p>
             <p className="text-sm text-muted-foreground">
