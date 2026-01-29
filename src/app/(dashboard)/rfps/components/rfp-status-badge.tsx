@@ -1,7 +1,7 @@
 'use client'
 
 import { useTransition } from 'react'
-import { Clock, CheckCircle2, Undo2, Loader2 } from 'lucide-react'
+import { Clock, CheckCircle2, BadgeCheck, Undo2, Loader2 } from 'lucide-react'
 import { Badge } from '@/components/ui/badge'
 import { cn } from '@/lib/utils'
 import { toast } from 'sonner'
@@ -32,7 +32,7 @@ const statusConfig = {
   },
   confirmado: {
     label: 'Confirmado',
-    icon: CheckCircle2,
+    icon: BadgeCheck,
     className: 'text-emerald-600',
     badgeClassName: 'bg-emerald-100 text-emerald-700 border-emerald-200 hover:bg-emerald-100',
   },

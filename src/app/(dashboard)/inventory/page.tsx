@@ -29,6 +29,44 @@ export default async function InventoryPage({
   // Get user role for permission checks
   const userRole = await getUserRole()
 
+  // Fetch last completed upload job
+  const { data: lastUploadJob } = await supabase
+    .from('inventory_upload_jobs')
+    .select('id, file_name, created_at, completed_at, processed_rows, user_id')
+    .eq('status', 'completed')
+    .order('completed_at', { ascending: false })
+    .limit(1)
+    .maybeSingle()
+
+  // Fetch user profile if upload exists
+  let lastUpload: {
+    id: string
+    file_name: string
+    created_at: string
+    completed_at: string | null
+    processed_rows: number
+    user_id: string
+    profiles: {
+      full_name: string | null
+      email: string
+    }
+  } | null = null
+
+  if (lastUploadJob) {
+    const { data: profile } = await supabase
+      .from('profiles')
+      .select('full_name, email')
+      .eq('id', lastUploadJob.user_id)
+      .single()
+
+    if (profile) {
+      lastUpload = {
+        ...lastUploadJob,
+        profiles: profile,
+      }
+    }
+  }
+
   // Fetch column configuration
   const { data: columnConfig, error: configError } = await supabase
     .from('inventory_column_config')
@@ -104,7 +142,7 @@ export default async function InventoryPage({
       </div>
       <InventoryStats
         totalCount={count ?? 0}
-        columnCount={columns.length}
+        lastUpload={lastUpload}
       />
       <InventoryTable
         data={data ?? []}

@@ -43,12 +43,12 @@ export function CSVDropzone({ onFileSelect, file, disabled }: CSVDropzoneProps) 
     <div
       {...getRootProps()}
       className={cn(
-        'border-2 border-dashed rounded-lg p-8 text-center cursor-pointer transition-colors',
+        'border-2 border-dashed rounded p-8 text-center cursor-pointer transition-colors',
         isDragActive && !isDragReject && 'border-primary bg-primary/5',
         isDragReject && 'border-destructive bg-destructive/5',
         file && 'border-green-500 bg-green-50 dark:bg-green-950/20',
         disabled && 'opacity-50 cursor-not-allowed',
-        !isDragActive && !file && 'border-muted-foreground/25 hover:border-muted-foreground/50'
+        !isDragActive && !file && 'border-primary/30 hover:border-primary/50'
       )}
     >
       <input {...getInputProps()} />

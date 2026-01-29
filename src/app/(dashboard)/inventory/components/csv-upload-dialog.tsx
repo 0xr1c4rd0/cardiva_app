@@ -103,7 +103,7 @@ export function CSVUploadDialog({ open, onOpenChange, onUpload }: CSVUploadDialo
 
   return (
     <Dialog open={open} onOpenChange={handleClose}>
-      <DialogContent className="max-w-2xl">
+      <DialogContent className="sm:max-w-3xl">
         <DialogHeader>
           <DialogTitle>Carregar CSV de Inventário</DialogTitle>
           <DialogDescription>

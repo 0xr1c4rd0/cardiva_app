@@ -2,7 +2,7 @@
 
 import { useCallback } from 'react'
 import { useDropzone, FileRejection } from 'react-dropzone'
-import { Upload, FileText } from 'lucide-react'
+import { CloudUpload, FileText, Sparkles } from 'lucide-react'
 import { cn } from '@/lib/utils'
 
 interface PDFDropzoneProps {
@@ -60,7 +60,7 @@ export function PDFDropzone({ onFilesSelect, files, disabled }: PDFDropzoneProps
         isDragReject && 'border-destructive bg-destructive/5',
         files.length > 0 && 'border-green-500 bg-green-50 dark:bg-green-950/20',
         disabled && 'opacity-50 cursor-not-allowed',
-        !isDragActive && files.length === 0 && 'border-muted-foreground/25 hover:border-muted-foreground/50'
+        !isDragActive && files.length === 0 && 'border-primary/30 hover:border-primary/50'
       )}
     >
       <input {...getInputProps()} />
@@ -85,16 +85,22 @@ export function PDFDropzone({ onFilesSelect, files, disabled }: PDFDropzoneProps
         </div>
       ) : isDragActive ? (
         <div className="space-y-2">
-          <Upload className="h-8 w-8 mx-auto text-primary" />
+          <CloudUpload className="h-10 w-10 mx-auto text-primary" />
           <p className="text-primary font-medium">Largue os ficheiros PDF aqui...</p>
         </div>
       ) : (
-        <div className="space-y-2">
-          <Upload className="h-8 w-8 mx-auto text-muted-foreground" />
-          <p>Arraste ficheiros PDF, ou clique para selecionar</p>
-          <p className="text-sm text-muted-foreground">
-            Até {MAX_FILES} ficheiros, 50MB max cada
-          </p>
+        <div className="space-y-2.5">
+          <CloudUpload className="h-10 w-10 mx-auto text-muted-foreground/70" />
+          <div className="space-y-1.5">
+            <div className="flex items-center justify-center gap-1.5">
+              <Sparkles className="h-3.5 w-3.5 text-primary shrink-0 fill-primary" />
+              <p className="text-[15px] text-primary font-medium">Carregar concursos e fazer match com inventário</p>
+            </div>
+            <p className="text-sm text-foreground">Arraste e largue ou clique para carregar</p>
+            <p className="text-xs text-muted-foreground">
+              Ficheiros suportados: PDF • Tamanho máx: 50MB • Até {MAX_FILES} ficheiros
+            </p>
+          </div>
         </div>
       )}
     </div>

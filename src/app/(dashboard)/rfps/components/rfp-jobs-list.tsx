@@ -5,7 +5,7 @@ import Link from 'next/link'
 import { formatDistanceToNow } from 'date-fns'
 import { pt } from 'date-fns/locale'
 import { useQueryStates, parseAsInteger, parseAsString } from 'nuqs'
-import { FileText, Clock, CheckCircle2, XCircle, Loader2, FileDown, Trash2, Upload, SearchX } from 'lucide-react'
+import { FileText, Clock, CheckCircle2, BadgeCheck, XCircle, Loader2, FileDown, Trash2, Upload, SearchX } from 'lucide-react'
 import { createClient } from '@/lib/supabase/client'
 import {
   Card,
@@ -147,7 +147,7 @@ const statusConfig = {
   },
   completed: {
     label: 'Concluído',
-    icon: CheckCircle2,
+    icon: BadgeCheck,
     variant: 'success' as const,
     className: 'text-emerald-600',
     badgeClassName: '',
@@ -183,7 +183,7 @@ const reviewStatusConfig = {
   },
   confirmado: {
     label: 'Confirmado',
-    icon: CheckCircle2,
+    icon: BadgeCheck,
     variant: 'success' as const,
     className: 'text-emerald-600',
     badgeClassName: '',
