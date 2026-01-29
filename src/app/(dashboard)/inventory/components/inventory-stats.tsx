@@ -42,7 +42,7 @@ export function InventoryStats({ totalCount, lastUpload }: InventoryStatsProps) 
         value={totalCount}
         icon={Package}
         description="Produtos registados no inventário"
-        iconContainerClassName="bg-blue-100 text-blue-600"
+        iconContainerClassName="bg-slate-100 text-slate-600"
       />
 
       <KPIStatsCard
@@ -50,7 +50,7 @@ export function InventoryStats({ totalCount, lastUpload }: InventoryStatsProps) 
         value={lastUploadTime}
         icon={Calendar}
         description={lastUpload?.file_name || 'Nenhum upload registado'}
-        iconContainerClassName="bg-green-100 text-green-600"
+        iconContainerClassName="bg-amber-100 text-amber-600"
       />
 
       <KPIStatsCard
@@ -62,7 +62,7 @@ export function InventoryStats({ totalCount, lastUpload }: InventoryStatsProps) 
             ? `${lastUpload.processed_rows} alterações processadas`
             : 'Nenhum upload registado'
         }
-        iconContainerClassName="bg-purple-100 text-purple-600"
+        iconContainerClassName="bg-emerald-100 text-emerald-600"
       />
     </div>
   )
