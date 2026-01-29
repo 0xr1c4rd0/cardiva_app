@@ -246,7 +246,7 @@ function RFPJobRow({ job, isDeleting, onViewPDF, onDeleteClick, onAnimationCompl
       }}
     >
       <div className="flex items-center gap-4">
-        <FileText className="h-8 w-8 text-muted-foreground" />
+        <FileText className="h-8 w-8 text-muted-foreground" strokeWidth={1.5} />
         <div>
           <p className="font-medium">{job.file_name}</p>
           <div className="flex items-center gap-2 text-sm text-muted-foreground">

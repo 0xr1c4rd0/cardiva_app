@@ -10,6 +10,7 @@ interface KPIStatsCardProps {
     value: string | number
     icon: LucideIcon
     description?: string
+    valueDetail?: string
     className?: string
     iconClassName?: string
     iconContainerClassName?: string
@@ -20,6 +21,7 @@ export function KPIStatsCard({
     value,
     icon: Icon,
     description,
+    valueDetail,
     className,
     iconClassName,
     iconContainerClassName = "bg-primary/10 text-primary",
@@ -36,13 +38,18 @@ export function KPIStatsCard({
                     </div>
                     <div>
                         <p className="text-sm font-medium text-muted-foreground">{label}</p>
-                        <h3 className="text-xl font-bold tracking-tight mt-0.5">
-                            {isNumeric ? (
-                                <AnimatedNumber value={value} duration={400} />
-                            ) : (
-                                value
+                        <div className="flex items-baseline gap-1.5 mt-0.5">
+                            <h3 className="text-xl font-bold tracking-tight">
+                                {isNumeric ? (
+                                    <AnimatedNumber value={value} duration={400} />
+                                ) : (
+                                    value
+                                )}
+                            </h3>
+                            {valueDetail && (
+                                <span className="text-xs text-muted-foreground font-medium">{valueDetail}</span>
                             )}
-                        </h3>
+                        </div>
                         {description && (
                             <p className="text-xs text-muted-foreground mt-0.5">{description}</p>
                         )}

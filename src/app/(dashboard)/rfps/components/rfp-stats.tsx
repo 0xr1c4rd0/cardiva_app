@@ -152,23 +152,26 @@ export function RFPStats({ initialKPIs }: RFPStatsProps) {
       />
 
       <KPIStatsCard
-        label="Concursos Por Rever"
+        label="Por Rever"
         value={isLoading ? '-' : data.porReverCount}
+        valueDetail="com decisões pendentes"
         icon={Clock}
         iconContainerClassName="bg-amber-100 text-amber-600"
         iconClassName={data.porReverCount > 0 ? "animate-pulse" : ""}
       />
 
       <KPIStatsCard
-        label="Concursos Revistos"
+        label="Revistos"
         value={isLoading ? '-' : data.revistosCount}
+        valueDetail="por confirmar"
         icon={CheckCircle2}
         iconContainerClassName="bg-blue-100 text-blue-600"
       />
 
       <KPIStatsCard
-        label="Concursos Confirmados"
+        label="Confirmados"
         value={isLoading ? '-' : data.confirmedCount}
+        valueDetail="prontos para exportação"
         icon={BadgeCheck}
         iconContainerClassName="bg-emerald-100 text-emerald-600"
       />
