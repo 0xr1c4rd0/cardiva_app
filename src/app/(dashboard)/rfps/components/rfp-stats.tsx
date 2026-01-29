@@ -145,35 +145,31 @@ export function RFPStats({ initialKPIs }: RFPStatsProps) {
   return (
     <div className="grid gap-4 md:grid-cols-4">
       <KPIStatsCard
-        label="Total"
+        label="Total de Concursos"
         value={isLoading ? '-' : data.totalCount}
         icon={FileText}
-        description="Total de concursos"
         iconContainerClassName="bg-slate-100 text-slate-600"
       />
 
       <KPIStatsCard
-        label="Por Rever"
+        label="Concursos Por Rever"
         value={isLoading ? '-' : data.porReverCount}
         icon={Clock}
-        description="Concursos com decisoes pendentes"
         iconContainerClassName="bg-amber-100 text-amber-600"
         iconClassName={data.porReverCount > 0 ? "animate-pulse" : ""}
       />
 
       <KPIStatsCard
-        label="Revistos"
+        label="Concursos Revistos"
         value={isLoading ? '-' : data.revistosCount}
         icon={CheckCircle2}
-        description="Revistos, por confirmar"
         iconContainerClassName="bg-blue-100 text-blue-600"
       />
 
       <KPIStatsCard
-        label="Confirmados"
+        label="Concursos Confirmados"
         value={isLoading ? '-' : data.confirmedCount}
         icon={BadgeCheck}
-        description="Prontos para exportacao"
         iconContainerClassName="bg-emerald-100 text-emerald-600"
       />
     </div>

@@ -38,30 +38,23 @@ export function InventoryStats({ totalCount, lastUpload }: InventoryStatsProps) 
   return (
     <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
       <KPIStatsCard
-        label="Total Produtos"
+        label="Produtos no Inventário"
         value={totalCount}
         icon={Package}
-        description="Produtos registados no inventário"
         iconContainerClassName="bg-slate-100 text-slate-600"
       />
 
       <KPIStatsCard
-        label="Última Atualização"
+        label="Último Carregamento"
         value={lastUploadTime}
         icon={Calendar}
-        description={lastUpload?.file_name || 'Nenhum upload registado'}
         iconContainerClassName="bg-amber-100 text-amber-600"
       />
 
       <KPIStatsCard
-        label="Atualizado Por"
+        label="Carregado Por"
         value={uploaderName}
         icon={User}
-        description={
-          lastUpload?.processed_rows
-            ? `${lastUpload.processed_rows} alterações processadas`
-            : 'Nenhum upload registado'
-        }
         iconContainerClassName="bg-emerald-100 text-emerald-600"
       />
     </div>
