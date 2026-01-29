@@ -710,10 +710,23 @@ function ItemRow({ jobId, item, isConfirmed, onItemUpdate, columnWidths }: ItemR
                         rfpItemId={item.id}
                         match={match}
                         isPerfectMatch={match.similarity_score >= 0.9999}
-                        onActionComplete={(updatedItem) => {
-                          setIsPopoverOpen(false)
+                        onActionComplete={(updatedItem, actionType) => {
                           if (updatedItem) {
+                            // Always update the item first
                             onItemUpdate(updatedItem)
+
+                            // Close popover on accept, or on reject if no more pending matches
+                            if (actionType === 'accept') {
+                              setIsPopoverOpen(false)
+                            } else if (actionType === 'reject') {
+                              // Check if there are still pending matches after this rejection
+                              const hasPendingMatches = updatedItem.rfp_match_suggestions.some(
+                                m => m.status === 'pending'
+                              )
+                              if (!hasPendingMatches) {
+                                setIsPopoverOpen(false)
+                              }
+                            }
                           }
                         }}
                       />
@@ -775,7 +788,7 @@ interface SuggestionItemProps {
   rfpItemId: string
   match: MatchSuggestion
   isPerfectMatch: boolean
-  onActionComplete: (updatedItem?: RFPItemWithMatches) => void
+  onActionComplete: (updatedItem?: RFPItemWithMatches, actionType?: 'accept' | 'reject') => void
 }
 
 function SuggestionItem({ jobId, rfpItemId, match, isPerfectMatch, onActionComplete }: SuggestionItemProps) {
@@ -809,7 +822,7 @@ function SuggestionItem({ jobId, rfpItemId, match, isPerfectMatch, onActionCompl
     }
 
     // Pass the updated item to trigger instant UI update
-    onActionComplete(result.updatedItem)
+    onActionComplete(result.updatedItem, 'accept')
   }
 
   const handleRejectOrToggle = async () => {
@@ -827,7 +840,7 @@ function SuggestionItem({ jobId, rfpItemId, match, isPerfectMatch, onActionCompl
     }
 
     // Pass the updated item to trigger instant UI update
-    onActionComplete(result.updatedItem)
+    onActionComplete(result.updatedItem, 'reject')
   }
 
   return (
@@ -882,7 +895,7 @@ function SuggestionItem({ jobId, rfpItemId, match, isPerfectMatch, onActionCompl
               size="sm"
               variant={showAsSelected ? 'default' : 'outline'}
               className={cn(
-                "h-7 w-7 p-0",
+                "h-7 w-7 p-0 rounded",
                 showAsSelected && "bg-emerald-600 hover:bg-emerald-700 border-emerald-600 disabled:opacity-100",
                 isLocked && showAsSelected && "cursor-default"
               )}
@@ -895,7 +908,7 @@ function SuggestionItem({ jobId, rfpItemId, match, isPerfectMatch, onActionCompl
               size="sm"
               variant="outline"
               className={cn(
-                "h-7 w-7 p-0",
+                "h-7 w-7 p-0 rounded",
                 isRejected
                   ? "bg-gray-200 text-gray-700 hover:bg-gray-200 border-gray-300"
                   : "text-muted-foreground hover:text-gray-600 hover:bg-gray-100"
