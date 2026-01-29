@@ -54,7 +54,7 @@ export function CSVDropzone({ onFileSelect, file, disabled }: CSVDropzoneProps) 
       <input {...getInputProps()} />
       {file ? (
         <div className="flex items-center justify-center gap-2">
-          <FileSpreadsheet className="h-8 w-8 text-primary" />
+          <FileSpreadsheet className="h-8 w-8 text-primary" strokeWidth={1.5} />
           <div className="text-left">
             <p className="font-medium">{file.name}</p>
             <p className="text-sm text-muted-foreground">
