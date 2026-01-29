@@ -1,6 +1,4 @@
-# CLAUDE.md
-
-This file provides guidance to Claude Code when working with code in this repository.
+# CLAUDE.md - Cardiva RFP Matching App
 
 ## Project Overview
 
@@ -10,423 +8,425 @@ Cardiva is an RFP (Request for Proposal) matching application for a pharmaceutic
 
 ---
 
-## Intelligent Behavior - AUTOMATIC ROUTING
+## Installed Frameworks
 
-**I automatically analyze every request and invoke the appropriate frameworks, skills, and tools.** The user never needs to type slash commands - I determine what's needed.
+I have access to four powerful frameworks. I automatically invoke the right commands based on your request—you never need to type slash commands.
 
-### My Decision Process
-
-For EVERY user request, I silently perform this analysis:
-
-```
-┌─────────────────────────────────────────────────────────────────────┐
-│                    AUTOMATIC REQUEST CLASSIFICATION                  │
-├─────────────────────────────────────────────────────────────────────┤
-│                                                                      │
-│  1. COMPLEXITY ASSESSMENT                                            │
-│     Simple: Single file, clear scope, <30 min                        │
-│     Complex: Multi-file, architectural, multi-session                │
-│                                                                      │
-│  2. DOMAIN DETECTION                                                 │
-│     Frontend? → Invoke frontend-design patterns                      │
-│     Database? → Use Supabase MCP, create migrations                  │
-│     Testing?  → Activate TDD workflow                                │
-│     Debug?    → Use systematic debugging with state                  │
-│                                                                      │
-│  3. WORKFLOW SELECTION                                               │
-│     Simple task    → Quick execution with atomic commit              │
-│     Complex task   → Full GSD: discuss → plan → execute → verify     │
-│     Ambiguous      → Default to full planning (better to over-plan)  │
-│                                                                      │
-│  4. QUALITY REQUIREMENTS                                             │
-│     New feature?   → TDD mandatory (RED-GREEN-REFACTOR)              │
-│     Significant?   → Code review agents post-implementation          │
-│     UI change?     → Visual verification via browser automation      │
-│                                                                      │
-└─────────────────────────────────────────────────────────────────────┘
-```
-
-### Automatic Triggers
-
-**I automatically invoke these capabilities based on request patterns:**
-
-| When I Detect... | I Automatically... |
-|------------------|-------------------|
-| New feature request | Brainstorm first, then plan with TDD approach |
-| Multi-file changes | Use full GSD planning workflow |
-| Bug report / issue | Use systematic debugging with state tracking |
-| UI/component work | Apply frontend-design skill, verify visually |
-| Database changes | Use Supabase MCP, create migration files |
-| Complex logic | Use Sequential Thinking MCP for analysis |
-| Library questions | Query Context7 MCP for documentation |
-| "Fix", "improve", "refactor" on existing code | Analyze scope, choose quick or full workflow |
-| Ambiguous or broad request | Ask clarifying questions first |
-| Session ending / context full | Create session handoff for continuity |
-
-### What This Means in Practice
-
-**User says:** "Add a delete button to the user profile"
-
-**I automatically:**
-1. Assess: UI change + likely multi-file (component + action + possibly DB)
-2. Invoke brainstorming to explore requirements
-3. Create a mini-plan: component, server action, confirmation dialog
-4. Apply frontend-design patterns for the component
-5. Follow TDD: write test expectation first
-6. Implement with immutability and proper error handling
-7. Run visual verification via browser automation
-8. Run code quality checks
-9. Present changes and ask before committing
-
-**User says:** "There's a bug where matches don't refresh"
-
-**I automatically:**
-1. Assess: Debug scenario requiring investigation
-2. Activate systematic debugging mode with hypothesis tracking
-3. Read relevant files, check Realtime subscription code
-4. Form hypotheses, test each systematically
-5. Document what I tried and results
-6. Implement fix with proper error handling
-7. Verify fix works via browser automation
-8. Present solution with explanation
+| Framework | Purpose |
+|-----------|---------|
+| **GSD** | Full project lifecycle, spec-driven development, phases, subagents |
+| **Superpowers** | Design brainstorming, TDD enforcement, plan-first approach |
+| **Everything Claude Code** | Code review agents, security audit, specialized tools |
+| **Ralph Loop** | Autonomous iteration until completion (overnight work) |
 
 ---
 
-## Automatic Workflow Selection
+## Installed Skills (Auto-Activated)
 
-### Simple Tasks (I Handle Directly)
+Skills are specialized knowledge modules that auto-activate based on context. They enhance code quality without explicit invocation.
 
-These I execute immediately with proper quality checks:
-- Bug fix in single file with clear cause
-- Config change or environment update
-- Small UI tweak (color, spacing, text)
-- Adding a simple field or column
-- Documentation update
-- One-off script or utility
+| Skill | Purpose | Auto-Activates When |
+|-------|---------|---------------------|
+| **vercel-react-best-practices** | React/Next.js performance optimization (57 rules) | Writing/reviewing React components, data fetching, bundle optimization |
+| **tailwind-design-system** | CVA components, design tokens, responsive patterns | Creating UI components, working with Tailwind CSS |
+| **ui-ux-pro-max** | UI/UX design intelligence (50 styles, 97 palettes) | Designing pages, choosing colors/typography, building dashboards |
+| **writing-clearly-and-concisely** | Clear prose using Strunk's principles | Writing documentation, commit messages, UI text, error messages |
+| **agentation** | Development annotation toolbar | Setup on request (not auto-activated) |
 
-**My process for simple tasks:**
-1. Understand the change needed
-2. Read relevant files first (never edit blind)
-3. Make the change with immutability patterns
-4. Run `npm run build` and `npm run test`
-5. Visual verification if UI-related
-6. Present diff and ask before committing
+### Skill Auto-Activation Rules
 
-### Complex Tasks (Full GSD Workflow)
+**React/Next.js Development** (vercel-react-best-practices):
+- Creating React components → Apply waterfall elimination, bundle optimization
+- Data fetching → Use parallel fetching, Suspense boundaries, caching
+- Performance issues → Check re-render optimization, rendering performance
+- Code review → Validate against 57 performance rules by priority
 
-These trigger full planning and phased execution:
-- New feature with multiple components
-- Changes spanning 3+ files with logic
-- Database schema changes
-- New page or route
-- Integration with external service
-- Refactoring across multiple modules
+**UI Component Development** (tailwind-design-system + ui-ux-pro-max):
+- Creating new components → Use CVA pattern, semantic color tokens
+- Building pages/dashboards → Generate design system first via:
+  ```bash
+  python3 .agents/skills/ui-ux-pro-max/scripts/search.py "<product> <style>" --design-system
+  ```
+- Styling decisions → Reference design tokens, not raw Tailwind classes
+- Dark mode → Use CSS variables pattern from tailwind-design-system
 
-**My process for complex tasks:**
+**Writing for Humans** (writing-clearly-and-concisely):
+- Documentation/README → Use active voice, omit needless words
+- Commit messages → Be specific, avoid AI-speak ("leverage", "robust", "seamless")
+- Error messages → Clear, positive framing, specific language
+- UI text → Concrete, not vague; definite, not general
 
+### Skill Integration with Frameworks
+
+**GSD Workflow + Skills:**
 ```
-Phase 1: UNDERSTAND
-├── Invoke brainstorming to explore intent and requirements
-├── Ask clarifying questions if scope is ambiguous
-└── Document decisions in context file
-
-Phase 2: PLAN
-├── Research patterns via Context7 MCP
-├── Break into atomic tasks (each independently testable)
-├── Define verification criteria for each task
-└── Create plan document in .planning/phases/
-
-Phase 3: EXECUTE
-├── Follow TDD for each task (RED-GREEN-REFACTOR)
-├── Apply code quality checklist
-├── Create atomic commits per task
-└── Track progress in plan document
-
-Phase 4: VERIFY
-├── Run full test suite
-├── Visual verification via browser automation
-├── Run code review agent for significant changes
-├── Check for console errors, responsive design
-└── Present results, ask before final commit
-
-Phase 5: COMPLETE
-├── Update roadmap/state documents
-├── Extract learnings if any
-└── Archive phase documentation
+/gsd:plan-phase N     # Plan includes skill considerations
+    ↓
+Skills auto-apply     # Performance rules, design patterns, clear writing
+    ↓
+/gsd:verify-work N    # Verification includes skill compliance
 ```
+
+**UI/UX Work Enhanced Flow:**
+```
+1. Generate design system (ui-ux-pro-max)
+   python3 .agents/skills/ui-ux-pro-max/scripts/search.py "dashboard analytics" --design-system -p "Cardiva"
+
+2. Build components (tailwind-design-system)
+   - Use CVA for variants
+   - Semantic color tokens
+   - forwardRef pattern
+
+3. Optimize performance (vercel-react-best-practices)
+   - Parallel data fetching
+   - Bundle optimization
+   - Re-render prevention
+```
+
+### Skill Reference Files
+
+| Skill | Key Files | When to Read |
+|-------|-----------|--------------|
+| vercel-react-best-practices | `rules/async-*.md`, `rules/bundle-*.md` | Performance issues |
+| tailwind-design-system | `SKILL.md` (complete patterns) | Creating components |
+| ui-ux-pro-max | Run CLI with `--domain ux` | UX best practices |
+| writing-clearly-and-concisely | `elements-of-style/03-*.md` | Active voice, concision |
+
+### Pre-Delivery Checklist (Skill-Enhanced)
+
+Before delivering UI code, verify against skills:
+
+**From ui-ux-pro-max:**
+- [ ] No emojis as icons (use SVG from Lucide)
+- [ ] All clickable elements have `cursor-pointer`
+- [ ] Hover states don't cause layout shift
+- [ ] Light/dark mode contrast verified
+- [ ] Touch targets ≥44x44px
+
+**From vercel-react-best-practices:**
+- [ ] No request waterfalls (parallel fetching)
+- [ ] Dynamic imports for heavy components
+- [ ] Proper Suspense boundaries
+- [ ] Memoization where beneficial
+
+**From tailwind-design-system:**
+- [ ] Using semantic colors (`primary`, not `blue-500`)
+- [ ] CVA pattern for component variants
+- [ ] Proper focus states for accessibility
+
+**From writing-clearly-and-concisely:**
+- [ ] Active voice in UI text
+- [ ] No AI-speak ("leverage", "robust", "seamless")
+- [ ] Specific, concrete language
 
 ---
 
-## Critical Rules (ALWAYS FOLLOW)
+## Command Routing (Auto-Invocation)
 
-### 1. Code Organization
+When you make a request, I classify it and invoke the appropriate commands automatically.
 
-**MANY SMALL FILES > FEW LARGE FILES**
-- High cohesion, low coupling
-- 200-400 lines typical, 800 max per file
-- Extract utilities from large components
-- Organize by feature/domain, not by type
+### Quick Reference
 
-### 2. Immutability (CRITICAL)
+| You Say | I Run |
+|---------|-------|
+| "Build X" / "New feature" | `/gsd:new-milestone` or `/superpowers:brainstorm` |
+| "Quick fix" / "Small change" | `/gsd:quick` |
+| "Bug" / "Not working" | `/gsd:debug` |
+| "Continue" / "Resume" | `/gsd:resume-work` → `/gsd:progress` |
+| "Pause" / "Stopping" | `/gsd:pause-work` |
+| "Review this" | `/code-review` |
+| "Brainstorm" / "Design" | `/superpowers:brainstorm` |
+| "Plan this" | `/gsd:plan-phase N` or `/superpowers:write-plan` |
+| "Execute" / "Build it" | `/gsd:execute-plan` |
+| "Verify" / "Test it" | `/gsd:verify-work N` |
+| "Run overnight" / "Autonomous" | `/ralph-loop` |
+| "Where am I?" | `/gsd:progress` |
+| "Map the codebase" | `/gsd:map-codebase` |
 
-ALWAYS create new objects, NEVER mutate:
+### Decision Tree
 
-```typescript
-// WRONG: Mutation
-function updateUser(user: User, name: string) {
-  user.name = name  // MUTATION!
-  return user
-}
-
-// CORRECT: Immutability
-function updateUser(user: User, name: string): User {
-  return { ...user, name }
-}
 ```
-
-### 3. Error Handling
-
-ALWAYS handle errors comprehensively:
-
-```typescript
-try {
-  const result = await riskyOperation()
-  return { success: true, data: result }
-} catch (error) {
-  console.error('Operation failed:', error)
-  return { success: false, error: 'User-friendly message' }
-}
-```
-
-### 4. Input Validation
-
-ALWAYS validate user input with Zod:
-
-```typescript
-import { z } from 'zod'
-
-const schema = z.object({
-  email: z.string().email(),
-  quantity: z.number().int().min(1)
-})
-
-const validated = schema.parse(input)
-```
-
-### 5. Security
-
-- No hardcoded secrets - use environment variables
-- Validate ALL user inputs before processing
-- Parameterized queries only (Supabase handles this)
-- CSRF protection via Server Actions
-- Never expose internal error details to users
-
-### 6. Code Quality Checklist
-
-Before marking ANY work complete, I verify:
-- [ ] Code is readable and well-named
-- [ ] Functions are small (<50 lines)
-- [ ] Files are focused (<800 lines)
-- [ ] No deep nesting (>4 levels)
-- [ ] Proper error handling with try/catch
-- [ ] No console.log in production code
-- [ ] No hardcoded values (use constants/env vars)
-- [ ] Immutable patterns used throughout
-
----
-
-## Development Commands
-
-```bash
-npm run dev          # Start dev server (port 3000)
-npm run build        # Production build (includes type-check)
-npm run test         # Run all Playwright E2E tests
-npm run test:ui      # Interactive Playwright test UI
-npm run test:headed  # Run tests with visible browser
+User Request
+    │
+    ├─► "overnight" / "autonomous" / "ralph" / "loop until"
+    │       └─► /ralph-loop "<task>" --max-iterations N
+    │
+    ├─► "brainstorm" / "design" / "explore" / "think through"
+    │       └─► /superpowers:brainstorm
+    │
+    ├─► "review" / "check code" / "any issues"
+    │       └─► /code-review
+    │
+    ├─► "bug" / "error" / "not working" / "broken"
+    │       └─► /gsd:debug
+    │
+    ├─► "continue" / "resume" / "where were we"
+    │       └─► /gsd:resume-work → /gsd:progress
+    │
+    ├─► "pause" / "stop" / "taking a break"
+    │       └─► /gsd:pause-work
+    │
+    ├─► Small scope (single file, config, tweak)?
+    │       └─► /gsd:quick
+    │
+    ├─► New project from scratch?
+    │       └─► /gsd:new-project
+    │
+    ├─► New feature on existing project?
+    │       └─► /gsd:new-milestone OR /superpowers:brainstorm
+    │
+    ├─► Inside active GSD workflow?
+    │   ├─► Need to plan? → /gsd:plan-phase N
+    │   ├─► Need to execute? → /gsd:execute-plan
+    │   └─► Need to verify? → /gsd:verify-work N
+    │
+    └─► Ambiguous?
+            └─► Ask clarifying question first
 ```
 
 ---
 
-## Automatic Testing & TDD
+## Detailed Command Routing
 
-### When I Implement New Features
+### 🆕 New Project / Major Feature
 
-I automatically follow RED-GREEN-REFACTOR:
+**Triggers:** "build", "create", "new project", "new feature", "implement", "add [complex thing]"
 
-1. **RED**: Write test first - it should FAIL
-2. **GREEN**: Write minimal implementation to pass
-3. **REFACTOR**: Clean up while keeping tests green
-4. **VERIFY**: Ensure 80%+ coverage
+**Decision:**
+- Starting from scratch → `/gsd:new-project`
+- Adding to existing project → `/gsd:new-milestone`
+- Need design exploration first → `/superpowers:brainstorm`
 
-### Test Types I Apply
-
-| Change Type | Tests I Create/Verify |
-|-------------|----------------------|
-| Utility function | Unit test |
-| Server action | Integration test |
-| User flow | E2E test (Playwright) |
-| UI component | Visual verification + E2E |
-
-### My Verification Checklist
-
-Before marking ANY task complete:
-
-- [ ] `npm run build` passes (type-check + build)
-- [ ] `npm run test` passes (all E2E tests)
-- [ ] Visual verification via browser automation completed
-- [ ] No console errors in browser DevTools
-- [ ] Responsive design verified (if UI change)
-- [ ] Portuguese text is correct (if user-facing)
-- [ ] Code quality checklist passed
-- [ ] User approved git commit
-
----
-
-## Automatic MCP & Tool Usage
-
-### Context7 MCP (Documentation Lookup)
-
-**I automatically use when:**
-- Working with React, Next.js, Supabase, shadcn/ui
-- Need framework best practices
-- Implementing unfamiliar patterns
-
-### Sequential Thinking MCP (Complex Analysis)
-
-**I automatically use when:**
-- Architectural decisions required
-- Multi-step problem decomposition needed
-- Debugging complex interconnected issues
-
-### Browser Automation (Visual Verification)
-
-**I automatically use after UI changes:**
-
-| Tool | When I Use It |
-|------|--------------|
-| agent-browser | Quick visual checks, accessibility tree |
-| chrome-devtools | Network requests, console errors, performance |
-| playwright | Complex E2E flows, form submissions, file uploads |
-
-### Supabase MCP (Database Operations)
-
-**I automatically use when:**
-- Database queries or mutations needed
-- Auth configuration changes
-- **CRITICAL**: I always create migration files in `supabase/migrations/`
-
----
-
-## Automatic Code Review
-
-### When I Run Code Review Agents
-
-I automatically invoke code review analysis for:
-- Changes touching 3+ files
-- New features or significant functionality
-- Security-sensitive code (auth, data handling)
-- Performance-critical paths
-
-### What I Check
-
-- Code quality and maintainability
-- Potential bugs and edge cases
-- Security vulnerabilities
-- TypeScript best practices
-- React/Next.js patterns
-- Architectural decisions
-
----
-
-## Git Workflow
-
-**I handle commits automatically but ALWAYS ask before:**
-- Creating any commit
-- Pushing to remote
-- Creating pull requests
-- Force operations
-
-**Commit message format:**
+**Full GSD workflow:**
 ```
-type(scope): description
-
-Co-Authored-By: Claude <noreply@anthropic.com>
+/gsd:new-project          # Extract requirements through questioning
+    ↓
+/gsd:create-roadmap       # Break into phases
+    ↓
+/gsd:discuss-phase 1      # Clarify phase scope
+    ↓
+/gsd:plan-phase 1         # Create atomic task plans (2-3 tasks max)
+    ↓
+/gsd:execute-plan         # Subagent implements with fresh 200k context
+    ↓
+/gsd:verify-work 1        # User acceptance testing
 ```
 
-**Conventional commits:**
-- `feat:` - New feature
-- `fix:` - Bug fix
-- `refactor:` - Code restructuring
-- `docs:` - Documentation
-- `test:` - Test additions/changes
+### ⚡ Quick Tasks
+
+**Triggers:** "quick fix", "small change", "just update", "config change", "tweak", "minor"
+
+**Command:** `/gsd:quick`
+
+Skips full planning. Provides atomic commits with state tracking. Use for: bug fixes, small features, config changes, one-off tasks.
+
+### 🐛 Bug Investigation
+
+**Triggers:** "bug", "not working", "broken", "error", "fails", "issue", "debug"
+
+**Command:** `/gsd:debug`
+
+Systematic debugging with hypothesis tracking and state preservation.
+
+### 🧠 Design / Brainstorming
+
+**Triggers:** "brainstorm", "think through", "explore options", "design", "what's the best approach"
+
+**Command:** `/superpowers:brainstorm`
+
+Socratic questioning to refine ideas, explore alternatives, validate design in digestible chunks before any code is written.
+
+### 📋 Planning
+
+**Triggers:** "plan", "break down", "create plan", "implementation plan"
+
+**Commands:**
+- Inside GSD workflow → `/gsd:plan-phase N`
+- Standalone planning → `/superpowers:write-plan` or `/plan`
+
+### ▶️ Execution
+
+**Triggers:** "execute", "implement", "build it", "go", "start coding"
+
+**Commands:**
+- GSD plan exists → `/gsd:execute-plan` or `/gsd:execute-phase N`
+- Superpowers plan exists → `/superpowers:execute-plan`
+
+Each task runs in a fresh subagent context—200k tokens purely for implementation, zero degradation.
+
+### ✅ Verification
+
+**Triggers:** "verify", "check", "test", "does it work", "UAT"
+
+**Command:** `/gsd:verify-work [N]`
+
+User acceptance testing with evidence capture. If issues found → `/gsd:plan-fix`
+
+### 🔍 Code Review
+
+**Triggers:** "review", "check my code", "code review", "is this good"
+
+**Command:** `/code-review`
+
+**Available agents (spawn via Task):**
+- `code-reviewer` - Quality and patterns
+- `security-reviewer` - Vulnerability analysis
+- `refactor-cleaner` - Dead code cleanup
+- `build-error-resolver` - Build errors
+- `e2e-runner` - Playwright E2E testing
+
+### 🗺️ Codebase Understanding
+
+**Triggers:** "understand codebase", "map the code", "brownfield", "existing project"
+
+**Command:** `/gsd:map-codebase`
+
+Creates documentation in `.planning/codebase/`: STACK.md, ARCHITECTURE.md, STRUCTURE.md, CONVENTIONS.md, TESTING.md, INTEGRATIONS.md, CONCERNS.md
+
+### 🤖 Autonomous / Overnight Work
+
+**Triggers:** "run overnight", "autonomous", "keep going until done", "ralph", "loop"
+
+**Command:** `/ralph-loop "<task>" --completion-promise "DONE" --max-iterations N`
+
+**Example:**
+```
+/ralph-loop "Implement all PRD items. Output <promise>DONE</promise> when complete" --max-iterations 50
+```
+
+**Safety:** Always set `--max-iterations`. Cancel with `/ralph-loop:cancel-ralph`
+
+### 🔄 Session Management
+
+| Action | Command |
+|--------|---------|
+| Resume previous work | `/gsd:resume-work` |
+| Check progress | `/gsd:progress` |
+| Pause and create handoff | `/gsd:pause-work` |
+
+### 📊 Phase Management
+
+| Action | Command |
+|--------|---------|
+| Add phase | `/gsd:add-phase` |
+| Insert urgent work | `/gsd:insert-phase N "description"` |
+| Remove phase | `/gsd:remove-phase N` |
+| Research domain | `/gsd:research-phase N` |
+| Check assumptions | `/gsd:list-phase-assumptions N` |
+
+### 🏁 Milestone Management
+
+| Action | Command |
+|--------|---------|
+| Ship milestone | `/gsd:complete-milestone` |
+| Start next version | `/gsd:new-milestone` |
+| Discuss next milestone | `/gsd:discuss-milestone` |
 
 ---
 
-## Session Continuity
+## Complete Command Reference
 
-### When Context Gets Full or Session Ends
+### GSD Commands
+```
+/gsd:new-project              # Start new project with questioning
+/gsd:create-roadmap           # Create phases and state tracking
+/gsd:map-codebase             # Analyze existing codebase (brownfield)
+/gsd:discuss-phase N          # Gather context before planning
+/gsd:research-phase N         # Deep ecosystem research
+/gsd:list-phase-assumptions N # See what Claude assumes
+/gsd:plan-phase N             # Generate task plans for phase
+/gsd:execute-plan             # Run plan via subagent
+/gsd:execute-phase N          # Execute specific phase
+/gsd:verify-work N            # User acceptance testing
+/gsd:plan-fix                 # Plan fixes for UAT issues
+/gsd:progress                 # Where am I? What's next?
+/gsd:quick                    # Fast path for small tasks
+/gsd:debug                    # Systematic debugging
+/gsd:add-phase                # Append phase to roadmap
+/gsd:insert-phase N           # Insert urgent work
+/gsd:remove-phase N           # Remove future phase
+/gsd:complete-milestone       # Ship it, prep next version
+/gsd:discuss-milestone        # Gather context for next milestone
+/gsd:new-milestone            # Create new milestone with phases
+/gsd:pause-work               # Create handoff when stopping
+/gsd:resume-work              # Restore from last session
+/gsd:help                     # Show all commands
+/gsd:update                   # Update GSD
+```
 
-I automatically create a handoff file at `.planning/sessions/YYYY-MM-DD-handoff.md` containing:
-- What was completed
-- What's in progress
-- Approaches that worked
-- Approaches that failed
-- Current blockers
-- Files to review next session
+### Superpowers Commands
+```
+/superpowers:brainstorm       # Interactive design refinement
+/superpowers:write-plan       # Create implementation plan
+/superpowers:execute-plan     # Execute plan in batches with TDD
+/superpowers:help             # Show help
+```
 
-### Continuous Learning
+### Everything Claude Code Commands
+```
+/plan                         # Implementation planning
+/code-review                  # Quality and security review
+/learn                        # Extract patterns from codebase
+```
 
-When I discover non-obvious solutions, I save them to `.planning/learnings/` for future sessions.
+**Agents:** `planner`, `architect`, `tdd-guide`, `code-reviewer`, `security-reviewer`, `build-error-resolver`, `e2e-runner`, `refactor-cleaner`, `doc-updater`
+
+### Ralph Loop Commands
+```
+/ralph-loop "<prompt>" --completion-promise "X" --max-iterations N
+/ralph-loop:cancel-ralph      # Cancel active loop
+/ralph-loop:help              # Show help
+```
 
 ---
 
-## GSD Framework Reference
+## Framework Selection Guide
 
-The underlying framework I use for complex tasks. User doesn't need to invoke these - I do it automatically.
+| Scenario | Best Framework | Why |
+|----------|----------------|-----|
+| New greenfield project | GSD | Full spec-driven workflow |
+| New feature (multi-file) | GSD | Structured phases and subagents |
+| Quick fix / config | GSD Quick | Fast path, atomic commits |
+| Bug investigation | GSD Debug | Systematic hypothesis tracking |
+| Design exploration | Superpowers | Socratic questioning |
+| TDD enforcement | Superpowers | Strict red-green-refactor |
+| Code review | Everything Claude Code | Dedicated review agents |
+| Security audit | Everything Claude Code | Security reviewer agent |
+| Autonomous overnight | Ralph Loop | Runs until completion |
 
-### GSD Commands (Internal Reference)
-
-| Command | When I Use It |
-|---------|--------------|
-| `discuss-phase` | Capturing implementation decisions |
-| `plan-phase` | Creating atomic task plans |
-| `execute-phase` | Running planned tasks |
-| `verify-work` | Automated + user acceptance testing |
-| `map-codebase` | Understanding existing code before changes |
-| `pause-work` | Creating handoff when stopping |
-| `resume-work` | Loading context from previous session |
-| `debug` | Systematic debugging with state |
-| `progress` | Checking current position |
-
-### GSD Directory Structure
+### Combining Frameworks
 
 ```
-.planning/
-├── PROJECT.md           # Vision (always loaded)
-├── REQUIREMENTS.md      # Scope with traceability
-├── ROADMAP.md          # Phases and progress
-├── STATE.md            # Decisions, blockers, position
-├── phases/
-│   └── {N}-{name}/
-│       ├── {N}-CONTEXT.md     # Implementation decisions
-│       ├── {N}-RESEARCH.md    # Phase research
-│       ├── {N}-{X}-PLAN.md    # Atomic task plans
-│       └── {N}-VERIFICATION.md # Results
-├── sessions/            # Session handoffs
-├── learnings/           # Extracted learnings
-└── todos/               # Captured ideas
+# Design + GSD Execution
+/superpowers:brainstorm     # Explore design
+/gsd:new-milestone          # Create from design
+/gsd:plan-phase 1           # Plan implementation
+/gsd:execute-plan           # Execute
+
+# GSD + Code Review
+/gsd:execute-plan           # Implement
+/code-review                # Review with agent
+/gsd:verify-work            # Final verification
+
+# Ralph for Long Tasks
+/gsd:plan-phase 1           # Create plan
+/ralph-loop "Execute plan" --max-iterations 30
 ```
 
 ---
 
-## Architecture
+## Tech Stack
 
-### Tech Stack
 - **Framework**: Next.js 16 with App Router (React 19, TypeScript)
 - **Backend**: Supabase (Auth, Postgres DB, Realtime, Storage)
 - **Processing**: n8n workflows triggered via webhooks
 - **UI**: shadcn/ui (Radix primitives) + Tailwind CSS 4
 - **State**: Zustand (client), React Query (server), Nuqs (URL params)
+- **Testing**: Playwright E2E
+
+---
+
+## Architecture
 
 ### Route Groups
 - `(auth)/` - Public auth pages (login, register, reset-password)
@@ -473,7 +473,105 @@ N8N_WEBHOOK_SECRET           # Optional auth header
 
 ---
 
-## Important Conventions
+## Code Standards
+
+### Immutability (CRITICAL)
+
+ALWAYS create new objects, NEVER mutate:
+
+```typescript
+// ❌ WRONG: Mutation
+function updateUser(user: User, name: string) {
+  user.name = name
+  return user
+}
+
+// ✅ CORRECT: Immutability
+function updateUser(user: User, name: string): User {
+  return { ...user, name }
+}
+```
+
+### Error Handling
+
+ALWAYS handle errors comprehensively:
+
+```typescript
+try {
+  const result = await riskyOperation()
+  return { success: true, data: result }
+} catch (error) {
+  console.error('Operation failed:', error)
+  return { success: false, error: 'User-friendly message' }
+}
+```
+
+### Input Validation
+
+ALWAYS validate user input with Zod:
+
+```typescript
+import { z } from 'zod'
+
+const schema = z.object({
+  email: z.string().email(),
+  quantity: z.number().int().min(1)
+})
+
+const validated = schema.parse(input)
+```
+
+### File Organization
+
+- **Many small files > Few large files**
+- 200-400 lines typical, 800 max per file
+- High cohesion, low coupling
+- Organize by feature/domain, not by type
+
+### Security
+
+- No hardcoded secrets - use environment variables
+- Validate ALL user inputs before processing
+- Parameterized queries only (Supabase handles this)
+- CSRF protection via Server Actions
+- Never expose internal error details to users
+
+---
+
+## Quality Checklist
+
+Before marking ANY work complete:
+
+- [ ] `bun run build` passes (type-check + build)
+- [ ] `bun test` passes (all E2E tests)
+- [ ] No console errors in browser DevTools
+- [ ] Code is readable with clear naming
+- [ ] Functions are small (<50 lines)
+- [ ] Files are focused (<800 lines)
+- [ ] No deep nesting (>4 levels)
+- [ ] Proper error handling with try/catch
+- [ ] No console.log in production code
+- [ ] No hardcoded values (use constants/env vars)
+- [ ] Immutable patterns used throughout
+- [ ] Portuguese text correct (if user-facing)
+- [ ] Responsive design verified (if UI change)
+- [ ] User approved git commit
+
+---
+
+## Development Commands
+
+```bash
+bun dev              # Start dev server (port 3000)
+bun run build        # Production build (includes type-check)
+bun test             # Run all Playwright E2E tests
+bun test:ui          # Interactive Playwright test UI
+bun test:headed      # Run tests with visible browser
+```
+
+---
+
+## Conventions
 
 - **UI Language**: Portuguese (Portugal) - all dashboard text, labels, messages
 - **CSV Encoding**: UTF-8 with ISO-8859-1 fallback for Portuguese characters
@@ -484,15 +582,49 @@ N8N_WEBHOOK_SECRET           # Optional auth header
 
 ---
 
-## Anti-Patterns I Avoid
+## Git Workflow
 
-1. **Don't create mega-files** - Split into focused modules
-2. **Don't mutate state** - Always return new objects
-3. **Don't skip tests** - TDD is mandatory for features
-4. **Don't hardcode values** - Use constants or env vars
-5. **Don't ignore errors** - Handle all error cases
-6. **Don't auto-commit** - Always ask user first
-7. **Don't overload context** - Disable unused MCPs
-8. **Don't skip verification** - Always run build + tests before marking complete
-9. **Don't edit blind** - Always read files before modifying
-10. **Don't assume** - Ask clarifying questions when scope is ambiguous
+**Always ask before:**
+- Creating any commit
+- Pushing to remote
+- Force operations
+
+**Commit format:**
+```
+type(scope): description
+
+Co-Authored-By: Claude <noreply@anthropic.com>
+```
+
+**Types:** `feat:`, `fix:`, `refactor:`, `docs:`, `test:`
+
+---
+
+## Anti-Patterns to Avoid
+
+| Don't | Do Instead |
+|-------|------------|
+| Create mega-files | Split into focused modules |
+| Mutate state | Return new objects |
+| Skip tests | TDD is mandatory for features |
+| Hardcode values | Use constants or env vars |
+| Ignore errors | Handle all error cases |
+| Auto-commit | Always ask user first |
+| Edit blind | Always read files before modifying |
+| Assume scope | Ask clarifying questions when ambiguous |
+| Jump to `/gsd:execute-plan` | Run `/gsd:discuss-phase` → `/gsd:plan-phase` first |
+| Use Ralph for quick tasks | Use `/gsd:quick` instead |
+| Skip verification | Always run `/gsd:verify-work` after execution |
+| Start feature without context | Run `/gsd:map-codebase` first for brownfield |
+| Let context fill up | Watch context, run `/gsd:pause-work` proactively |
+
+---
+
+## Help Commands
+
+| Framework | Command |
+|-----------|---------|
+| GSD | `/gsd:help` |
+| Superpowers | `/superpowers:help` |
+| Ralph Loop | `/ralph-loop:help` |
+| All available | `/help` |
