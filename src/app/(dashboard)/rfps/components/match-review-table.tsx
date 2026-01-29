@@ -900,7 +900,7 @@ function SuggestionItem({ jobId, rfpItemId, match, isPerfectMatch, onActionCompl
               </p>
             </TooltipTrigger>
             <TooltipContent
-              className="bg-white text-muted-foreground border border-border rounded uppercase max-w-md shadow-md"
+              className="bg-white text-muted-foreground border border-border rounded uppercase max-w-md shadow-md [&>svg]:fill-white [&>svg]:border [&>svg]:border-border"
               sideOffset={5}
             >
               {match.descricao_comercial}
