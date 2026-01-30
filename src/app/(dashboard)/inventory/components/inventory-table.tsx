@@ -304,8 +304,8 @@ export function InventoryTable({
         onSearchChange={handleSearchChange}
         isPending={isPending}
       />
-      <div className="rounded border border-border shadow-xs overflow-hidden bg-white p-2 overflow-x-hidden">
-        <Table className="[&_thead_tr]:border-0 table-fixed w-full">
+      <div className="rounded border border-border shadow-xs overflow-hidden bg-white p-2 overflow-x-auto">
+        <Table className="[&_thead_tr]:border-0 table-fixed">
           <TableHeader>
             {table.getHeaderGroups().map((headerGroup) => (
               <TableRow key={headerGroup.id} className="hover:bg-transparent border-0 cursor-default">
