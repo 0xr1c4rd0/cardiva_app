@@ -1,11 +1,7 @@
 import { createClient } from '@/lib/supabase/server'
 import { getUserRole } from '@/lib/auth/utils'
-import { InventoryTable } from './components/inventory-table'
-import { PermissionGate } from './components/permission-gate'
-import { ExportButton } from './components/export-button'
-import { CSVUploadButton } from './components/csv-upload-button'
+import { InventoryPageContent } from './components/inventory-page-content'
 import { InventoryColumnConfig } from '@/lib/supabase/types'
-import { InventoryStats } from './components/inventory-stats'
 
 // Force dynamic rendering
 export const dynamic = 'force-dynamic'
@@ -121,41 +117,19 @@ export default async function InventoryPage({
   }
 
   return (
-    <div className="flex flex-1 flex-col gap-6">
-      <div className="flex items-center justify-between">
-        <div>
-          <h1 className="text-2xl font-semibold">Inventário</h1>
-          <p className="text-muted-foreground">
-            Consultar e gerir o catálogo de produtos
-          </p>
-        </div>
-
-        <div className="flex items-center gap-2">
-          {/* Export hidden for now - functionality preserved in export-button.tsx */}
-          {/* <ExportButton data={data ?? []} columnConfig={visibleColumns} /> */}
-
-          {/* Upload only for admin users */}
-          <PermissionGate requiredRole="admin" userRole={userRole}>
-            <CSVUploadButton />
-          </PermissionGate>
-        </div>
-      </div>
-      <InventoryStats
-        totalCount={count ?? 0}
-        lastUpload={lastUpload}
-      />
-      <InventoryTable
-        data={data ?? []}
-        totalCount={count ?? 0}
-        columnConfig={visibleColumns}
-        initialState={{
-          page,
-          pageSize,
-          search,
-          sortBy: actualSortBy,
-          sortOrder,
-        }}
-      />
-    </div>
+    <InventoryPageContent
+      data={data ?? []}
+      totalCount={count ?? 0}
+      columnConfig={visibleColumns}
+      lastUpload={lastUpload}
+      userRole={userRole}
+      initialState={{
+        page,
+        pageSize,
+        search,
+        sortBy: actualSortBy,
+        sortOrder,
+      }}
+    />
   )
 }
