@@ -1,4 +1,4 @@
-import { Home, FileText, Package, History, Settings, Users } from 'lucide-react'
+import { Home, FileText, Package, Settings, Users } from 'lucide-react'
 import Link from 'next/link'
 import {
   Sidebar,
@@ -10,7 +10,6 @@ import {
   SidebarMenuButton,
   SidebarMenuItem,
   SidebarHeader,
-  SidebarFooter,
 } from '@/components/ui/sidebar'
 import { isAdmin } from '@/lib/auth/utils'
 
@@ -18,7 +17,6 @@ const navItems = [
   { title: 'Dashboard', url: '/', icon: Home },
   { title: 'Concursos', url: '/rfps', icon: FileText },
   { title: 'Inventário', url: '/inventory', icon: Package },
-  { title: 'Histórico', url: '/history', icon: History },
 ]
 
 const adminItems = [
@@ -39,7 +37,7 @@ export async function AppSidebar() {
       </SidebarHeader>
       <SidebarContent>
         <SidebarGroup>
-          <SidebarGroupLabel>Navegação</SidebarGroupLabel>
+          <SidebarGroupLabel>Geral</SidebarGroupLabel>
           <SidebarGroupContent>
             <SidebarMenu>
               {navItems.map((item) => (
@@ -76,18 +74,7 @@ export async function AppSidebar() {
           </SidebarGroup>
         )}
       </SidebarContent>
-      <SidebarFooter className="border-t border-sidebar-border p-4">
-        <SidebarMenu>
-          <SidebarMenuItem>
-            <SidebarMenuButton asChild>
-              <Link href="/settings">
-                <Settings className="h-4 w-4" />
-                <span>Definições</span>
-              </Link>
-            </SidebarMenuButton>
-          </SidebarMenuItem>
-        </SidebarMenu>
-      </SidebarFooter>
+
     </Sidebar>
   )
 }

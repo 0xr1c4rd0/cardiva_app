@@ -1,6 +1,6 @@
 'use client'
 
-import { useState, useTransition } from 'react'
+import { useState, useTransition, memo, useCallback } from 'react'
 import { useRouter } from 'next/navigation'
 import { useDebouncedCallback } from 'use-debounce'
 import {
@@ -32,7 +32,12 @@ interface InventoryResultItemProps {
   isPending: boolean
 }
 
-function InventoryResultItem({ item, onSelect, isPending }: InventoryResultItemProps) {
+const InventoryResultItem = memo(function InventoryResultItem({ item, onSelect, isPending }: InventoryResultItemProps) {
+  const handleClick = useCallback((e: React.MouseEvent) => {
+    e.stopPropagation()
+    onSelect()
+  }, [onSelect])
+
   return (
     <div
       className="flex items-center justify-between p-3 hover:bg-muted/40 cursor-pointer border-b last:border-b-0"
@@ -55,10 +60,7 @@ function InventoryResultItem({ item, onSelect, isPending }: InventoryResultItemP
         variant="ghost"
         size="sm"
         className="shrink-0 text-emerald-600 hover:text-emerald-700 hover:bg-emerald-50"
-        onClick={(e) => {
-          e.stopPropagation()
-          onSelect()
-        }}
+        onClick={handleClick}
         disabled={isPending}
       >
         {isPending ? (
@@ -69,7 +71,7 @@ function InventoryResultItem({ item, onSelect, isPending }: InventoryResultItemP
       </Button>
     </div>
   )
-}
+})
 
 export function ManualMatchDialog({
   open,

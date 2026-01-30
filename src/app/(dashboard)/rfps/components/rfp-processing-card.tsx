@@ -14,7 +14,7 @@ import {
 import { Progress } from '@/components/ui/progress'
 import { Button } from '@/components/ui/button'
 import { cn } from '@/lib/utils'
-import { useRFPUploadStatus, type QueuedUpload } from '@/contexts/rfp-upload-status-context'
+import { useUploadQueue, type QueuedUpload } from '@/contexts/rfp-upload-status-context'
 
 // Estimated processing time: 3 minutes
 const ESTIMATED_TIME_MS = 3 * 60 * 1000
@@ -177,7 +177,7 @@ function UploadProgressItem({ upload, onRemoveComplete }: UploadProgressItemProp
           <span>Em fila...</span>
         </div>
       ) : isUploading ? (
-        <div className="relative h-1.5 w-full overflow-hidden rounded-full bg-primary/20">
+        <div className="relative h-1.5 w-full overflow-hidden rounded-md bg-primary/20">
           <div
             className="bg-primary h-full w-1/3"
             style={{
@@ -207,7 +207,7 @@ function UploadProgressItem({ upload, onRemoveComplete }: UploadProgressItemProp
 }
 
 export function RFPProcessingCard() {
-  const { uploadQueue } = useRFPUploadStatus()
+  const { uploadQueue } = useUploadQueue()
   const [showOverflow, setShowOverflow] = useState(false)
   const [removedIds, setRemovedIds] = useState<Set<string>>(new Set())
 
@@ -263,6 +263,7 @@ export function RFPProcessingCard() {
 
   return (
     <Card className={cn(
+      "py-6",
       hasFailures
         ? "border-red-200 bg-red-50/50"
         : "border-green-200 bg-green-50/50"

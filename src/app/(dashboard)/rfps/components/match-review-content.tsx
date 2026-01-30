@@ -1,6 +1,6 @@
 'use client'
 
-import { useState, useCallback } from 'react'
+import { useState, useCallback, useMemo } from 'react'
 import type { RFPItemWithMatches } from '@/types/rfp'
 import { RFPConfirmationProvider } from './rfp-confirmation-context'
 import { RFPStatusBadge } from './rfp-status-badge'
@@ -41,16 +41,26 @@ export function MatchReviewContent({
   totalCount,
   initialState,
 }: MatchReviewContentProps) {
-  // Local state for items - enables instant UI updates after actions
+  // Single source of truth for items - enables instant UI updates after actions
   const [allItems, setAllItems] = useState(initialAllItems)
-  const [paginatedItems, setPaginatedItems] = useState(initialPaginatedItems)
 
-  // Update an item in both allItems and paginatedItems
+  // Track which item IDs are in the current page (from server pagination)
+  // This set is stable across renders since it's based on initial props
+  const paginatedItemIds = useMemo(
+    () => new Set(initialPaginatedItems.map(item => item.id)),
+    [initialPaginatedItems]
+  )
+
+  // Derive paginated items from allItems - single source of truth
+  // When allItems updates, paginatedItems automatically reflects the change
+  const paginatedItems = useMemo(
+    () => allItems.filter(item => paginatedItemIds.has(item.id)),
+    [allItems, paginatedItemIds]
+  )
+
+  // Update an item - only need to update allItems, paginatedItems derives automatically
   const updateItem = useCallback((updatedItem: RFPItemWithMatches) => {
     setAllItems(prev => prev.map(item =>
-      item.id === updatedItem.id ? updatedItem : item
-    ))
-    setPaginatedItems(prev => prev.map(item =>
       item.id === updatedItem.id ? updatedItem : item
     ))
   }, [])

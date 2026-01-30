@@ -17,6 +17,23 @@
   --color-yellow: oklch(0.80 0.14 85);            /* #F5A623 */
   --color-green: oklch(0.58 0.12 175);            /* #0D9488 */
 
+  /* Semantic Status Colors */
+  --color-success: oklch(0.55 0.15 155);          /* Emerald green */
+  --color-success-light: oklch(0.95 0.03 155);    /* Light emerald bg */
+  --color-success-foreground: oklch(0.30 0.10 155);
+
+  --color-warning: oklch(0.75 0.15 75);           /* Amber */
+  --color-warning-light: oklch(0.96 0.04 75);     /* Light amber bg */
+  --color-warning-foreground: oklch(0.40 0.12 75);
+
+  --color-info: oklch(0.55 0.15 240);             /* Blue */
+  --color-info-light: oklch(0.95 0.03 240);       /* Light blue bg */
+  --color-info-foreground: oklch(0.35 0.12 240);
+
+  --color-error: oklch(0.55 0.20 25);             /* Red */
+  --color-error-light: oklch(0.96 0.03 25);       /* Light red bg */
+  --color-error-foreground: oklch(0.40 0.15 25);
+
   /* Neutral Colors - Warm Grays */
   --color-gray-50: oklch(0.99 0.002 85);          /* Warmer off-white */
   --color-gray-100: oklch(0.97 0.003 85);
@@ -35,6 +52,19 @@
   --spacing-8: 32px;
   --spacing-10: 40px;
   --spacing-12: 48px;
+  --spacing-16: 64px;
+  --spacing-20: 80px;
+  --spacing-24: 96px;
+
+  /* Semantic Spacing - Component patterns */
+  --space-page-x: var(--spacing-6);              /* Page horizontal padding */
+  --space-page-y: var(--spacing-8);              /* Page vertical padding */
+  --space-section: var(--spacing-8);             /* Between sections */
+  --space-card: var(--spacing-4);                /* Card internal padding */
+  --space-inline: var(--spacing-2);              /* Between inline elements */
+  --space-stack: var(--spacing-4);               /* Between stacked elements */
+  --space-form-gap: var(--spacing-4);            /* Between form fields */
+  --space-button-gap: var(--spacing-3);          /* Between button groups */
 
   /* Border Radius - Increased for softness */
   --radius-sm: 8px;
@@ -54,6 +84,24 @@
   --font-sans: var(--font-geist-sans), -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
   --font-serif: var(--font-serif), 'Georgia', serif;
   --font-mono: var(--font-geist-mono), ui-monospace, SFMono-Regular, monospace;
+
+  /* Line Heights - Consistent vertical rhythm */
+  --leading-none: 1;
+  --leading-tight: 1.25;
+  --leading-snug: 1.375;
+  --leading-normal: 1.5;
+  --leading-relaxed: 1.625;
+  --leading-loose: 2;
+
+  /* Font Sizes with matching line-heights */
+  --text-xs: 0.75rem;      /* 12px */
+  --text-sm: 0.875rem;     /* 14px */
+  --text-base: 1rem;       /* 16px */
+  --text-lg: 1.125rem;     /* 18px */
+  --text-xl: 1.25rem;      /* 20px */
+  --text-2xl: 1.5rem;      /* 24px */
+  --text-3xl: 1.875rem;    /* 30px */
+  --text-4xl: 2.25rem;     /* 36px */
 
   /* Sidebar dimensions */
   --sidebar-width: 260px;
@@ -175,5 +223,16 @@
     font-family: var(--font-serif);
     font-weight: 600;
     letter-spacing: -0.02em;
+  }
+}
+
+/* Table row states */
+@layer components {
+  .table-row-selected {
+    @apply bg-primary/5 border-l-2 border-l-primary;
+  }
+
+  .table-row-hover {
+    @apply hover:bg-muted/50 transition-colors;
   }
 }

@@ -1,3 +1,5 @@
+import { triggerWebhookWithRetry, buildWebhookHeaders, WebhookRetryError } from './webhook-utils'
+
 export interface WebhookPayload {
   jobId: string
   attachment_0: File
@@ -7,9 +9,9 @@ export interface WebhookPayload {
 }
 
 /**
- * Trigger n8n webhook with fire-and-forget pattern
+ * Trigger n8n inventory webhook with retry logic
  * Sends CSV file as binary data via multipart/form-data
- * Does NOT await response - n8n will update job status when complete
+ * Retries up to 3 times with exponential backoff on transient failures
  */
 export async function triggerN8nWebhook(payload: WebhookPayload): Promise<void> {
   const webhookUrl = process.env.N8N_INVENTORY_WEBHOOK_URL
@@ -27,19 +29,17 @@ export async function triggerN8nWebhook(payload: WebhookPayload): Promise<void> 
   formData.append('rowCount', String(payload.rowCount))
   formData.append('timestamp', new Date().toISOString())
 
-  // Fire-and-forget: don't await the response
-  // n8n webhook is configured to respond "immediately"
-  fetch(webhookUrl, {
-    method: 'POST',
-    headers: {
-      // Don't set Content-Type - fetch will set it automatically with boundary for FormData
-      ...(process.env.N8N_WEBHOOK_SECRET && {
-        'X-Webhook-Secret': process.env.N8N_WEBHOOK_SECRET,
-      }),
-    },
-    body: formData,
-  }).catch((error) => {
-    // Log but don't throw - fire-and-forget
-    console.error('n8n webhook request failed:', error)
-  })
+  try {
+    await triggerWebhookWithRetry(webhookUrl, formData, buildWebhookHeaders())
+  } catch (error) {
+    if (error instanceof WebhookRetryError) {
+      console.error(
+        `n8n inventory webhook failed after ${error.attempts} attempts:`,
+        error.lastError?.message
+      )
+    } else {
+      console.error('n8n inventory webhook request failed:', error)
+    }
+    throw error
+  }
 }

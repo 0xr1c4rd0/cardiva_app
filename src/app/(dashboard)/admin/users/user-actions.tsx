@@ -157,11 +157,11 @@ export function DeleteUserButton({ userId, userEmail, isCurrentUser, onDelete }:
   return (
     <AlertDialog>
       <AlertDialogTrigger asChild>
-        <Button variant="ghost" size="icon" disabled={isDeleting}>
+        <Button variant="ghost" size="icon" disabled={isDeleting} aria-label="Eliminar utilizador">
           {isDeleting ? (
-            <Loader2 className="h-4 w-4 animate-spin" />
+            <Loader2 className="h-4 w-4 animate-spin" aria-hidden="true" />
           ) : (
-            <Trash2 className="h-4 w-4 text-destructive" />
+            <Trash2 className="h-4 w-4 text-destructive" aria-hidden="true" />
           )}
         </Button>
       </AlertDialogTrigger>

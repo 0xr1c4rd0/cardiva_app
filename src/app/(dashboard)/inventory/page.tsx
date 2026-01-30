@@ -1,11 +1,7 @@
 import { createClient } from '@/lib/supabase/server'
 import { getUserRole } from '@/lib/auth/utils'
-import { InventoryTable } from './components/inventory-table'
-import { PermissionGate } from './components/permission-gate'
-import { ExportButton } from './components/export-button'
-import { CSVUploadButton } from './components/csv-upload-button'
+import { InventoryPageContent } from './components/inventory-page-content'
 import { InventoryColumnConfig } from '@/lib/supabase/types'
-import { InventoryStats } from './components/inventory-stats'
 
 // Force dynamic rendering
 export const dynamic = 'force-dynamic'
@@ -28,6 +24,44 @@ export default async function InventoryPage({
 
   // Get user role for permission checks
   const userRole = await getUserRole()
+
+  // Fetch last completed upload job
+  const { data: lastUploadJob } = await supabase
+    .from('inventory_upload_jobs')
+    .select('id, file_name, created_at, completed_at, processed_rows, user_id')
+    .eq('status', 'completed')
+    .order('completed_at', { ascending: false })
+    .limit(1)
+    .maybeSingle()
+
+  // Fetch user profile if upload exists
+  let lastUpload: {
+    id: string
+    file_name: string
+    created_at: string
+    completed_at: string | null
+    processed_rows: number
+    user_id: string
+    profiles: {
+      full_name: string | null
+      email: string
+    }
+  } | null = null
+
+  if (lastUploadJob) {
+    const { data: profile } = await supabase
+      .from('profiles')
+      .select('full_name, email')
+      .eq('id', lastUploadJob.user_id)
+      .single()
+
+    if (profile) {
+      lastUpload = {
+        ...lastUploadJob,
+        profiles: profile,
+      }
+    }
+  }
 
   // Fetch column configuration
   const { data: columnConfig, error: configError } = await supabase
@@ -83,41 +117,19 @@ export default async function InventoryPage({
   }
 
   return (
-    <div className="flex flex-1 flex-col gap-6">
-      <div className="flex items-center justify-between">
-        <div>
-          <h1 className="text-2xl font-semibold">Inventário</h1>
-          <p className="text-muted-foreground">
-            Consultar e gerir o catálogo de produtos
-          </p>
-        </div>
-
-        <div className="flex items-center gap-2">
-          {/* Export hidden for now - functionality preserved in export-button.tsx */}
-          {/* <ExportButton data={data ?? []} columnConfig={visibleColumns} /> */}
-
-          {/* Upload only for admin users */}
-          <PermissionGate requiredRole="admin" userRole={userRole}>
-            <CSVUploadButton />
-          </PermissionGate>
-        </div>
-      </div>
-      <InventoryStats
-        totalCount={count ?? 0}
-        columnCount={columns.length}
-      />
-      <InventoryTable
-        data={data ?? []}
-        totalCount={count ?? 0}
-        columnConfig={visibleColumns}
-        initialState={{
-          page,
-          pageSize,
-          search,
-          sortBy: actualSortBy,
-          sortOrder,
-        }}
-      />
-    </div>
+    <InventoryPageContent
+      data={data ?? []}
+      totalCount={count ?? 0}
+      columnConfig={visibleColumns}
+      lastUpload={lastUpload}
+      userRole={userRole}
+      initialState={{
+        page,
+        pageSize,
+        search,
+        sortBy: actualSortBy,
+        sortOrder,
+      }}
+    />
   )
 }

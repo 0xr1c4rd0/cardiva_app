@@ -76,14 +76,14 @@ export function RFPActionButton({ jobId, items, rfpFileName }: RFPActionButtonPr
   if (!isConfirmed) {
     const getButtonText = () => {
       if (pendingCount > 0) {
-        return `${pendingCount} ${pendingCount === 1 ? 'item' : 'itens'} por rever`
+        return `${pendingCount} ${pendingCount === 1 ? 'produto' : 'produtos'} por rever`
       }
       return 'Confirmar'
     }
 
     const getTooltipText = () => {
       if (pendingCount > 0) {
-        return 'Reveja todos os itens antes de confirmar'
+        return 'Reveja todos os produtos antes de confirmar'
       }
       if (!hasConfirmedMatches) {
         return 'Selecione pelo menos um produto para confirmar'

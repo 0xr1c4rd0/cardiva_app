@@ -85,7 +85,7 @@ export function ConfirmationSummary({ items, jobId, rfpFileName }: ConfirmationS
             <span>Progresso</span>
             <span>{stats.accepted + stats.manual + stats.rejected + stats.noMatch} / {stats.total}</span>
           </div>
-          <div className="h-2 bg-muted rounded-full overflow-hidden">
+          <div className="h-2 bg-muted rounded-sm overflow-hidden">
             <div
               className="h-full bg-emerald-500 transition-all duration-300"
               style={{ width: `${((stats.accepted + stats.manual + stats.rejected + stats.noMatch) / stats.total) * 100}%` }}

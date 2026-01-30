@@ -7,6 +7,7 @@ import {
   flexRender,
   SortingState,
   ColumnDef,
+  ColumnSizingState,
 } from '@tanstack/react-table'
 import { useQueryStates, parseAsInteger, parseAsString } from 'nuqs'
 import { ArrowUpDown, ArrowUp, ArrowDown } from 'lucide-react'
@@ -21,8 +22,10 @@ import {
 import { cn } from '@/lib/utils'
 import { Skeleton } from '@/components/ui/skeleton'
 import { PackageOpen } from 'lucide-react'
+import { EmptyState } from '@/components/empty-state'
 import { DataTablePagination } from './data-table-pagination'
 import { TableToolbar } from './table-toolbar'
+import { TableResizeHandle } from '@/components/table-resize-handle'
 import { Artigo, InventoryColumnConfig } from '@/lib/supabase/types'
 
 // Currency formatter for currency columns
@@ -35,6 +38,26 @@ const currencyFormatter = new Intl.NumberFormat('pt-PT', {
 const dateFormatter = new Intl.DateTimeFormat('pt-PT', {
   dateStyle: 'medium',
 })
+
+// Storage key for column widths
+const COLUMN_WIDTHS_STORAGE_KEY = 'cardiva-inventory-column-widths'
+
+// Get default column width based on column type
+function getDefaultColumnSize(columnType: string): number {
+  switch (columnType) {
+    case 'currency':
+    case 'number':
+      return 120
+    case 'date':
+      return 150
+    case 'text':
+    default:
+      return 200
+  }
+}
+
+// Minimum column width (50px allows more flexibility)
+const MIN_COLUMN_WIDTH = 50
 
 interface InventoryTableProps {
   data: Artigo[]
@@ -55,12 +78,15 @@ function createColumns(config: InventoryColumnConfig[]): ColumnDef<Artigo>[] {
     const baseColumn: ColumnDef<Artigo> = {
       accessorKey: col.column_name,
       enableSorting: col.sortable,
+      size: getDefaultColumnSize(col.column_type),
+      minSize: MIN_COLUMN_WIDTH,
+      maxSize: 600,
       header: col.sortable
         ? ({ column }) => (
             <button
               type="button"
               onClick={() => column.toggleSorting(column.getIsSorted() === 'asc')}
-              className="inline-flex items-center hover:text-slate-900 transition-colors"
+              className="inline-flex items-center hover:text-foreground transition-colors cursor-pointer"
             >
               {col.display_name}
               {column.getIsSorted() === 'asc' ? (
@@ -68,7 +94,7 @@ function createColumns(config: InventoryColumnConfig[]): ColumnDef<Artigo>[] {
               ) : column.getIsSorted() === 'desc' ? (
                 <ArrowDown className="ml-1 h-3 w-3" />
               ) : (
-                <ArrowUpDown className="ml-1 h-3 w-3 text-slate-400" />
+                <ArrowUpDown className="ml-1 h-3 w-3 text-muted-foreground/60" />
               )}
             </button>
           )
@@ -123,11 +149,33 @@ export function InventoryTable({
   const [localData, setLocalData] = useState<Artigo[]>(data)
   const [originalData, setOriginalData] = useState<Artigo[]>(data)
 
+  // Column sizing state with localStorage persistence
+  const [columnSizing, setColumnSizing] = useState<ColumnSizingState>(() => {
+    if (typeof window !== 'undefined') {
+      const stored = localStorage.getItem(COLUMN_WIDTHS_STORAGE_KEY)
+      if (stored) {
+        try {
+          return JSON.parse(stored)
+        } catch {
+          return {}
+        }
+      }
+    }
+    return {}
+  })
+
   // Update local state when server data arrives
   useEffect(() => {
     setLocalData(data)
     setOriginalData(data)
   }, [data])
+
+  // Persist column sizing to localStorage
+  useEffect(() => {
+    if (typeof window !== 'undefined' && Object.keys(columnSizing).length > 0) {
+      localStorage.setItem(COLUMN_WIDTHS_STORAGE_KEY, JSON.stringify(columnSizing))
+    }
+  }, [columnSizing])
 
   // Generate columns from config
   const columns = useMemo(() => createColumns(columnConfig), [columnConfig])
@@ -194,13 +242,17 @@ export function InventoryTable({
     manualSorting: true,
     rowCount: totalCount,
     pageCount: Math.ceil(totalCount / pageSize),
+    enableColumnResizing: true,
+    columnResizeMode: 'onChange',
     state: {
       pagination: {
         pageIndex: page - 1,
         pageSize,
       },
       sorting,
+      columnSizing,
     },
+    onColumnSizingChange: setColumnSizing,
     onPaginationChange: (updater) => {
       startTransition(() => {
         const current = { pageIndex: page - 1, pageSize }
@@ -252,18 +304,31 @@ export function InventoryTable({
         onSearchChange={handleSearchChange}
         isPending={isPending}
       />
-      <div className="rounded-lg border border-slate-200 shadow-xs overflow-hidden bg-white p-2">
-        <Table className="[&_thead_tr]:border-0">
+      <div className="rounded border border-border shadow-xs overflow-hidden bg-white p-2 overflow-x-hidden">
+        <Table className="[&_thead_tr]:border-0 table-fixed w-full">
           <TableHeader>
             {table.getHeaderGroups().map((headerGroup) => (
-              <TableRow key={headerGroup.id} className="hover:bg-transparent border-0">
-                {headerGroup.headers.map((header, index) => (
+              <TableRow key={headerGroup.id} className="hover:bg-transparent border-0 cursor-default">
+                {headerGroup.headers.map((header, index) => {
+                  // Determine aria-sort value for accessibility
+                  const isSorted = header.column.getIsSorted()
+                  const ariaSort = header.column.getCanSort()
+                    ? isSorted === 'asc'
+                      ? 'ascending'
+                      : isSorted === 'desc'
+                        ? 'descending'
+                        : 'none'
+                    : undefined
+
+                  return (
                   <TableHead
                     key={header.id}
-                    className={`text-xs font-medium text-slate-700 tracking-wide bg-slate-100/70 py-2 px-3 ${
-                      index === 0 ? 'pl-4 rounded-l-md' : ''
+                    aria-sort={ariaSort}
+                    style={{ width: header.getSize() }}
+                    className={`relative text-xs font-medium text-muted-foreground tracking-wide bg-muted/70 py-2 px-3 ${
+                      index === 0 ? 'pl-4 rounded-l' : ''
                     } ${
-                      index === headerGroup.headers.length - 1 ? 'pr-4 rounded-r-md' : ''
+                      index === headerGroup.headers.length - 1 ? 'pr-4 rounded-r' : ''
                     }`}
                   >
                     {header.isPlaceholder
@@ -272,18 +337,26 @@ export function InventoryTable({
                           header.column.columnDef.header,
                           header.getContext()
                         )}
+                    {header.column.getCanResize() && (
+                      <TableResizeHandle
+                        onMouseDown={header.getResizeHandler()}
+                        onTouchStart={header.getResizeHandler()}
+                        isResizing={header.column.getIsResizing()}
+                      />
+                    )}
                   </TableHead>
-                ))}
+                )})}
               </TableRow>
             ))}
           </TableHeader>
           <TableBody>
             {isPending ? (
               Array.from({ length: 5 }).map((_, i) => (
-                <TableRow key={`skeleton-${i}`} className="hover:bg-slate-50 border-0">
-                  {columns.map((_, j) => (
+                <TableRow key={`skeleton-${i}`} className="hover:bg-muted/50 border-0">
+                  {table.getAllColumns().map((column, j) => (
                     <TableCell
-                      key={`skeleton-cell-${i}-${j}`}
+                      key={`skeleton-cell-${i}-${column.id}`}
+                      style={{ width: column.getSize() }}
                       className={`py-2 px-3 ${j === 0 ? 'pl-4' : ''} ${j === columns.length - 1 ? 'pr-4' : ''}`}
                     >
                       <Skeleton className="h-4 w-full" />
@@ -293,11 +366,12 @@ export function InventoryTable({
               ))
             ) : table.getRowModel().rows?.length ? (
               table.getRowModel().rows.map((row) => (
-                <TableRow key={row.id} className="hover:bg-slate-50 border-0">
+                <TableRow key={row.id} className="hover:bg-muted/50 border-0">
                   {row.getVisibleCells().map((cell, index) => (
                     <TableCell
                       key={cell.id}
-                      className={`py-2 px-3 text-slate-700 text-sm ${
+                      style={{ width: cell.column.getSize() }}
+                      className={`py-2 px-3 text-foreground text-sm ${
                         index === 0 ? 'pl-4' : ''
                       } ${
                         index === row.getVisibleCells().length - 1 ? 'pr-4' : ''
@@ -315,12 +389,13 @@ export function InventoryTable({
               <TableRow className="border-0">
                 <TableCell
                   colSpan={columns.length}
-                  className="h-48 text-center"
+                  className="h-48"
                 >
-                  <div className="flex flex-col items-center gap-2 text-muted-foreground">
-                    <PackageOpen className="h-10 w-10" />
-                    <p>Nenhum produto encontrado</p>
-                  </div>
+                  <EmptyState
+                    icon={PackageOpen}
+                    title="Nenhum produto encontrado"
+                    description="Tente ajustar os filtros de pesquisa ou adicione novos produtos ao inventário."
+                  />
                 </TableCell>
               </TableRow>
             )}

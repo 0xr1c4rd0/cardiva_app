@@ -1,7 +1,5 @@
 import { createClient } from '@/lib/supabase/server'
 import { notFound, redirect } from 'next/navigation'
-import Link from 'next/link'
-import { ChevronRight } from 'lucide-react'
 import { MatchReviewContent } from '@/app/(dashboard)/rfps/components/match-review-content'
 import { autoAcceptExactMatches } from './actions'
 import type { RFPItemWithMatches, MatchSuggestion } from '@/types/rfp'
@@ -55,21 +53,23 @@ export default async function MatchReviewPage({ params, searchParams }: PageProp
     redirect('/login')
   }
 
-  // Fetch job (all authenticated users can access any RFP)
-  // Include confirmed_at for the Confirm button state
-  const { data: job, error: jobError } = await supabase
-    .from('rfp_upload_jobs')
-    .select('id, file_name, status, confirmed_at')
-    .eq('id', jobId)
-    .single()
+  // PERFORMANCE: Parallelize job fetch and auto-accept (they're independent)
+  // - Job fetch: read-only, needed for validation and UI
+  // - Auto-accept: write operation, needs to complete before items query
+  const [jobResult, _autoAcceptResult] = await Promise.all([
+    supabase
+      .from('rfp_upload_jobs')
+      .select('id, file_name, status, confirmed_at')
+      .eq('id', jobId)
+      .single(),
+    autoAcceptExactMatches(jobId),
+  ])
+
+  const { data: job, error: jobError } = jobResult
 
   if (jobError || !job) {
     notFound()
   }
-
-  // Auto-accept exact matches (100% similarity) on first load
-  // This pre-confirms obvious matches before user reviews them
-  await autoAcceptExactMatches(jobId)
 
   // Build base query for items with nested match suggestions
   // Use explicit FK name because there are two relationships:
@@ -140,11 +140,16 @@ export default async function MatchReviewPage({ params, searchParams }: PageProp
   }
 
   // Sort each item's match suggestions by similarity_score DESC (client-side)
+  // Note: descricao_comercial would require a separate join to artigos table
+  // which isn't possible without a FK constraint - set to null for now
   let itemsWithSortedMatches: RFPItemWithMatches[] = (items ?? []).map((item) => ({
     ...item,
-    rfp_match_suggestions: (item.rfp_match_suggestions || []).sort(
-      (a: MatchSuggestion, b: MatchSuggestion) => b.similarity_score - a.similarity_score
-    ),
+    rfp_match_suggestions: (item.rfp_match_suggestions || [])
+      .map((match: MatchSuggestion) => ({
+        ...match,
+        descricao_comercial: null,
+      }))
+      .sort((a: MatchSuggestion, b: MatchSuggestion) => b.similarity_score - a.similarity_score),
   }))
 
   // Apply status filter (client-side since it depends on suggestions)
@@ -211,25 +216,18 @@ export default async function MatchReviewPage({ params, searchParams }: PageProp
 
   const allItemsWithSortedMatches: RFPItemWithMatches[] = (allItems ?? []).map((item) => ({
     ...item,
-    rfp_match_suggestions: (item.rfp_match_suggestions || []).sort(
-      (a: MatchSuggestion, b: MatchSuggestion) => b.similarity_score - a.similarity_score
-    ),
+    rfp_match_suggestions: (item.rfp_match_suggestions || [])
+      .map((match: MatchSuggestion) => ({
+        ...match,
+        descricao_comercial: null,
+      }))
+      .sort((a: MatchSuggestion, b: MatchSuggestion) => b.similarity_score - a.similarity_score),
   }))
 
   const totalCount = count ?? 0
 
   return (
     <div className="flex flex-1 flex-col">
-      {/* Breadcrumb */}
-      <nav className="flex items-center gap-1.5 text-sm text-muted-foreground">
-        <Link href="/rfps" className="hover:text-foreground transition-colors">
-          Concursos
-        </Link>
-        <ChevronRight className="h-4 w-4" />
-        <span className="text-foreground font-medium">Rever Correspondências</span>
-      </nav>
-
-      {/* Main content wrapped in context provider */}
       <MatchReviewContent
         jobId={jobId}
         fileName={job.file_name}

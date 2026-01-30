@@ -4,7 +4,8 @@ import { useActionState, useState } from 'react'
 import { updatePassword } from './actions'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
-import { Label } from '@/components/ui/label'
+import { FormField } from '@/components/form-field'
+import { PasswordStrength } from '@/components/password-strength'
 import {
   Card,
   CardContent,
@@ -52,34 +53,32 @@ export default function UpdatePasswordPage() {
                 </AlertDescription>
               </Alert>
             )}
-            <div className="space-y-2">
-              <Label htmlFor="password">Nova Palavra-passe</Label>
+            <FormField label="Nova Palavra-passe" htmlFor="password" required>
               <Input
                 id="password"
                 name="password"
                 type="password"
                 required
+                autoComplete="new-password"
                 disabled={isPending}
                 value={password}
                 onChange={(e) => setPassword(e.target.value)}
                 minLength={8}
               />
-              <p className="text-xs text-muted-foreground">
-                Mínimo 8 caracteres com maiúscula, minúscula e número
-              </p>
-            </div>
-            <div className="space-y-2">
-              <Label htmlFor="confirmPassword">Confirmar Nova Palavra-passe</Label>
+            </FormField>
+            <PasswordStrength password={password} />
+            <FormField label="Confirmar Nova Palavra-passe" htmlFor="confirmPassword" required>
               <Input
                 id="confirmPassword"
                 name="confirmPassword"
                 type="password"
                 required
+                autoComplete="new-password"
                 disabled={isPending}
                 value={confirmPassword}
                 onChange={(e) => setConfirmPassword(e.target.value)}
               />
-            </div>
+            </FormField>
           </CardContent>
           <div className="px-6 pb-6">
             <Button type="submit" className="w-full" disabled={isPending}>

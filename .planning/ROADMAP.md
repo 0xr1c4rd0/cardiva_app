@@ -168,19 +168,19 @@ Plans:
   3. Email recipients configurable by admin (preset, editable, replaceable modes)
   4. Export fields configurable by admin (select columns, display names, order)
   5. Inventory display fields configurable by admin
-  6. Admin can change user roles (user ↔ admin)
+  6. Admin can change user roles (user <-> admin)
   7. Admin can delete users (except self)
   8. Export dropdown replaces single button in confirmation summary
 **Plans**: 6 plans in 2 waves
 **Design**: See `docs/plans/2026-01-25-phase9-export-email-admin-design.md`
 
 Plans:
-- [ ] 09-01-PLAN.md — Database migrations: app_settings, export_column_config, sync functions
-- [ ] 09-02-PLAN.md — Split ExportDialog → dropdown + ExportDownloadDialog
-- [ ] 09-03-PLAN.md — ExportEmailDialog with recipient configuration
-- [ ] 09-04-PLAN.md — Export field configuration: update rfp-export.ts to use DB config
-- [ ] 09-05-PLAN.md — Admin settings page: email + export fields + inventory fields sections
-- [ ] 09-06-PLAN.md — Admin users enhancements: role dropdown + delete button
+- [ ] 09-01-PLAN.md — Database migrations: app_settings, export_column_config, sync functions (Wave 1)
+- [ ] 09-02-PLAN.md — Split ExportDialog into dropdown + ExportDownloadDialog (Wave 1)
+- [ ] 09-03-PLAN.md — ExportEmailDialog with recipient configuration (Wave 2, depends on 09-01, 09-02)
+- [ ] 09-04-PLAN.md — Export field configuration: update rfp-export.ts to use DB config (Wave 2, depends on 09-01)
+- [ ] 09-05-PLAN.md — Admin settings page: email + export fields + inventory fields sections (Wave 2, depends on 09-01)
+- [ ] 09-06-PLAN.md — Admin users enhancements: role dropdown + delete button (Wave 1)
 
 ### Phase 10: History & Polish
 **Goal**: Users can access past RFPs and the application feels polished and production-ready
@@ -236,10 +236,10 @@ Phases execute in numeric order: 1 -> 2 -> 3 -> ... -> 10
 | 6. Processing Status | 1/1 | Complete | 2026-01-22 |
 | 7. Match Review | 2/2 | Complete | 2026-01-22 |
 | 8. Bulk Operations | 2/2 | Complete | 2026-01-23 |
-| 9. Export, Email & Admin | 0/6 | Not started | - |
+| 9. Export, Email & Admin | 0/6 | Planned | - |
 | 10. History & Polish | 0/3 | Not started | - |
 | 10.1 RFP Upload Polish | 5/5 | Complete | 2026-01-24 |
 
 ---
 *Created: 2025-01-21*
-*Last updated: 2026-01-25 — Phase 8 marked complete, Phase 9 expanded scope*
+*Last updated: 2026-01-25 — Phase 9 plans created (6 plans in 2 waves)*

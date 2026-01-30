@@ -96,11 +96,15 @@ function formatValue(value: unknown, type: ExportColumnMapping['type']): string 
     case 'currency':
       return typeof value === 'number' ? value : parseFloat(String(value)) || null
     case 'number':
-      if (typeof value === 'number') {
-        // Format similarity score as percentage (values between 0 and 1)
-        return value <= 1 && value > 0 ? `${Math.round(value * 100)}%` : value
-      }
+      // Return number as-is (no percentage conversion)
+      if (typeof value === 'number') return value
       return parseFloat(String(value)) || null
+    case 'percentage':
+      // Format as percentage (expects values between 0 and 1)
+      if (typeof value === 'number') {
+        return `${Math.round(value * 100)}%`
+      }
+      return null
     case 'date':
       if (value instanceof Date) return value.toISOString()
       return String(value)

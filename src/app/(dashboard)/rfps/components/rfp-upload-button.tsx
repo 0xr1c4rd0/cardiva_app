@@ -5,11 +5,11 @@ import { Button } from '@/components/ui/button'
 import { Upload } from 'lucide-react'
 import { Badge } from '@/components/ui/badge'
 import { RFPUploadDialog } from './rfp-upload-dialog'
-import { useRFPUploadStatus } from '@/contexts/rfp-upload-status-context'
+import { useUploadQueue } from '@/contexts/rfp-upload-status-context'
 
 export function RFPUploadButton() {
   const [open, setOpen] = useState(false)
-  const { queuedCount, processingCount } = useRFPUploadStatus()
+  const { queuedCount, processingCount } = useUploadQueue()
 
   // Total items in queue (queued + processing)
   const totalInQueue = queuedCount + processingCount

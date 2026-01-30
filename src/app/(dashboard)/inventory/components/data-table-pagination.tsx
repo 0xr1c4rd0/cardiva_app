@@ -40,7 +40,7 @@ export function DataTablePagination<TData>({
             }}
             disabled={isPending}
           >
-            <SelectTrigger className="h-8 w-[70px]">
+            <SelectTrigger className="!h-7 w-[70px]">
               <SelectValue placeholder={table.getState().pagination.pageSize} />
             </SelectTrigger>
             <SelectContent side="top">
@@ -60,22 +60,22 @@ export function DataTablePagination<TData>({
             <Button
               variant="outline"
               size="icon"
-              className="h-8 w-8"
+              className="h-7 w-7"
               onClick={() => table.previousPage()}
               disabled={!table.getCanPreviousPage() || isPending}
+              aria-label="Página anterior"
             >
-              <ChevronLeft className="h-4 w-4" />
-              <span className="sr-only">Página anterior</span>
+              <ChevronLeft className="h-4 w-4" aria-hidden="true" />
             </Button>
             <Button
               variant="outline"
               size="icon"
-              className="h-8 w-8"
+              className="h-7 w-7"
               onClick={() => table.nextPage()}
               disabled={!table.getCanNextPage() || isPending}
+              aria-label="Página seguinte"
             >
-              <ChevronRight className="h-4 w-4" />
-              <span className="sr-only">Página seguinte</span>
+              <ChevronRight className="h-4 w-4" aria-hidden="true" />
             </Button>
           </div>
         </div>

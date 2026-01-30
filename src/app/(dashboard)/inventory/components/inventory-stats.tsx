@@ -1,31 +1,62 @@
 'use client'
 
 import { KPIStatsCard } from '@/components/dashboard/kpi-stats-card'
-import { Package, Database } from 'lucide-react'
+import { Package, Calendar, User } from 'lucide-react'
+import { formatDistanceToNow } from 'date-fns'
+import { ptBR } from 'date-fns/locale'
 
-interface InventoryStatsProps {
-    totalCount: number
-    columnCount: number
+interface LastUpload {
+  id: string
+  file_name: string
+  created_at: string
+  completed_at: string | null
+  processed_rows: number
+  user_id: string
+  profiles: {
+    full_name: string | null
+    email: string
+  }
 }
 
-export function InventoryStats({ totalCount, columnCount }: InventoryStatsProps) {
-    return (
-        <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
-            <KPIStatsCard
-                label="Total Produtos"
-                value={totalCount}
-                icon={Package}
-                description="Produtos registados no inventário"
-                iconContainerClassName="bg-blue-100 text-blue-600"
-            />
+interface InventoryStatsProps {
+  totalCount: number
+  lastUpload: LastUpload | null
+}
 
-            <KPIStatsCard
-                label="Campos Mapeados"
-                value={columnCount}
-                icon={Database}
-                description="Atributos disponíveis por produto"
-                iconContainerClassName="bg-indigo-100 text-indigo-600"
-            />
-        </div>
-    )
+export function InventoryStats({ totalCount, lastUpload }: InventoryStatsProps) {
+  // Format last upload time
+  const lastUploadTime = lastUpload?.completed_at
+    ? formatDistanceToNow(new Date(lastUpload.completed_at), {
+        addSuffix: true,
+        locale: ptBR,
+      })
+    : 'Nunca'
+
+  // Get uploader name or email
+  const uploaderName = lastUpload?.profiles.full_name || lastUpload?.profiles.email || 'Desconhecido'
+
+  return (
+    <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
+      <KPIStatsCard
+        label="Produtos no Inventário"
+        value={totalCount}
+        icon={Package}
+        iconContainerClassName="bg-slate-100 text-slate-600"
+      />
+
+      <KPIStatsCard
+        label="Último Carregamento"
+        value={lastUploadTime}
+        icon={Calendar}
+        iconContainerClassName="bg-amber-100 text-amber-600"
+      />
+
+      <KPIStatsCard
+        label="Carregado Por"
+        value={uploaderName}
+        icon={User}
+        iconContainerClassName="bg-emerald-100 text-emerald-600"
+      />
+    </div>
+  )
 }

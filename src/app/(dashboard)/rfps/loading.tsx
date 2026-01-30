@@ -22,7 +22,7 @@ export default function RFPsLoading() {
       </div>
 
       {/* Jobs list skeleton */}
-      <Card>
+      <Card className="py-6">
         <CardHeader>
           <CardTitle>Histórico de Concursos</CardTitle>
           <CardDescription>Os seus documentos de concurso carregados</CardDescription>
@@ -39,10 +39,10 @@ export default function RFPsLoading() {
             {Array.from({ length: 5 }).map((_, i) => (
               <div
                 key={`skeleton-${i}`}
-                className="flex items-center justify-between p-4 border rounded-lg"
+                className="flex items-center justify-between px-4 py-2 border rounded"
               >
                 <div className="flex items-center gap-4">
-                  <Skeleton className="h-8 w-8 rounded" />
+                  <Skeleton className="h-8 w-8 rounded-sm" />
                   <div className="space-y-2">
                     <Skeleton className="h-4 w-48" />
                     <div className="flex items-center gap-2">
@@ -52,9 +52,9 @@ export default function RFPsLoading() {
                   </div>
                 </div>
                 <div className="flex items-center gap-2">
-                  <Skeleton className="h-6 w-20 rounded-full" />
-                  <Skeleton className="h-8 w-8 rounded" />
-                  <Skeleton className="h-8 w-8 rounded" />
+                  <Skeleton className="h-6 w-20 rounded-sm" />
+                  <Skeleton className="h-8 w-8 rounded-sm" />
+                  <Skeleton className="h-8 w-8 rounded-sm" />
                 </div>
               </div>
             ))}

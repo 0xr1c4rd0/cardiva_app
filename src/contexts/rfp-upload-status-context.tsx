@@ -1,9 +1,9 @@
 'use client'
 
-import { createContext, useContext, useEffect, useState, useCallback, useRef, type ReactNode } from 'react'
+import { createContext, useContext, useEffect, useState, useCallback, useRef, useMemo, type ReactNode } from 'react'
 import { createClient } from '@/lib/supabase/client'
 import { toast } from 'sonner'
-import { triggerRFPUpload, getJobReviewStatus } from '@/app/(dashboard)/rfps/actions'
+import { triggerRFPUpload, getJobReviewStatus, checkDuplicateFileName } from '@/app/(dashboard)/rfps/actions'
 
 export type ReviewStatus = 'por_rever' | 'revisto' | 'confirmado' | null
 
@@ -32,27 +32,42 @@ export interface QueuedUpload {
   error?: string
   isRestored?: boolean    // True when restored from DB after page refresh
   fileName?: string       // For display when file is null (restored jobs)
+  uploadingUntil?: Date   // Minimum time to show 'uploading' state (for pulsing animation)
 }
 
-interface RFPUploadStatusContextValue {
-  // Existing (keep for backward compat with single-job display)
-  activeJob: RFPUploadJob | null
-  lastCompletedJob: RFPUploadJob | null
-  isProcessing: boolean
-  refetch: () => Promise<void>
+// Split contexts for performance - components only re-render when their specific data changes
 
-  // New for multi-upload
+// Context for upload queue operations
+interface UploadQueueContextValue {
   uploadQueue: QueuedUpload[]
   queueFiles: (files: File[]) => void
   processingCount: number
   queuedCount: number
+}
 
-  // Refresh trigger - increments when data should be refreshed (e.g., job completed, deleted)
+// Context for active job display
+interface ActiveJobContextValue {
+  activeJob: RFPUploadJob | null
+  lastCompletedJob: RFPUploadJob | null
+  isProcessing: boolean
+  refetch: () => Promise<void>
+}
+
+// Context for refresh triggers (KPIs, stats)
+interface RefreshContextValue {
   refreshTrigger: number
-  // Manual trigger for KPI refresh (call after delete, confirm, etc.)
   triggerKPIRefresh: () => void
 }
 
+// Legacy combined interface (for backward compat)
+interface RFPUploadStatusContextValue extends UploadQueueContextValue, ActiveJobContextValue, RefreshContextValue {}
+
+// Split contexts
+const UploadQueueContext = createContext<UploadQueueContextValue | null>(null)
+const ActiveJobContext = createContext<ActiveJobContextValue | null>(null)
+const RefreshContext = createContext<RefreshContextValue | null>(null)
+
+// Legacy combined context (for backward compat - consumers that need everything)
 const RFPUploadStatusContext = createContext<RFPUploadStatusContextValue | null>(null)
 
 interface RFPUploadStatusProviderProps {
@@ -65,6 +80,7 @@ const MAX_PARALLEL_UPLOADS = 3 // Max simultaneous uploads showing progress anim
 const UPLOAD_STAGGER_MS = 2000 // 2s delay between starting each upload
 const WEBHOOK_DELAY_MS = 2500 // 2.5s between n8n triggers
 const COMPLETED_CLEANUP_DELAY_MS = 5000 // Remove completed items after 5s
+const MIN_UPLOADING_DURATION_MS = 800 // Minimum time to show pulsing 'uploading' state
 
 /**
  * Provider that manages RFP upload job status via Supabase Realtime
@@ -91,7 +107,7 @@ export function RFPUploadStatusProvider({ children }: RFPUploadStatusProviderPro
 
     const { data, error } = await supabase
       .from('rfp_upload_jobs')
-      .select('*')
+      .select('id, user_id, file_name, file_path, file_size, status, error_message, created_at, updated_at, completed_at, last_edited_by')
       .in('status', ['pending', 'processing'])
       .order('created_at', { ascending: false })
       .limit(1)
@@ -136,6 +152,18 @@ export function RFPUploadStatusProvider({ children }: RFPUploadStatusProviderPro
         } else if (newJob.status === 'failed') {
           return { ...q, status: 'failed' as const, error: newJob.error_message || 'Processing failed' }
         } else if (newJob.status === 'processing') {
+          // Check if minimum uploading duration has elapsed
+          if (q.uploadingUntil && new Date() < q.uploadingUntil) {
+            // Not enough time has passed, schedule transition for later
+            const remainingMs = q.uploadingUntil.getTime() - Date.now()
+            setTimeout(() => {
+              setUploadQueue(prevQueue => prevQueue.map(item =>
+                item.jobId === newJob.id ? { ...item, status: 'processing' as const } : item
+              ))
+            }, remainingMs)
+            // Keep current status for now
+            return q
+          }
           return { ...q, status: 'processing' as const }
         }
       }
@@ -170,41 +198,117 @@ export function RFPUploadStatusProvider({ children }: RFPUploadStatusProviderPro
 
     if (newJob.status === 'pending' || newJob.status === 'processing') {
       setActiveJob(newJob)
+
+      // Also add to upload queue so the processing animation shows
+      // This handles email-triggered uploads that didn't go through queueFiles
+      setUploadQueue(prev => {
+        // Check if job already exists in queue (avoid duplicates)
+        // Check both by jobId AND by fileName + uploading status (for race condition with manual uploads)
+        const exists = prev.some(q =>
+          q.jobId === newJob.id ||
+          (q.fileName === newJob.file_name && (q.status === 'uploading' || q.status === 'processing'))
+        )
+
+        if (exists) {
+          return prev
+        }
+
+        // Add new item to queue for display in processing card
+        const startTime = new Date(newJob.created_at)
+        const newItem: QueuedUpload = {
+          id: newJob.id,
+          file: null,
+          status: newJob.status === 'pending' ? 'uploading' as const : 'processing' as const,
+          jobId: newJob.id,
+          startedAt: startTime,
+          isRestored: false,
+          fileName: newJob.file_name,
+          // Set minimum duration for 'uploading' state (for pulsing animation visibility)
+          uploadingUntil: newJob.status === 'pending'
+            ? new Date(startTime.getTime() + MIN_UPLOADING_DURATION_MS)
+            : undefined,
+        }
+
+        return [newItem, ...prev]
+      })
     }
   }, [])
 
   // Queue files for upload (max 10 total active)
-  const queueFiles = useCallback((files: File[]) => {
+  const queueFiles = useCallback(async (files: File[]) => {
+    // Check for duplicates in queue first
+    const queuedFileNames = new Set(uploadQueue.map(q => q.fileName))
+    const duplicatesInQueue = files.filter(f => queuedFileNames.has(f.name))
+
+    if (duplicatesInQueue.length > 0) {
+      toast.error('Ficheiros duplicados na fila', {
+        description: `Os seguintes ficheiros já estão em processamento: ${duplicatesInQueue.map(f => f.name).join(', ')}`,
+      })
+    }
+
+    // Filter out duplicates already in queue
+    const uniqueFiles = files.filter(f => !queuedFileNames.has(f.name))
+
+    if (uniqueFiles.length === 0) return
+
+    // Check for duplicates in database
+    const duplicateChecks = await Promise.all(
+      uniqueFiles.map(file => checkDuplicateFileName(file.name))
+    )
+
+    const duplicatesInDB: string[] = []
+    const filesToQueue: File[] = []
+
+    uniqueFiles.forEach((file, index) => {
+      if (duplicateChecks[index].isDuplicate) {
+        duplicatesInDB.push(file.name)
+      } else {
+        filesToQueue.push(file)
+      }
+    })
+
+    // Show error for database duplicates
+    if (duplicatesInDB.length > 0) {
+      toast.error('Ficheiros já carregados', {
+        description: duplicatesInDB.length === 1
+          ? `O ficheiro "${duplicatesInDB[0]}" já foi carregado anteriormente.`
+          : `${duplicatesInDB.length} ficheiros já foram carregados: ${duplicatesInDB.slice(0, 3).join(', ')}${duplicatesInDB.length > 3 ? '...' : ''}`,
+      })
+    }
+
+    if (filesToQueue.length === 0) return
+
     setUploadQueue(prev => {
       // Count current active uploads (queued + uploading + processing)
       const currentCount = prev.filter(
         q => q.status === 'queued' || q.status === 'uploading' || q.status === 'processing'
       ).length
       const available = MAX_CONCURRENT - currentCount
-      const filesToQueue = files.slice(0, Math.max(0, available))
+      const finalFilesToQueue = filesToQueue.slice(0, Math.max(0, available))
 
-      if (filesToQueue.length < files.length) {
+      if (finalFilesToQueue.length < filesToQueue.length) {
         toast.warning('Limite de ficheiros', {
-          description: `Apenas ${filesToQueue.length} de ${files.length} ficheiros foram adicionados. Maximo de ${MAX_CONCURRENT} em processamento simultaneo.`,
+          description: `Apenas ${finalFilesToQueue.length} de ${filesToQueue.length} ficheiros foram adicionados. Máximo de ${MAX_CONCURRENT} em processamento simultâneo.`,
         })
       }
 
-      const newItems: QueuedUpload[] = filesToQueue.map(file => ({
+      const newItems: QueuedUpload[] = finalFilesToQueue.map(file => ({
         id: crypto.randomUUID(),
         file,
+        fileName: file.name,
         status: 'queued' as const
       }))
 
       return [...prev, ...newItems]
     })
-  }, [])
+  }, [uploadQueue])
 
   // Restore processing jobs from DB on mount (for page refresh persistence)
   useEffect(() => {
     const restoreActiveJobs = async () => {
       const { data: activeJobs, error } = await supabase
         .from('rfp_upload_jobs')
-        .select('*')
+        .select('id, file_name, status, created_at')
         .in('status', ['pending', 'processing'])
         .order('created_at', { ascending: false })
         .limit(MAX_PARALLEL_UPLOADS)
@@ -216,15 +320,22 @@ export function RFPUploadStatusProvider({ children }: RFPUploadStatusProviderPro
         const existingJobIds = new Set(prev.filter(q => q.jobId).map(q => q.jobId))
         const newItems: QueuedUpload[] = activeJobs
           .filter(job => !existingJobIds.has(job.id))
-          .map(job => ({
-            id: job.id,
-            file: null,
-            status: job.status === 'pending' ? 'uploading' as const : 'processing' as const,
-            jobId: job.id,
-            startedAt: new Date(job.created_at),
-            isRestored: true,
-            fileName: job.file_name,
-          }))
+          .map(job => {
+            const startTime = new Date(job.created_at)
+            return {
+              id: job.id,
+              file: null,
+              status: job.status === 'pending' ? 'uploading' as const : 'processing' as const,
+              jobId: job.id,
+              startedAt: startTime,
+              isRestored: true,
+              fileName: job.file_name,
+              // Set minimum duration for 'uploading' state (for pulsing animation visibility)
+              uploadingUntil: job.status === 'pending'
+                ? new Date(startTime.getTime() + MIN_UPLOADING_DURATION_MS)
+                : undefined,
+            }
+          })
 
         return newItems.length > 0 ? [...newItems, ...prev] : prev
       })
@@ -254,8 +365,14 @@ export function RFPUploadStatusProvider({ children }: RFPUploadStatusProviderPro
       isProcessingQueueRef.current = true
 
       // Mark as uploading FIRST (before stagger delay)
+      const uploadStartTime = new Date()
       setUploadQueue(prev => prev.map(q =>
-        q.id === nextQueued.id ? { ...q, status: 'uploading' as const, startedAt: new Date() } : q
+        q.id === nextQueued.id ? {
+          ...q,
+          status: 'uploading' as const,
+          startedAt: uploadStartTime,
+          uploadingUntil: new Date(uploadStartTime.getTime() + MIN_UPLOADING_DURATION_MS),
+        } : q
       ))
 
       // Stagger uploads - wait if there are other active uploads
@@ -375,48 +492,107 @@ export function RFPUploadStatusProvider({ children }: RFPUploadStatusProviderPro
     }
   }, [supabase, fetchActiveJob, handleJobUpdate, handleJobInsert])
 
-  // Compute derived values
-  const processingCount = uploadQueue.filter(
-    q => q.status === 'uploading' || q.status === 'processing'
-  ).length
+  // Compute derived values with useMemo to prevent unnecessary re-renders
+  const processingCount = useMemo(
+    () => uploadQueue.filter(q => q.status === 'uploading' || q.status === 'processing').length,
+    [uploadQueue]
+  )
 
-  const queuedCount = uploadQueue.filter(q => q.status === 'queued').length
+  const queuedCount = useMemo(
+    () => uploadQueue.filter(q => q.status === 'queued').length,
+    [uploadQueue]
+  )
 
   // Manual trigger for KPI refresh (call after delete, confirm, etc.)
   const triggerKPIRefresh = useCallback(() => {
     setRefreshTrigger(prev => prev + 1)
   }, [])
 
-  const value: RFPUploadStatusContextValue = {
-    activeJob,
-    lastCompletedJob,
-    isProcessing: activeJob?.status === 'pending' || activeJob?.status === 'processing',
-    refetch: fetchActiveJob,
-    // Multi-upload
+  // Memoize context values to prevent unnecessary re-renders
+  const uploadQueueValue = useMemo<UploadQueueContextValue>(() => ({
     uploadQueue,
     queueFiles,
     processingCount,
     queuedCount,
-    // Refresh trigger for KPIs
+  }), [uploadQueue, queueFiles, processingCount, queuedCount])
+
+  const activeJobValue = useMemo<ActiveJobContextValue>(() => ({
+    activeJob,
+    lastCompletedJob,
+    isProcessing: activeJob?.status === 'pending' || activeJob?.status === 'processing',
+    refetch: fetchActiveJob,
+  }), [activeJob, lastCompletedJob, fetchActiveJob])
+
+  const refreshValue = useMemo<RefreshContextValue>(() => ({
     refreshTrigger,
     triggerKPIRefresh,
-  }
+  }), [refreshTrigger, triggerKPIRefresh])
+
+  // Legacy combined value (for backward compat)
+  const combinedValue = useMemo<RFPUploadStatusContextValue>(() => ({
+    ...uploadQueueValue,
+    ...activeJobValue,
+    ...refreshValue,
+  }), [uploadQueueValue, activeJobValue, refreshValue])
 
   return (
-    <RFPUploadStatusContext.Provider value={value}>
-      {children}
-    </RFPUploadStatusContext.Provider>
+    <UploadQueueContext.Provider value={uploadQueueValue}>
+      <ActiveJobContext.Provider value={activeJobValue}>
+        <RefreshContext.Provider value={refreshValue}>
+          <RFPUploadStatusContext.Provider value={combinedValue}>
+            {children}
+          </RFPUploadStatusContext.Provider>
+        </RefreshContext.Provider>
+      </ActiveJobContext.Provider>
+    </UploadQueueContext.Provider>
   )
 }
 
 /**
- * Hook to access RFP upload status from context
+ * Hook to access RFP upload status from context (all data)
+ * Use specialized hooks below for better performance when you only need a subset
  * Must be used within RFPUploadStatusProvider
  */
 export function useRFPUploadStatus(): RFPUploadStatusContextValue {
   const context = useContext(RFPUploadStatusContext)
   if (!context) {
     throw new Error('useRFPUploadStatus must be used within RFPUploadStatusProvider')
+  }
+  return context
+}
+
+/**
+ * Hook for upload queue operations only
+ * Components using this won't re-render when activeJob or refreshTrigger changes
+ */
+export function useUploadQueue(): UploadQueueContextValue {
+  const context = useContext(UploadQueueContext)
+  if (!context) {
+    throw new Error('useUploadQueue must be used within RFPUploadStatusProvider')
+  }
+  return context
+}
+
+/**
+ * Hook for active job display only
+ * Components using this won't re-render when uploadQueue or refreshTrigger changes
+ */
+export function useActiveJob(): ActiveJobContextValue {
+  const context = useContext(ActiveJobContext)
+  if (!context) {
+    throw new Error('useActiveJob must be used within RFPUploadStatusProvider')
+  }
+  return context
+}
+
+/**
+ * Hook for refresh triggers only (KPIs, stats)
+ * Components using this won't re-render when uploadQueue or activeJob changes
+ */
+export function useRefreshTrigger(): RefreshContextValue {
+  const context = useContext(RefreshContext)
+  if (!context) {
+    throw new Error('useRefreshTrigger must be used within RFPUploadStatusProvider')
   }
   return context
 }

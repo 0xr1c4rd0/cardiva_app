@@ -35,7 +35,7 @@ export default function RootLayout({
         className={`${geistSans.variable} ${geistMono.variable} ${fraunces.variable} antialiased`}
       >
         <NuqsAdapter>{children}</NuqsAdapter>
-        <Toaster />
+        <Toaster position="bottom-right" />
       </body>
     </html>
   )

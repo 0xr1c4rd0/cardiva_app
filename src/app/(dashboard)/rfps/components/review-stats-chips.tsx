@@ -66,7 +66,7 @@ export function ReviewStatsChips({ items }: ReviewStatsChipsProps) {
           <Tooltip key={index}>
             <TooltipTrigger asChild>
               <div
-                className={`flex items-center gap-1 px-2 py-1 rounded-full text-xs font-medium ${chip.bgColor} ${chip.textColor} cursor-default`}
+                className={`flex items-center gap-1 px-2 py-1 rounded-md text-xs font-medium ${chip.bgColor} ${chip.textColor} cursor-default`}
               >
                 {chip.icon}
                 <span>{chip.count}</span>

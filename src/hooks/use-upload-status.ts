@@ -38,7 +38,7 @@ export function useUploadStatus(): UseUploadStatusReturn {
 
     const { data } = await supabase
       .from('inventory_upload_jobs')
-      .select('*')
+      .select('id, user_id, file_name, row_count, status, error_message, processed_rows, created_at, updated_at, completed_at')
       .eq('user_id', user.id)
       .in('status', ['pending', 'processing'])
       .order('created_at', { ascending: false })
@@ -102,34 +102,48 @@ export function useUploadStatus(): UseUploadStatusReturn {
   }, [])
 
   useEffect(() => {
-    // Fetch initial state
-    fetchActiveJob()
+    let channel: ReturnType<typeof supabase.channel> | null = null
 
-    // Subscribe to realtime changes
-    const channel = supabase
-      .channel('inventory_upload_jobs_changes')
-      .on(
-        'postgres_changes',
-        {
-          event: 'UPDATE',
-          schema: 'public',
-          table: 'inventory_upload_jobs',
-        },
-        (payload) => handleJobUpdate(payload as unknown as { new: UploadJob; old: UploadJob })
-      )
-      .on(
-        'postgres_changes',
-        {
-          event: 'INSERT',
-          schema: 'public',
-          table: 'inventory_upload_jobs',
-        },
-        (payload) => handleJobInsert(payload as unknown as { new: UploadJob })
-      )
-      .subscribe()
+    const setupSubscription = async () => {
+      // Get current user for filtering
+      const { data: { user } } = await supabase.auth.getUser()
+      if (!user) return
+
+      // Fetch initial state
+      await fetchActiveJob()
+
+      // Subscribe to realtime changes - filter by user_id to reduce network traffic
+      channel = supabase
+        .channel(`inventory_upload_jobs_${user.id}`)
+        .on(
+          'postgres_changes',
+          {
+            event: 'UPDATE',
+            schema: 'public',
+            table: 'inventory_upload_jobs',
+            filter: `user_id=eq.${user.id}`,
+          },
+          (payload) => handleJobUpdate(payload as unknown as { new: UploadJob; old: UploadJob })
+        )
+        .on(
+          'postgres_changes',
+          {
+            event: 'INSERT',
+            schema: 'public',
+            table: 'inventory_upload_jobs',
+            filter: `user_id=eq.${user.id}`,
+          },
+          (payload) => handleJobInsert(payload as unknown as { new: UploadJob })
+        )
+        .subscribe()
+    }
+
+    setupSubscription()
 
     return () => {
-      supabase.removeChannel(channel)
+      if (channel) {
+        supabase.removeChannel(channel)
+      }
     }
   }, [supabase, fetchActiveJob, handleJobUpdate, handleJobInsert])
 

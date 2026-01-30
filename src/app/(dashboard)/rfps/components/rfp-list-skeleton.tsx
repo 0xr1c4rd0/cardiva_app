@@ -12,7 +12,7 @@ export function RFPListSkeleton() {
         >
           <div className="flex items-center gap-4">
             {/* File icon placeholder */}
-            <Skeleton className="h-8 w-8 rounded" />
+            <Skeleton className="h-8 w-8 rounded-sm" />
             <div className="space-y-2">
               {/* Filename */}
               <Skeleton className="h-4 w-48" />
@@ -25,10 +25,10 @@ export function RFPListSkeleton() {
           </div>
           <div className="flex items-center gap-2">
             {/* Status badge */}
-            <Skeleton className="h-6 w-20 rounded-full" />
+            <Skeleton className="h-6 w-20 rounded-sm" />
             {/* Action buttons */}
-            <Skeleton className="h-8 w-8 rounded" />
-            <Skeleton className="h-8 w-8 rounded" />
+            <Skeleton className="h-8 w-8 rounded-sm" />
+            <Skeleton className="h-8 w-8 rounded-sm" />
           </div>
         </div>
       ))}

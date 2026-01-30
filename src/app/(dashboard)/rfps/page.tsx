@@ -187,9 +187,10 @@ export default async function RFPsPage({ searchParams }: RFPsPageProps) {
 
   // Build query with search, sort, and pagination
   // All authenticated users can see all RFPs (no user_id filter)
+  // PERFORMANCE: Select only needed columns instead of *
   let query = supabase
     .from('rfp_upload_jobs')
-    .select('*', { count: 'exact' })
+    .select('id, file_name, file_size, status, error_message, created_at, updated_at, completed_at, confirmed_at, user_id, last_edited_by', { count: 'exact' })
 
   // Apply search filter on file_name
   if (search) {
@@ -202,7 +203,13 @@ export default async function RFPsPage({ searchParams }: RFPsPageProps) {
   // Apply pagination
   query = query.range((page - 1) * pageSize, page * pageSize - 1)
 
-  const { data: jobs, error, count } = await query
+  // PERFORMANCE: Parallelize jobs query and KPIs (they're independent)
+  const [jobsResult, initialKPIs] = await Promise.all([
+    query,
+    computeKPIs(supabase),
+  ])
+
+  const { data: jobs, error, count } = jobsResult
 
   if (error) {
     console.error('Failed to fetch RFP jobs:', error)
@@ -216,32 +223,32 @@ export default async function RFPsPage({ searchParams }: RFPsPageProps) {
     if (job.last_edited_by) userIds.add(job.last_edited_by)
   }
 
-  // Fetch profiles in a single query
-  const profilesMap = new Map<string, { email: string; first_name: string; last_name: string }>()
-  if (userIds.size > 0) {
-    const { data: profiles } = await supabase
-      .from('profiles')
-      .select('id, email, first_name, last_name')
-      .in('id', Array.from(userIds))
-
-    for (const profile of profiles ?? []) {
-      profilesMap.set(profile.id, {
-        email: profile.email,
-        first_name: profile.first_name ?? '',
-        last_name: profile.last_name ?? '',
-      })
-    }
-  }
-
   // Compute review status for completed, unconfirmed jobs
   const completedUnconfirmedIds = (jobs ?? [])
     .filter(j => j.status === 'completed' && !j.confirmed_at)
     .map(j => j.id)
 
-  const reviewStatuses = await computeReviewStatuses(supabase, completedUnconfirmedIds)
+  // PERFORMANCE: Parallelize profiles fetch and review status computation
+  const [profilesData, reviewStatuses] = await Promise.all([
+    userIds.size > 0
+      ? supabase
+          .from('profiles')
+          .select('id, email, first_name, last_name, role')
+          .in('id', Array.from(userIds))
+      : Promise.resolve({ data: null }),
+    computeReviewStatuses(supabase, completedUnconfirmedIds),
+  ])
 
-  // Compute KPI data server-side to avoid flicker
-  const initialKPIs = await computeKPIs(supabase)
+  // Build profiles map
+  const profilesMap = new Map<string, { email: string; first_name: string; last_name: string; role: 'user' | 'admin' | 'automation' }>()
+  for (const profile of profilesData.data ?? []) {
+    profilesMap.set(profile.id, {
+      email: profile.email,
+      first_name: profile.first_name ?? '',
+      last_name: profile.last_name ?? '',
+      role: profile.role,
+    })
+  }
 
   // Add review_status and profile data to each job
   const jobsWithStatus = (jobs ?? []).map(job => {

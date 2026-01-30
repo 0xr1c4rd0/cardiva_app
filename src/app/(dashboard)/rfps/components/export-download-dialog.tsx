@@ -82,7 +82,7 @@ export function ExportDownloadDialog({ open, onOpenChange, items, rfpFileName }:
         {/* Summary stats - compact inline */}
         <div className="flex items-center justify-center gap-6 py-3">
           <div className="flex items-center gap-2">
-            <div className="flex items-center justify-center h-6 w-6 rounded-full bg-emerald-100">
+            <div className="flex items-center justify-center h-6 w-6 rounded-sm bg-emerald-100">
               <Check className="h-3.5 w-3.5 text-emerald-600" />
             </div>
             <span className="text-lg font-semibold text-emerald-700">{matchedCount}</span>
@@ -90,11 +90,11 @@ export function ExportDownloadDialog({ open, onOpenChange, items, rfpFileName }:
           </div>
           <div className="h-5 w-px bg-border" />
           <div className="flex items-center gap-2">
-            <div className="flex items-center justify-center h-6 w-6 rounded-full bg-gray-100">
+            <div className="flex items-center justify-center h-6 w-6 rounded-sm bg-gray-100">
               <AlertCircle className="h-3.5 w-3.5 text-gray-500" />
             </div>
             <span className="text-lg font-semibold text-gray-700">{noMatchCount}</span>
-            <span className="text-xs text-muted-foreground">Sem correspondência</span>
+            <span className="text-xs text-muted-foreground whitespace-nowrap">Sem correspondência</span>
           </div>
         </div>
 
@@ -104,19 +104,19 @@ export function ExportDownloadDialog({ open, onOpenChange, items, rfpFileName }:
           <RadioGroup
             value={exportMode}
             onValueChange={(value) => setExportMode(value as 'matched' | 'all')}
-            className="space-y-2"
+            className="space-y-1"
           >
             <div className="flex items-center space-x-3">
               <RadioGroupItem value="matched" id="matched" />
-              <Label htmlFor="matched" className="cursor-pointer font-normal">
+              <span className="text-xs text-muted-foreground cursor-pointer">
                 Apenas correspondências ({matchedCount} {matchedCount === 1 ? 'produto' : 'produtos'})
-              </Label>
+              </span>
             </div>
             <div className="flex items-center space-x-3">
               <RadioGroupItem value="all" id="all" />
-              <Label htmlFor="all" className="cursor-pointer font-normal">
+              <span className="text-xs text-muted-foreground cursor-pointer">
                 Todos os produtos ({items.length} {items.length === 1 ? 'produto' : 'produtos'})
-              </Label>
+              </span>
             </div>
           </RadioGroup>
         </div>

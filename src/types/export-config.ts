@@ -13,7 +13,7 @@ export interface ExportColumnConfig {
   display_name: string
   visible: boolean
   display_order: number
-  column_type: 'text' | 'number' | 'currency' | 'date'
+  column_type: 'text' | 'number' | 'currency' | 'date' | 'percentage'
   created_at: string
   updated_at: string
 }
@@ -26,7 +26,7 @@ export interface ExportColumnMapping {
   key: string              // column_name from config
   header: string           // display_name from config
   source: 'rfp_items' | 'rfp_match_suggestions'
-  type: 'text' | 'number' | 'currency' | 'date'
+  type: 'text' | 'number' | 'currency' | 'date' | 'percentage'
 }
 
 /**
@@ -43,6 +43,6 @@ export const DEFAULT_EXPORT_COLUMNS: ExportColumnMapping[] = [
   { key: 'artigo', header: 'Artigo Match', source: 'rfp_match_suggestions', type: 'text' },
   { key: 'descricao', header: 'Descricao Match', source: 'rfp_match_suggestions', type: 'text' },
   { key: 'preco', header: 'Preco Unit.', source: 'rfp_match_suggestions', type: 'currency' },
-  { key: 'similarity_score', header: 'Similaridade', source: 'rfp_match_suggestions', type: 'number' },
+  { key: 'similarity_score', header: 'Similaridade', source: 'rfp_match_suggestions', type: 'percentage' },
   { key: 'match_type', header: 'Tipo', source: 'rfp_match_suggestions', type: 'text' },
 ]

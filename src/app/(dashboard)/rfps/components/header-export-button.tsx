@@ -59,8 +59,8 @@ export function HeaderExportButton({ items, jobId, rfpFileName }: HeaderExportBu
 
   const button = (
     <Button
+      variant="default"
       disabled={isDisabled}
-      className={isDisabled ? 'cursor-not-allowed' : ''}
     >
       <Download className="h-4 w-4 mr-2" />
       {getButtonText()}

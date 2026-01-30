@@ -24,7 +24,7 @@ export function UserMenuClient({ email, initials }: UserMenuClientProps) {
       <DropdownMenuTrigger asChild>
         <Button
           variant="ghost"
-          className="relative h-10 w-10 rounded-full"
+          className="relative h-10 w-10 rounded-sm"
           suppressHydrationWarning
         >
           <Avatar>

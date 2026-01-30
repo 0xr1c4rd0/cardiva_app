@@ -42,7 +42,7 @@ export default async function PendingApprovalPage() {
     <div className="flex min-h-screen items-center justify-center p-4">
       <Card className="w-full max-w-md">
         <CardHeader className="text-center">
-          <div className="mx-auto mb-4 flex h-16 w-16 items-center justify-center rounded-full bg-amber-100 dark:bg-amber-900">
+          <div className="mx-auto mb-4 flex h-16 w-16 items-center justify-center rounded-sm bg-amber-100 dark:bg-amber-900">
             <Clock className="h-8 w-8 text-amber-600 dark:text-amber-400" />
           </div>
           <CardTitle className="text-2xl">Conta Pendente de Aprovação</CardTitle>

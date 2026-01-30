@@ -1,11 +1,11 @@
 'use client'
 
-import { useState, useEffect, useTransition, useCallback, useRef } from 'react'
+import { useState, useEffect, useTransition, useCallback, useRef, memo } from 'react'
 import Link from 'next/link'
 import { formatDistanceToNow } from 'date-fns'
 import { pt } from 'date-fns/locale'
 import { useQueryStates, parseAsInteger, parseAsString } from 'nuqs'
-import { FileText, Clock, CheckCircle2, XCircle, Loader2, FileDown, Trash2, Upload, SearchX } from 'lucide-react'
+import { FileText, Clock, CheckCircle2, BadgeCheck, XCircle, Loader2, FileDown, Trash2, Upload, SearchX } from 'lucide-react'
 import { createClient } from '@/lib/supabase/client'
 import {
   Card,
@@ -17,7 +17,8 @@ import {
 import { Badge } from '@/components/ui/badge'
 import { Button } from '@/components/ui/button'
 import { cn } from '@/lib/utils'
-import { useRFPUploadStatus, type RFPUploadJob } from '@/contexts/rfp-upload-status-context'
+import { EmptyState } from '@/components/empty-state'
+import { useActiveJob, useRefreshTrigger, type RFPUploadJob } from '@/contexts/rfp-upload-status-context'
 import { DeleteRFPDialog } from './delete-rfp-dialog'
 import { RFPListToolbar } from './rfp-list-toolbar'
 import { RFPListPagination } from './rfp-list-pagination'
@@ -33,6 +34,7 @@ interface ProfileInfo {
   email: string
   first_name: string
   last_name: string
+  role?: 'user' | 'admin' | 'automation'
 }
 
 interface RFPJob {
@@ -67,13 +69,23 @@ interface RFPJobsListProps {
   initialState: RFPListState
 }
 
-// Helper to format user name as "FirstName L." (first name + last initial + dot)
+// Helper to format user name
+// - Automation accounts: "FirstName LastName" (full name)
+// - Regular users: "FirstName L." (first name + last initial + dot)
 function formatUserName(profile: ProfileInfo | null | undefined): string | null {
   if (!profile) return null
 
-  // If we have first and last name, format as "FirstName L."
+  // If we have first and last name
   if (profile.first_name && profile.last_name) {
     const firstName = profile.first_name.charAt(0).toUpperCase() + profile.first_name.slice(1).toLowerCase()
+
+    // For automation accounts, show full name (e.g., "Gmail Bot")
+    if (profile.role === 'automation') {
+      const lastName = profile.last_name.charAt(0).toUpperCase() + profile.last_name.slice(1).toLowerCase()
+      return `${firstName} ${lastName}`
+    }
+
+    // For regular users, show first name + last initial (e.g., "Ricardo C.")
     const lastInitial = profile.last_name.charAt(0).toUpperCase()
     return `${firstName} ${lastInitial}.`
   }
@@ -123,6 +135,7 @@ const statusConfig = {
     variant: 'secondary' as const,
     className: 'text-muted-foreground',
     badgeClassName: '',
+    dotVariant: 'pending' as const,
   },
   processing: {
     label: 'A processar',
@@ -130,13 +143,15 @@ const statusConfig = {
     variant: 'default' as const,
     className: 'text-white animate-spin',
     badgeClassName: '',
+    dotVariant: 'processing' as const,
   },
   completed: {
     label: 'Concluído',
-    icon: CheckCircle2,
-    variant: 'default' as const,
-    className: 'text-green-600',
+    icon: BadgeCheck,
+    variant: 'success' as const,
+    className: 'text-emerald-600',
     badgeClassName: '',
+    dotVariant: 'success' as const,
   },
   failed: {
     label: 'Falhou',
@@ -144,6 +159,7 @@ const statusConfig = {
     variant: 'destructive' as const,
     className: 'text-destructive',
     badgeClassName: '',
+    dotVariant: 'error' as const,
   },
 }
 
@@ -152,23 +168,26 @@ const reviewStatusConfig = {
   por_rever: {
     label: 'Por Rever',
     icon: Clock,
-    variant: 'secondary' as const,
+    variant: 'warning' as const,
     className: 'text-amber-600',
-    badgeClassName: 'bg-amber-100 text-amber-700 border-amber-200 hover:bg-amber-100',
+    badgeClassName: '',
+    dotVariant: 'warning' as const,
   },
   revisto: {
     label: 'Revisto',
     icon: CheckCircle2,
-    variant: 'secondary' as const,
+    variant: 'info' as const,
     className: 'text-blue-600',
-    badgeClassName: 'bg-blue-100 text-blue-700 border-blue-200 hover:bg-blue-100',
+    badgeClassName: '',
+    dotVariant: 'info' as const,
   },
   confirmado: {
     label: 'Confirmado',
-    icon: CheckCircle2,
-    variant: 'secondary' as const,
+    icon: BadgeCheck,
+    variant: 'success' as const,
     className: 'text-emerald-600',
-    badgeClassName: 'bg-emerald-100 text-emerald-700 border-emerald-200 hover:bg-emerald-100',
+    badgeClassName: '',
+    dotVariant: 'success' as const,
   },
 }
 
@@ -181,7 +200,7 @@ interface RFPJobRowProps {
   onAnimationComplete: (jobId: string) => void
 }
 
-function RFPJobRow({ job, isDeleting, onViewPDF, onDeleteClick, onAnimationComplete }: RFPJobRowProps) {
+const RFPJobRow = memo(function RFPJobRow({ job, isDeleting, onViewPDF, onDeleteClick, onAnimationComplete }: RFPJobRowProps) {
   const [animationPhase, setAnimationPhase] = useState<'normal' | 'collapsing'>('normal')
 
   // Start collapse animation when isDeleting becomes true
@@ -216,7 +235,7 @@ function RFPJobRow({ job, isDeleting, onViewPDF, onDeleteClick, onAnimationCompl
     <div
       onTransitionEnd={handleTransitionEnd}
       className={cn(
-        "flex items-center justify-between p-4 border rounded-lg transition-all ease-out",
+        "flex items-center justify-between px-4 py-2 border rounded transition-all ease-out",
         isClickable ? "hover:bg-muted/50 cursor-pointer" : "",
         animationPhase === 'collapsing' && "opacity-0 max-h-0 py-0 px-4 my-0 overflow-hidden border-transparent"
       )}
@@ -227,7 +246,7 @@ function RFPJobRow({ job, isDeleting, onViewPDF, onDeleteClick, onAnimationCompl
       }}
     >
       <div className="flex items-center gap-4">
-        <FileText className="h-8 w-8 text-muted-foreground" />
+        <FileText className="h-8 w-8 text-muted-foreground" strokeWidth={1.5} />
         <div>
           <p className="font-medium">{job.file_name}</p>
           <div className="flex items-center gap-2 text-sm text-muted-foreground">
@@ -254,9 +273,9 @@ function RFPJobRow({ job, isDeleting, onViewPDF, onDeleteClick, onAnimationCompl
       <div className="flex items-center gap-2">
         <Badge
           variant={displayStatus.variant}
-          className={cn("flex items-center gap-1", displayStatus.badgeClassName)}
+          className={cn("flex items-center gap-1.5", displayStatus.badgeClassName)}
         >
-          <StatusIcon className={cn('h-3 w-3', displayStatus.className)} />
+          <StatusIcon className={cn("h-4 w-4", displayStatus.className)} />
           {displayStatus.label}
         </Badge>
 
@@ -268,8 +287,9 @@ function RFPJobRow({ job, isDeleting, onViewPDF, onDeleteClick, onAnimationCompl
               className="h-8 w-8"
               onClick={(e) => onViewPDF(e, job.id)}
               title="Ver PDF"
+              aria-label="Ver PDF"
             >
-              <FileDown className="h-4 w-4" />
+              <FileDown className="h-4 w-4" aria-hidden="true" />
             </Button>
             <Button
               variant="outline"
@@ -277,8 +297,9 @@ function RFPJobRow({ job, isDeleting, onViewPDF, onDeleteClick, onAnimationCompl
               className="h-8 w-8 hover:bg-destructive hover:text-white hover:border-destructive"
               onClick={(e) => onDeleteClick(e, job)}
               title="Eliminar"
+              aria-label="Eliminar"
             >
-              <Trash2 className="h-4 w-4" />
+              <Trash2 className="h-4 w-4" aria-hidden="true" />
             </Button>
           </>
         )}
@@ -293,12 +314,13 @@ function RFPJobRow({ job, isDeleting, onViewPDF, onDeleteClick, onAnimationCompl
   ) : (
     <div>{content}</div>
   )
-}
+})
 
 export function RFPJobsList({ initialJobs, totalCount, initialState }: RFPJobsListProps) {
   const [jobs, setJobs] = useState<RFPJob[]>(initialJobs)
   const [currentTotalCount, setCurrentTotalCount] = useState(totalCount)
-  const { activeJob, lastCompletedJob, triggerKPIRefresh } = useRFPUploadStatus()
+  const { activeJob, lastCompletedJob } = useActiveJob()
+  const { triggerKPIRefresh } = useRefreshTrigger()
   const [deleteDialogOpen, setDeleteDialogOpen] = useState(false)
   const [jobToDelete, setJobToDelete] = useState<{ id: string; name: string } | null>(null)
   const [deletingIds, setDeletingIds] = useState<Set<string>>(new Set())
@@ -383,61 +405,50 @@ export function RFPJobsList({ initialJobs, totalCount, initialState }: RFPJobsLi
   }, [pageSize, sortBy, sortOrder])
 
   // Handle real-time job updates (both activeJob and lastCompletedJob)
-  // Uses ref for jobs to avoid infinite loops
+  // Always checks for existing job inside setJobs for accurate state
   const handleJobUpdate = useCallback(async (job: RFPUploadJob) => {
-    // Check if job already exists in the list (using ref to avoid dependency on jobs state)
+    // Check if last_edited_by changed - need to fetch new profile
     const existingJob = jobsRef.current.find((j) => j.id === job.id)
+    const lastEditorChanged = existingJob && job.last_edited_by && job.last_edited_by !== existingJob.last_edited_by
 
-    if (existingJob) {
-      // Check if last_edited_by changed - need to fetch new profile
-      const lastEditorChanged = job.last_edited_by && job.last_edited_by !== existingJob.last_edited_by
-
-      if (lastEditorChanged) {
-        // Fetch the new editor's profile
-        const profilesMap = await fetchProfilesForUserIds([job.last_edited_by!])
-        const newEditorProfile = profilesMap.get(job.last_edited_by!) ?? null
-
-        setJobs((prev) => {
-          const index = prev.findIndex((j) => j.id === job.id)
-          if (index < 0) return prev
-
-          const updated = [...prev]
-          updated[index] = {
-            ...prev[index],
-            ...job,
-            last_editor: newEditorProfile,  // Use freshly fetched profile
-          }
-
-          return sortJobs(updated, sortBy as 'file_name' | 'created_at', sortOrder as 'asc' | 'desc')
-        })
-      } else {
-        // No editor change - preserve existing profile data
-        setJobs((prev) => {
-          const index = prev.findIndex((j) => j.id === job.id)
-          if (index < 0) return prev
-
-          const updated = [...prev]
-          updated[index] = {
-            ...prev[index],
-            ...job,
-          }
-
-          return sortJobs(updated, sortBy as 'file_name' | 'created_at', sortOrder as 'asc' | 'desc')
-        })
-      }
-    } else if (page === 1 && !search) {
-      // New job - fetch profiles before adding (only on first page without search)
-      // Prevent duplicate fetches for the same job
-      if (pendingProfileFetches.current.has(job.id)) return
-      pendingProfileFetches.current.add(job.id)
-
-      try {
-        await addNewJobWithProfiles(job)
-      } finally {
-        pendingProfileFetches.current.delete(job.id)
-      }
+    // Fetch new editor profile if needed
+    let newEditorProfile: ReturnType<typeof fetchProfilesForUserIds> extends Promise<infer T> ? T extends Map<string, infer V> ? V | null : null : null = null
+    if (lastEditorChanged) {
+      const profilesMap = await fetchProfilesForUserIds([job.last_edited_by!])
+      newEditorProfile = profilesMap.get(job.last_edited_by!) ?? null
     }
-  }, [page, search, sortBy, sortOrder, addNewJobWithProfiles])
+
+    // Update or add job - always check existence inside setJobs for race condition safety
+    setJobs((prev) => {
+      const index = prev.findIndex((j) => j.id === job.id)
+
+      if (index >= 0) {
+        // Job exists - update it
+        const updated = [...prev]
+        updated[index] = {
+          ...prev[index],
+          ...job,
+          // Preserve or update editor profile
+          last_editor: lastEditorChanged ? newEditorProfile : prev[index].last_editor,
+        }
+        return sortJobs(updated, sortBy as 'file_name' | 'created_at', sortOrder as 'asc' | 'desc')
+      } else if (page === 1 && !search) {
+        // Job doesn't exist yet - add it (only on first page without search)
+        // This handles the case where UPDATE event arrives before INSERT finishes processing
+        // For new jobs from email, we'll add them without profile data initially
+        // (profile will be added when INSERT completes)
+        const jobWithProfile: RFPJob = {
+          ...job,
+          uploader: existingJob?.uploader ?? null,
+          last_editor: existingJob?.last_editor ?? null,
+        }
+        const updated = [jobWithProfile, ...prev.slice(0, pageSize - 1)]
+        return sortJobs(updated, sortBy as 'file_name' | 'created_at', sortOrder as 'asc' | 'desc')
+      }
+
+      return prev
+    })
+  }, [page, search, sortBy, sortOrder, pageSize])
 
   // Update jobs list in real-time when activeJob changes (processing jobs)
   useEffect(() => {
@@ -567,7 +578,7 @@ export function RFPJobsList({ initialJobs, totalCount, initialState }: RFPJobsLi
   const isSearchEmpty = jobs.length === 0 && search
 
   return (
-    <Card>
+    <Card className="py-6">
       <CardHeader>
         <CardTitle>Histórico de Concursos</CardTitle>
         <CardDescription>Os seus documentos de concurso carregados</CardDescription>
@@ -590,33 +601,29 @@ export function RFPJobsList({ initialJobs, totalCount, initialState }: RFPJobsLi
           <RFPListSkeleton />
         ) : isEmptyState ? (
           // Empty state - no jobs at all
-          <div className="flex flex-col items-center justify-center py-12 text-center">
-            <div className="mb-6 rounded-full bg-muted p-6">
-              <FileText className="h-12 w-12 text-muted-foreground" />
-            </div>
-            <h3 className="mb-2 text-lg font-medium">Ainda não há concursos</h3>
-            <p className="mb-6 max-w-sm text-muted-foreground">
-              Carregue o seu primeiro documento de concurso para começar a encontrar correspondências no inventário.
-            </p>
-            <Button onClick={handleUploadClick}>
-              <Upload className="mr-2 h-4 w-4" />
-              Carregar primeiro concurso
-            </Button>
-          </div>
+          <EmptyState
+            icon={FileText}
+            title="Ainda não há concursos"
+            description="Carregue o seu primeiro documento de concurso para começar a encontrar correspondências no inventário."
+            action={
+              <Button onClick={handleUploadClick}>
+                <Upload className="mr-2 h-4 w-4" />
+                Carregar primeiro concurso
+              </Button>
+            }
+          />
         ) : isSearchEmpty ? (
           // Search empty state
-          <div className="flex flex-col items-center justify-center py-12 text-center">
-            <div className="mb-6 rounded-full bg-muted p-6">
-              <SearchX className="h-12 w-12 text-muted-foreground" />
-            </div>
-            <h3 className="mb-2 text-lg font-medium">Nenhum concurso encontrado</h3>
-            <p className="mb-6 max-w-sm text-muted-foreground">
-              Não foram encontrados concursos para &quot;{search}&quot;. Tente outro termo de pesquisa.
-            </p>
-            <Button variant="outline" onClick={handleClearSearch}>
-              Limpar pesquisa
-            </Button>
-          </div>
+          <EmptyState
+            icon={SearchX}
+            title="Nenhum concurso encontrado"
+            description={`Não foram encontrados concursos para "${search}". Tente outro termo de pesquisa.`}
+            action={
+              <Button variant="outline" onClick={handleClearSearch}>
+                Limpar pesquisa
+              </Button>
+            }
+          />
         ) : (
           // Jobs list
           <div className="flex flex-col gap-2">

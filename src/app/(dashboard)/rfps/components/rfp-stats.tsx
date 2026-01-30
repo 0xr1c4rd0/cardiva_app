@@ -4,7 +4,7 @@ import { useEffect, useState, useCallback } from 'react'
 import { createClient } from '@/lib/supabase/client'
 import { KPIStatsCard } from '@/components/dashboard/kpi-stats-card'
 import { Clock, CheckCircle2, BadgeCheck, FileText } from 'lucide-react'
-import { useRFPUploadStatus } from '@/contexts/rfp-upload-status-context'
+import { useRefreshTrigger } from '@/contexts/rfp-upload-status-context'
 
 /**
  * 3-State KPI Model for RFP workflow:
@@ -39,7 +39,7 @@ export function RFPStats({ initialKPIs }: RFPStatsProps) {
   // Initialize with server-provided data - no loading state needed
   const [data, setData] = useState<KPIData>(initialKPIs)
   const [isLoading, setIsLoading] = useState(false)
-  const { refreshTrigger } = useRFPUploadStatus()
+  const { refreshTrigger } = useRefreshTrigger()
   const supabase = createClient()
 
   const fetchKPIs = useCallback(async () => {
@@ -145,18 +145,17 @@ export function RFPStats({ initialKPIs }: RFPStatsProps) {
   return (
     <div className="grid gap-4 md:grid-cols-4">
       <KPIStatsCard
-        label="Total"
+        label="Total de Concursos"
         value={isLoading ? '-' : data.totalCount}
         icon={FileText}
-        description="Total de concursos"
         iconContainerClassName="bg-slate-100 text-slate-600"
       />
 
       <KPIStatsCard
         label="Por Rever"
         value={isLoading ? '-' : data.porReverCount}
+        valueDetail="com decisões pendentes"
         icon={Clock}
-        description="Concursos com decisoes pendentes"
         iconContainerClassName="bg-amber-100 text-amber-600"
         iconClassName={data.porReverCount > 0 ? "animate-pulse" : ""}
       />
@@ -164,16 +163,16 @@ export function RFPStats({ initialKPIs }: RFPStatsProps) {
       <KPIStatsCard
         label="Revistos"
         value={isLoading ? '-' : data.revistosCount}
+        valueDetail="por confirmar"
         icon={CheckCircle2}
-        description="Revistos, por confirmar"
         iconContainerClassName="bg-blue-100 text-blue-600"
       />
 
       <KPIStatsCard
         label="Confirmados"
         value={isLoading ? '-' : data.confirmedCount}
+        valueDetail="prontos para exportação"
         icon={BadgeCheck}
-        description="Prontos para exportacao"
         iconContainerClassName="bg-emerald-100 text-emerald-600"
       />
     </div>

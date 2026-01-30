@@ -6,11 +6,11 @@ import { Upload, Loader2 } from 'lucide-react'
 import { CSVUploadDialog } from './csv-upload-dialog'
 import { triggerInventoryUpload } from '../actions'
 import { toast } from 'sonner'
-import { useUploadStatus } from '@/hooks/use-upload-status'
+import { useInventoryUploadStatus } from '@/contexts/inventory-upload-status-context'
 
 export function CSVUploadButton() {
   const [open, setOpen] = useState(false)
-  const { isProcessing, activeJob, refetch } = useUploadStatus()
+  const { isProcessing, activeJob, refetch } = useInventoryUploadStatus()
 
   const handleUpload = async (file: File, rowCount: number) => {
     const formData = new FormData()

@@ -43,6 +43,7 @@ export interface MatchSuggestion {
   codigo_spms: string | null
   artigo: string | null
   descricao: string | null
+  descricao_comercial: string | null // Commercial description for hover display
   unidade_venda: string | null
   quantidade_disponivel: number | null
   preco: number | null
