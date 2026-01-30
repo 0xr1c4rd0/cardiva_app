@@ -1,6 +1,6 @@
 'use client'
 
-import { createContext, useContext, useEffect, useState, useCallback, useRef, type ReactNode } from 'react'
+import { createContext, useContext, useEffect, useState, useCallback, useRef, useMemo, type ReactNode } from 'react'
 import { createClient } from '@/lib/supabase/client'
 import { toast } from 'sonner'
 import { triggerRFPUpload, getJobReviewStatus, checkDuplicateFileName } from '@/app/(dashboard)/rfps/actions'
@@ -35,25 +35,39 @@ export interface QueuedUpload {
   uploadingUntil?: Date   // Minimum time to show 'uploading' state (for pulsing animation)
 }
 
-interface RFPUploadStatusContextValue {
-  // Existing (keep for backward compat with single-job display)
-  activeJob: RFPUploadJob | null
-  lastCompletedJob: RFPUploadJob | null
-  isProcessing: boolean
-  refetch: () => Promise<void>
+// Split contexts for performance - components only re-render when their specific data changes
 
-  // New for multi-upload
+// Context for upload queue operations
+interface UploadQueueContextValue {
   uploadQueue: QueuedUpload[]
   queueFiles: (files: File[]) => void
   processingCount: number
   queuedCount: number
+}
 
-  // Refresh trigger - increments when data should be refreshed (e.g., job completed, deleted)
+// Context for active job display
+interface ActiveJobContextValue {
+  activeJob: RFPUploadJob | null
+  lastCompletedJob: RFPUploadJob | null
+  isProcessing: boolean
+  refetch: () => Promise<void>
+}
+
+// Context for refresh triggers (KPIs, stats)
+interface RefreshContextValue {
   refreshTrigger: number
-  // Manual trigger for KPI refresh (call after delete, confirm, etc.)
   triggerKPIRefresh: () => void
 }
 
+// Legacy combined interface (for backward compat)
+interface RFPUploadStatusContextValue extends UploadQueueContextValue, ActiveJobContextValue, RefreshContextValue {}
+
+// Split contexts
+const UploadQueueContext = createContext<UploadQueueContextValue | null>(null)
+const ActiveJobContext = createContext<ActiveJobContextValue | null>(null)
+const RefreshContext = createContext<RefreshContextValue | null>(null)
+
+// Legacy combined context (for backward compat - consumers that need everything)
 const RFPUploadStatusContext = createContext<RFPUploadStatusContextValue | null>(null)
 
 interface RFPUploadStatusProviderProps {
@@ -93,7 +107,7 @@ export function RFPUploadStatusProvider({ children }: RFPUploadStatusProviderPro
 
     const { data, error } = await supabase
       .from('rfp_upload_jobs')
-      .select('*')
+      .select('id, user_id, file_name, file_path, file_size, status, error_message, created_at, updated_at, completed_at, last_edited_by')
       .in('status', ['pending', 'processing'])
       .order('created_at', { ascending: false })
       .limit(1)
@@ -294,7 +308,7 @@ export function RFPUploadStatusProvider({ children }: RFPUploadStatusProviderPro
     const restoreActiveJobs = async () => {
       const { data: activeJobs, error } = await supabase
         .from('rfp_upload_jobs')
-        .select('*')
+        .select('id, file_name, status, created_at')
         .in('status', ['pending', 'processing'])
         .order('created_at', { ascending: false })
         .limit(MAX_PARALLEL_UPLOADS)
@@ -478,48 +492,107 @@ export function RFPUploadStatusProvider({ children }: RFPUploadStatusProviderPro
     }
   }, [supabase, fetchActiveJob, handleJobUpdate, handleJobInsert])
 
-  // Compute derived values
-  const processingCount = uploadQueue.filter(
-    q => q.status === 'uploading' || q.status === 'processing'
-  ).length
+  // Compute derived values with useMemo to prevent unnecessary re-renders
+  const processingCount = useMemo(
+    () => uploadQueue.filter(q => q.status === 'uploading' || q.status === 'processing').length,
+    [uploadQueue]
+  )
 
-  const queuedCount = uploadQueue.filter(q => q.status === 'queued').length
+  const queuedCount = useMemo(
+    () => uploadQueue.filter(q => q.status === 'queued').length,
+    [uploadQueue]
+  )
 
   // Manual trigger for KPI refresh (call after delete, confirm, etc.)
   const triggerKPIRefresh = useCallback(() => {
     setRefreshTrigger(prev => prev + 1)
   }, [])
 
-  const value: RFPUploadStatusContextValue = {
-    activeJob,
-    lastCompletedJob,
-    isProcessing: activeJob?.status === 'pending' || activeJob?.status === 'processing',
-    refetch: fetchActiveJob,
-    // Multi-upload
+  // Memoize context values to prevent unnecessary re-renders
+  const uploadQueueValue = useMemo<UploadQueueContextValue>(() => ({
     uploadQueue,
     queueFiles,
     processingCount,
     queuedCount,
-    // Refresh trigger for KPIs
+  }), [uploadQueue, queueFiles, processingCount, queuedCount])
+
+  const activeJobValue = useMemo<ActiveJobContextValue>(() => ({
+    activeJob,
+    lastCompletedJob,
+    isProcessing: activeJob?.status === 'pending' || activeJob?.status === 'processing',
+    refetch: fetchActiveJob,
+  }), [activeJob, lastCompletedJob, fetchActiveJob])
+
+  const refreshValue = useMemo<RefreshContextValue>(() => ({
     refreshTrigger,
     triggerKPIRefresh,
-  }
+  }), [refreshTrigger, triggerKPIRefresh])
+
+  // Legacy combined value (for backward compat)
+  const combinedValue = useMemo<RFPUploadStatusContextValue>(() => ({
+    ...uploadQueueValue,
+    ...activeJobValue,
+    ...refreshValue,
+  }), [uploadQueueValue, activeJobValue, refreshValue])
 
   return (
-    <RFPUploadStatusContext.Provider value={value}>
-      {children}
-    </RFPUploadStatusContext.Provider>
+    <UploadQueueContext.Provider value={uploadQueueValue}>
+      <ActiveJobContext.Provider value={activeJobValue}>
+        <RefreshContext.Provider value={refreshValue}>
+          <RFPUploadStatusContext.Provider value={combinedValue}>
+            {children}
+          </RFPUploadStatusContext.Provider>
+        </RefreshContext.Provider>
+      </ActiveJobContext.Provider>
+    </UploadQueueContext.Provider>
   )
 }
 
 /**
- * Hook to access RFP upload status from context
+ * Hook to access RFP upload status from context (all data)
+ * Use specialized hooks below for better performance when you only need a subset
  * Must be used within RFPUploadStatusProvider
  */
 export function useRFPUploadStatus(): RFPUploadStatusContextValue {
   const context = useContext(RFPUploadStatusContext)
   if (!context) {
     throw new Error('useRFPUploadStatus must be used within RFPUploadStatusProvider')
+  }
+  return context
+}
+
+/**
+ * Hook for upload queue operations only
+ * Components using this won't re-render when activeJob or refreshTrigger changes
+ */
+export function useUploadQueue(): UploadQueueContextValue {
+  const context = useContext(UploadQueueContext)
+  if (!context) {
+    throw new Error('useUploadQueue must be used within RFPUploadStatusProvider')
+  }
+  return context
+}
+
+/**
+ * Hook for active job display only
+ * Components using this won't re-render when uploadQueue or refreshTrigger changes
+ */
+export function useActiveJob(): ActiveJobContextValue {
+  const context = useContext(ActiveJobContext)
+  if (!context) {
+    throw new Error('useActiveJob must be used within RFPUploadStatusProvider')
+  }
+  return context
+}
+
+/**
+ * Hook for refresh triggers only (KPIs, stats)
+ * Components using this won't re-render when uploadQueue or activeJob changes
+ */
+export function useRefreshTrigger(): RefreshContextValue {
+  const context = useContext(RefreshContext)
+  if (!context) {
+    throw new Error('useRefreshTrigger must be used within RFPUploadStatusProvider')
   }
   return context
 }

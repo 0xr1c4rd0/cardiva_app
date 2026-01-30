@@ -4,7 +4,7 @@ import { useEffect, useState, useCallback } from 'react'
 import { createClient } from '@/lib/supabase/client'
 import { KPIStatsCard } from '@/components/dashboard/kpi-stats-card'
 import { Clock, CheckCircle2, BadgeCheck, FileText } from 'lucide-react'
-import { useRFPUploadStatus } from '@/contexts/rfp-upload-status-context'
+import { useRefreshTrigger } from '@/contexts/rfp-upload-status-context'
 
 /**
  * 3-State KPI Model for RFP workflow:
@@ -39,7 +39,7 @@ export function RFPStats({ initialKPIs }: RFPStatsProps) {
   // Initialize with server-provided data - no loading state needed
   const [data, setData] = useState<KPIData>(initialKPIs)
   const [isLoading, setIsLoading] = useState(false)
-  const { refreshTrigger } = useRFPUploadStatus()
+  const { refreshTrigger } = useRefreshTrigger()
   const supabase = createClient()
 
   const fetchKPIs = useCallback(async () => {

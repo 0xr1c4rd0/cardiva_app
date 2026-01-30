@@ -208,7 +208,7 @@ export async function getRFPJobStatus(jobId: string) {
 
   const { data, error } = await supabase
     .from('rfp_upload_jobs')
-    .select('*')
+    .select('id, file_name, status, error_message, created_at, completed_at')
     .eq('id', jobId)
     .single()
 
@@ -235,7 +235,7 @@ export async function getRecentRFPJobs(limit: number = 10) {
 
   const { data, error } = await supabase
     .from('rfp_upload_jobs')
-    .select('*')
+    .select('id, file_name, status, error_message, created_at, completed_at')
     .eq('user_id', user.id)
     .order('created_at', { ascending: false })
     .limit(limit)

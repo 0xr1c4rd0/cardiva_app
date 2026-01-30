@@ -15,7 +15,7 @@ export interface ActionResult {
 /**
  * Helper function to fetch an RFP item with its match suggestions.
  * Used to return updated data after mutations for optimistic UI updates.
- * Enriches match suggestions with descricao_comercial from artigos table.
+ * Note: descricao_comercial would require FK to artigos table - set to null.
  */
 async function fetchItemWithMatches(
   supabase: SupabaseClient,
@@ -35,30 +35,15 @@ async function fetchItemWithMatches(
     return null
   }
 
-  // Enrich match suggestions with descricao_comercial from artigos table
-  const enrichedMatches = await Promise.all(
-    (data.rfp_match_suggestions || []).map(async (match: MatchSuggestion) => {
-      // Skip if no artigo code to join on
-      if (!match.artigo) return match
+  // Sort by similarity_score DESC and add descricao_comercial: null
+  const matches = (data.rfp_match_suggestions || []).map((match: MatchSuggestion) => ({
+    ...match,
+    descricao_comercial: null,
+  }))
 
-      // Fetch descricao_comercial from artigos table
-      const { data: artigoData } = await supabase
-        .from('artigos')
-        .select('descricao_comercial')
-        .eq('artigo', match.artigo)
-        .maybeSingle()
-
-      return {
-        ...match,
-        descricao_comercial: artigoData?.descricao_comercial ?? null,
-      }
-    })
-  )
-
-  // Sort match suggestions by similarity_score DESC
   return {
     ...data,
-    rfp_match_suggestions: enrichedMatches.sort(
+    rfp_match_suggestions: matches.sort(
       (a: MatchSuggestion, b: MatchSuggestion) => b.similarity_score - a.similarity_score
     ),
   } as RFPItemWithMatches
@@ -405,6 +390,9 @@ export async function searchInventory(
  * Auto-accept exact matches (100% similarity) for all pending items in a job.
  * Called on page load to pre-confirm obvious matches.
  * Returns the count of auto-accepted items.
+ *
+ * PERFORMANCE: Uses batch operations (3 queries total) instead of per-item updates.
+ * For 100 exact matches, this is 3 queries instead of 300.
  */
 export async function autoAcceptExactMatches(
   jobId: string
@@ -420,7 +408,7 @@ export async function autoAcceptExactMatches(
       return { accepted: 0, error: 'Not authenticated' }
     }
 
-    // Find all pending RFP items for this job
+    // Find all pending RFP items for this job with their match suggestions
     const { data: items, error: fetchError } = await supabase
       .from('rfp_items')
       .select(
@@ -440,7 +428,10 @@ export async function autoAcceptExactMatches(
       return { accepted: 0, error: fetchError.message }
     }
 
-    let accepted = 0
+    // Collect all IDs for batch operations
+    const exactMatchIds: string[] = []
+    const itemIdsWithExactMatch: string[] = []
+    const itemMatchPairs: { itemId: string; matchId: string }[] = []
 
     for (const item of items ?? []) {
       // Find a match with 100% similarity (>= 0.9999 to handle floating point)
@@ -449,37 +440,60 @@ export async function autoAcceptExactMatches(
       )?.find((m) => m.similarity_score >= 0.9999)
 
       if (exactMatch) {
-        // Accept the exact match using the same logic as acceptMatch
-        // Step 1: Accept the selected match
-        await supabase
-          .from('rfp_match_suggestions')
-          .update({ status: 'accepted' })
-          .eq('id', exactMatch.id)
+        exactMatchIds.push(exactMatch.id)
+        itemIdsWithExactMatch.push(item.id)
+        itemMatchPairs.push({ itemId: item.id, matchId: exactMatch.id })
+      }
+    }
 
-        // Step 2: Reject all other matches for this RFP item
-        await supabase
-          .from('rfp_match_suggestions')
-          .update({ status: 'rejected' })
-          .eq('rfp_item_id', item.id)
-          .neq('id', exactMatch.id)
+    // Early return if no exact matches found
+    if (exactMatchIds.length === 0) {
+      return { accepted: 0 }
+    }
 
-        // Step 3: Update the RFP item's review_status and selected_match_id
-        await supabase
+    // Batch operation 1: Accept all exact matches in one query
+    const { error: acceptError } = await supabase
+      .from('rfp_match_suggestions')
+      .update({ status: 'accepted' })
+      .in('id', exactMatchIds)
+
+    if (acceptError) {
+      console.error('autoAcceptExactMatches accept error:', acceptError)
+      return { accepted: 0, error: acceptError.message }
+    }
+
+    // Batch operation 2: Reject all non-exact matches for affected items in one query
+    // This rejects all matches for items that have exact matches, except the exact matches themselves
+    const { error: rejectError } = await supabase
+      .from('rfp_match_suggestions')
+      .update({ status: 'rejected' })
+      .in('rfp_item_id', itemIdsWithExactMatch)
+      .not('id', 'in', `(${exactMatchIds.join(',')})`)
+
+    if (rejectError) {
+      console.error('autoAcceptExactMatches reject error:', rejectError)
+      // Non-fatal: continue
+    }
+
+    // Batch operation 3: Update all RFP items using individual updates
+    // (Supabase doesn't support bulk update with different values per row)
+    // But we can still optimize by running them in parallel
+    await Promise.all(
+      itemMatchPairs.map(({ itemId, matchId }) =>
+        supabase
           .from('rfp_items')
           .update({
             review_status: 'accepted',
-            selected_match_id: exactMatch.id,
+            selected_match_id: matchId,
           })
-          .eq('id', item.id)
-
-        accepted++
-      }
-    }
+          .eq('id', itemId)
+      )
+    )
 
     // Note: No revalidatePath here since this function is called during server component render.
     // The page will display fresh data after this function returns since it fetches data afterward.
 
-    return { accepted }
+    return { accepted: exactMatchIds.length }
   } catch (error) {
     console.error('autoAcceptExactMatches error:', error)
     return {

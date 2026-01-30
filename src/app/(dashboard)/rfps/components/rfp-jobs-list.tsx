@@ -18,7 +18,7 @@ import { Badge } from '@/components/ui/badge'
 import { Button } from '@/components/ui/button'
 import { cn } from '@/lib/utils'
 import { EmptyState } from '@/components/empty-state'
-import { useRFPUploadStatus, type RFPUploadJob } from '@/contexts/rfp-upload-status-context'
+import { useActiveJob, useRefreshTrigger, type RFPUploadJob } from '@/contexts/rfp-upload-status-context'
 import { DeleteRFPDialog } from './delete-rfp-dialog'
 import { RFPListToolbar } from './rfp-list-toolbar'
 import { RFPListPagination } from './rfp-list-pagination'
@@ -319,7 +319,8 @@ const RFPJobRow = memo(function RFPJobRow({ job, isDeleting, onViewPDF, onDelete
 export function RFPJobsList({ initialJobs, totalCount, initialState }: RFPJobsListProps) {
   const [jobs, setJobs] = useState<RFPJob[]>(initialJobs)
   const [currentTotalCount, setCurrentTotalCount] = useState(totalCount)
-  const { activeJob, lastCompletedJob, triggerKPIRefresh } = useRFPUploadStatus()
+  const { activeJob, lastCompletedJob } = useActiveJob()
+  const { triggerKPIRefresh } = useRefreshTrigger()
   const [deleteDialogOpen, setDeleteDialogOpen] = useState(false)
   const [jobToDelete, setJobToDelete] = useState<{ id: string; name: string } | null>(null)
   const [deletingIds, setDeletingIds] = useState<Set<string>>(new Set())

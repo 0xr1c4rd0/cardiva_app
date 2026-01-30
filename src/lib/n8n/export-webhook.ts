@@ -1,3 +1,5 @@
+import { triggerWebhookWithRetry, buildWebhookHeaders, WebhookRetryError } from './webhook-utils'
+
 /**
  * Payload for export email webhook (metadata only, file sent as binary)
  */
@@ -6,7 +8,7 @@ export interface ExportEmailPayload {
   userId: string
   recipientEmail: string
   fileName: string
-  rfpFileName: string  // Original RFP filename for reference
+  rfpFileName: string // Original RFP filename for reference
   excelBuffer: ArrayBuffer
   summary: {
     totalItems: number
@@ -18,9 +20,9 @@ export interface ExportEmailPayload {
 }
 
 /**
- * Trigger n8n export email webhook with fire-and-forget pattern
+ * Trigger n8n export email webhook with retry logic
  * Sends Excel file as binary via FormData (more efficient than base64)
- * Does NOT await response - n8n will send email asynchronously
+ * Retries up to 3 times with exponential backoff on transient failures
  */
 export async function triggerExportEmailWebhook(payload: ExportEmailPayload): Promise<void> {
   const webhookUrl = process.env.N8N_EXPORT_EMAIL_WEBHOOK_URL
@@ -46,18 +48,17 @@ export async function triggerExportEmailWebhook(payload: ExportEmailPayload): Pr
   })
   formData.append('file', blob, payload.fileName)
 
-  // Fire-and-forget: don't await the full response
-  // n8n webhook is configured to respond "immediately"
-  fetch(webhookUrl, {
-    method: 'POST',
-    headers: {
-      ...(process.env.N8N_WEBHOOK_SECRET && {
-        'X-Webhook-Secret': process.env.N8N_WEBHOOK_SECRET,
-      }),
-    },
-    body: formData,
-  }).catch((error) => {
-    // Log but don't throw - fire-and-forget
-    console.error('n8n export email webhook request failed:', error)
-  })
+  try {
+    await triggerWebhookWithRetry(webhookUrl, formData, buildWebhookHeaders())
+  } catch (error) {
+    if (error instanceof WebhookRetryError) {
+      console.error(
+        `n8n export email webhook failed after ${error.attempts} attempts:`,
+        error.lastError?.message
+      )
+    } else {
+      console.error('n8n export email webhook request failed:', error)
+    }
+    throw error
+  }
 }

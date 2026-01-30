@@ -47,13 +47,17 @@ export async function getDashboardStats(): Promise<DashboardStats> {
   const startOfMonth = new Date(now.getFullYear(), now.getMonth(), 1)
   const sixMonthsAgo = new Date(now.getFullYear(), now.getMonth() - 5, 1)
 
-  // Parallel queries for performance
+  // PERFORMANCE: Use COUNT queries instead of fetching all rows
+  // This reduces data transfer from 100k+ rows to just count numbers
   const [
     totalRFPsResult,
     rfpsThisMonthResult,
     pendingReviewResult,
-    matchStatsResult,
+    acceptedCountResult,
+    rejectedCountResult,
+    matchesThisMonthResult,
     monthlyRFPsResult,
+    acceptedMatchesForChartResult,
     recentRFPsResult,
   ] = await Promise.all([
     // Total completed RFPs
@@ -72,10 +76,24 @@ export async function getDashboardStats(): Promise<DashboardStats> {
     // Jobs needing review (completed, not confirmed, with pending items)
     getPendingReviewCount(supabase),
 
-    // Match statistics (accepted, rejected counts)
+    // PERFORMANCE: Count accepted matches (not fetch all)
     supabase
       .from('rfp_match_suggestions')
-      .select('status, created_at'),
+      .select('*', { count: 'exact', head: true })
+      .eq('status', 'accepted'),
+
+    // PERFORMANCE: Count rejected matches (not fetch all)
+    supabase
+      .from('rfp_match_suggestions')
+      .select('*', { count: 'exact', head: true })
+      .eq('status', 'rejected'),
+
+    // PERFORMANCE: Count accepted matches this month (not fetch all)
+    supabase
+      .from('rfp_match_suggestions')
+      .select('*', { count: 'exact', head: true })
+      .eq('status', 'accepted')
+      .gte('created_at', startOfMonth.toISOString()),
 
     // Monthly RFP counts for chart (last 6 months)
     supabase
@@ -85,6 +103,14 @@ export async function getDashboardStats(): Promise<DashboardStats> {
       .gte('created_at', sixMonthsAgo.toISOString())
       .order('created_at', { ascending: true }),
 
+    // PERFORMANCE: Only fetch accepted matches for chart (not all matches)
+    // Limited to last 6 months for chart data
+    supabase
+      .from('rfp_match_suggestions')
+      .select('created_at')
+      .eq('status', 'accepted')
+      .gte('created_at', sixMonthsAgo.toISOString()),
+
     // Recent RFPs for activity list
     supabase
       .from('rfp_upload_jobs')
@@ -93,25 +119,21 @@ export async function getDashboardStats(): Promise<DashboardStats> {
       .limit(5),
   ])
 
-  // Process match statistics
-  const matchStats = matchStatsResult.data ?? []
-  const acceptedMatches = matchStats.filter(m => m.status === 'accepted').length
-  const rejectedMatches = matchStats.filter(m => m.status === 'rejected').length
+  // Process match statistics using COUNT results
+  const acceptedMatches = acceptedCountResult.count ?? 0
+  const rejectedMatches = rejectedCountResult.count ?? 0
   const totalDecisions = acceptedMatches + rejectedMatches
   const acceptanceRate = totalDecisions > 0
     ? Math.round((acceptedMatches / totalDecisions) * 100)
     : 0
 
-  // Matches this month
-  const matchesThisMonth = matchStats.filter(m => {
-    const matchDate = new Date(m.created_at)
-    return m.status === 'accepted' && matchDate >= startOfMonth
-  }).length
+  // Matches this month from COUNT
+  const matchesThisMonth = matchesThisMonthResult.count ?? 0
 
   // Process monthly data for chart
   const monthlyData = processMonthlyData(
     monthlyRFPsResult.data ?? [],
-    matchStats.filter(m => m.status === 'accepted'),
+    acceptedMatchesForChartResult.data ?? [],
     sixMonthsAgo
   )
 

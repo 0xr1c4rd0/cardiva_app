@@ -17,7 +17,7 @@ import {
 } from '@/components/ui/collapsible'
 import { PDFDropzone } from './pdf-dropzone'
 import { Upload, ChevronDown, Mail, Forward, Copy } from 'lucide-react'
-import { useRFPUploadStatus } from '@/contexts/rfp-upload-status-context'
+import { useUploadQueue } from '@/contexts/rfp-upload-status-context'
 import { toast } from 'sonner'
 
 interface RFPUploadDialogProps {
@@ -29,7 +29,7 @@ export function RFPUploadDialog({ open, onOpenChange }: RFPUploadDialogProps) {
   const [files, setFiles] = useState<File[]>([])
   const [isUploading, setIsUploading] = useState(false)
   const [isCollapsibleOpen, setIsCollapsibleOpen] = useState(true)
-  const { queueFiles } = useRFPUploadStatus()
+  const { queueFiles } = useUploadQueue()
 
   const EMAIL_ADDRESS = 'cardiva.automation@gmail.com'
 
