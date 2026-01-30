@@ -90,7 +90,7 @@ export function DashboardRecentActivity({ items }: DashboardRecentActivityProps)
         <CardDescription>Últimos concursos</CardDescription>
       </CardHeader>
       <CardContent>
-        <div className="space-y-2">
+        <div className="space-y-3">
           {items.map((item) => {
             const isCompleted = item.status === 'completed'
             const reviewStatus = item.review_status && item.review_status !== 'por_rever'
@@ -101,13 +101,8 @@ export function DashboardRecentActivity({ items }: DashboardRecentActivityProps)
             const StatusIcon = displayStatus.icon
             const isClickable = item.status === 'completed'
 
-            const content = (
-              <div
-                className={cn(
-                  "flex items-center justify-between p-3 rounded-lg border transition-colors",
-                  isClickable && "hover:bg-muted/50 cursor-pointer"
-                )}
-              >
+            const innerContent = (
+              <>
                 <div className="flex items-center gap-3 min-w-0">
                   <FileText className="h-4 w-4 text-muted-foreground flex-shrink-0" />
                   <div className="min-w-0">
@@ -121,15 +116,24 @@ export function DashboardRecentActivity({ items }: DashboardRecentActivityProps)
                   <StatusIcon className={cn("h-3 w-3", displayStatus.className)} />
                   {displayStatus.label}
                 </Badge>
-              </div>
+              </>
             )
 
             return isClickable ? (
-              <Link key={item.id} href={`/rfps/${item.id}/matches`}>
-                {content}
+              <Link
+                key={item.id}
+                href={`/rfps/${item.id}/matches`}
+                className="flex items-center justify-between p-3 rounded border transition-colors hover:bg-muted/50"
+              >
+                {innerContent}
               </Link>
             ) : (
-              <div key={item.id}>{content}</div>
+              <div
+                key={item.id}
+                className="flex items-center justify-between p-3 rounded border transition-colors"
+              >
+                {innerContent}
+              </div>
             )
           })}
         </div>

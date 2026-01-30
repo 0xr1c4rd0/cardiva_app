@@ -53,12 +53,12 @@ export function DashboardNeedsAttention({ items }: DashboardNeedsAttentionProps)
         <CardDescription>Concursos por rever</CardDescription>
       </CardHeader>
       <CardContent>
-        <div className="space-y-2">
+        <div className="space-y-3">
           {items.map((item) => (
             <Link
               key={item.id}
               href={`/rfps/${item.id}/matches`}
-              className="flex items-center justify-between p-3 rounded-lg border transition-colors hover:bg-muted/50"
+              className="flex items-center justify-between p-3 rounded border transition-colors hover:bg-muted/50"
             >
               <div className="flex items-center gap-3 min-w-0">
                 <FileText className="h-4 w-4 text-muted-foreground flex-shrink-0" />
