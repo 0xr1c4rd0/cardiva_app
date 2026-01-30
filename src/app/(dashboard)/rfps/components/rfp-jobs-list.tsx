@@ -1,6 +1,6 @@
 'use client'
 
-import { useState, useEffect, useTransition, useCallback, useRef } from 'react'
+import { useState, useEffect, useTransition, useCallback, useRef, memo } from 'react'
 import Link from 'next/link'
 import { formatDistanceToNow } from 'date-fns'
 import { pt } from 'date-fns/locale'
@@ -200,7 +200,7 @@ interface RFPJobRowProps {
   onAnimationComplete: (jobId: string) => void
 }
 
-function RFPJobRow({ job, isDeleting, onViewPDF, onDeleteClick, onAnimationComplete }: RFPJobRowProps) {
+const RFPJobRow = memo(function RFPJobRow({ job, isDeleting, onViewPDF, onDeleteClick, onAnimationComplete }: RFPJobRowProps) {
   const [animationPhase, setAnimationPhase] = useState<'normal' | 'collapsing'>('normal')
 
   // Start collapse animation when isDeleting becomes true
@@ -314,7 +314,7 @@ function RFPJobRow({ job, isDeleting, onViewPDF, onDeleteClick, onAnimationCompl
   ) : (
     <div>{content}</div>
   )
-}
+})
 
 export function RFPJobsList({ initialJobs, totalCount, initialState }: RFPJobsListProps) {
   const [jobs, setJobs] = useState<RFPJob[]>(initialJobs)

@@ -1,6 +1,6 @@
 'use client'
 
-import { useState, useEffect, useTransition } from 'react'
+import { useState, useEffect, useTransition, useMemo, useCallback, memo } from 'react'
 import { useQueryStates, parseAsInteger, parseAsString } from 'nuqs'
 import { Check, X, Loader2, SearchX, ArrowUpDown, ArrowUp, ArrowDown } from 'lucide-react'
 import {
@@ -91,14 +91,99 @@ interface SortableHeaderProps {
   className?: string
 }
 
-function SortableHeader({ column, label, sortBy, sortDir, onSort, className = '' }: SortableHeaderProps) {
+// Pure sort/filter functions moved outside component for performance
+const sortItems = (itemsList: RFPItemWithMatches[], column: SortColumn, direction: SortDirection): RFPItemWithMatches[] => {
+  return [...itemsList].sort((a, b) => {
+    const isAsc = direction === 'asc'
+    let comparison = 0
+
+    switch (column) {
+      case 'lote':
+        comparison = String(a.lote_pedido ?? '').localeCompare(String(b.lote_pedido ?? ''), 'pt')
+        if (comparison === 0) {
+          comparison = (a.posicao_pedido ?? 0) - (b.posicao_pedido ?? 0)
+        }
+        break
+      case 'pos':
+        comparison = (a.posicao_pedido ?? 0) - (b.posicao_pedido ?? 0)
+        break
+      case 'artigo':
+        comparison = String(a.artigo_pedido ?? '').localeCompare(String(b.artigo_pedido ?? ''), 'pt')
+        break
+      case 'descricao':
+        comparison = String(a.descricao_pedido ?? '').localeCompare(String(b.descricao_pedido ?? ''), 'pt')
+        break
+      case 'status':
+        comparison = String(a.review_status ?? '').localeCompare(String(b.review_status ?? ''), 'pt')
+        break
+      default:
+        comparison = 0
+    }
+
+    return isAsc ? comparison : -comparison
+  })
+}
+
+const filterBySearch = (itemsList: RFPItemWithMatches[], searchTerm: string): RFPItemWithMatches[] => {
+  if (!searchTerm) return itemsList
+  const searchLower = searchTerm.toLowerCase()
+  return itemsList.filter(item => {
+    const rfpMatch =
+      item.artigo_pedido?.toLowerCase().includes(searchLower) ||
+      item.descricao_pedido?.toLowerCase().includes(searchLower)
+    if (rfpMatch) return true
+
+    const acceptedMatch = item.rfp_match_suggestions.find(m => m.status === 'accepted')
+    if (acceptedMatch) {
+      return (
+        acceptedMatch.artigo?.toLowerCase().includes(searchLower) ||
+        acceptedMatch.descricao?.toLowerCase().includes(searchLower)
+      )
+    }
+
+    return false
+  })
+}
+
+const filterByStatus = (itemsList: RFPItemWithMatches[], statusFilter: StatusFilter): RFPItemWithMatches[] => {
+  if (statusFilter === 'all') return itemsList
+  return itemsList.filter(item => {
+    const hasSuggestions = item.rfp_match_suggestions.length > 0
+    const hasPerfectMatch = item.rfp_match_suggestions.some(m => m.similarity_score >= 0.9999)
+
+    switch (statusFilter) {
+      case 'pending':
+        return item.review_status === 'pending' && hasSuggestions && !hasPerfectMatch
+      case 'matched':
+        return (
+          item.review_status === 'accepted' ||
+          item.review_status === 'manual' ||
+          (item.review_status === 'pending' && hasPerfectMatch)
+        )
+      case 'no_match':
+        return item.review_status === 'rejected' || (item.review_status === 'pending' && !hasSuggestions)
+      default:
+        return true
+    }
+  })
+}
+
+const applyFilters = (itemsList: RFPItemWithMatches[], searchTerm: string, statusFilter: StatusFilter): RFPItemWithMatches[] => {
+  let result = filterByStatus(itemsList, statusFilter)
+  result = filterBySearch(result, searchTerm)
+  return result
+}
+
+const SortableHeader = memo(function SortableHeader({ column, label, sortBy, sortDir, onSort, className = '' }: SortableHeaderProps) {
   const isActive = sortBy === column
   const isAsc = sortDir === 'asc'
+
+  const handleClick = useCallback(() => onSort(column), [column, onSort])
 
   return (
     <button
       type="button"
-      onClick={() => onSort(column)}
+      onClick={handleClick}
       className={cn("inline-flex items-center hover:text-foreground transition-colors cursor-pointer", className)}
     >
       {label}
@@ -109,7 +194,7 @@ function SortableHeader({ column, label, sortBy, sortDir, onSort, className = ''
       )}
     </button>
   )
-}
+})
 
 export function MatchReviewTable({ jobId, items, totalCount, initialState, onItemUpdate }: MatchReviewTableProps) {
   // Get confirmation state from context
@@ -137,7 +222,7 @@ export function MatchReviewTable({ jobId, items, totalCount, initialState, onIte
   }, [items])
 
   // Wrapped onItemUpdate that also updates local state immediately
-  const handleItemUpdate = (updatedItem: RFPItemWithMatches) => {
+  const handleItemUpdate = useCallback((updatedItem: RFPItemWithMatches) => {
     // Update local state immediately for instant feedback
     setLocalItems(prev => prev.map(item =>
       item.id === updatedItem.id ? updatedItem : item
@@ -147,7 +232,7 @@ export function MatchReviewTable({ jobId, items, totalCount, initialState, onIte
     ))
     // Also notify parent
     onItemUpdate(updatedItem)
-  }
+  }, [onItemUpdate])
 
   // URL state management with startTransition for proper server component re-render
   const [{ page, pageSize, search, status, sortBy, sortDir }, setParams] = useQueryStates(
@@ -165,100 +250,8 @@ export function MatchReviewTable({ jobId, items, totalCount, initialState, onIte
     }
   )
 
-  // Client-side sorting function
-  const sortItems = (itemsList: RFPItemWithMatches[], column: SortColumn, direction: SortDirection): RFPItemWithMatches[] => {
-    return [...itemsList].sort((a, b) => {
-      const isAsc = direction === 'asc'
-      let comparison = 0
-
-      switch (column) {
-        case 'lote':
-          // Sort by lote (string), then position (number)
-          comparison = String(a.lote_pedido ?? '').localeCompare(String(b.lote_pedido ?? ''), 'pt')
-          if (comparison === 0) {
-            comparison = (a.posicao_pedido ?? 0) - (b.posicao_pedido ?? 0)
-          }
-          break
-        case 'pos':
-          comparison = (a.posicao_pedido ?? 0) - (b.posicao_pedido ?? 0)
-          break
-        case 'artigo':
-          comparison = String(a.artigo_pedido ?? '').localeCompare(String(b.artigo_pedido ?? ''), 'pt')
-          break
-        case 'descricao':
-          comparison = String(a.descricao_pedido ?? '').localeCompare(String(b.descricao_pedido ?? ''), 'pt')
-          break
-        case 'status':
-          comparison = String(a.review_status ?? '').localeCompare(String(b.review_status ?? ''), 'pt')
-          break
-        default:
-          comparison = 0
-      }
-
-      return isAsc ? comparison : -comparison
-    })
-  }
-
-  // Client-side search filtering function
-  const filterBySearch = (itemsList: RFPItemWithMatches[], searchTerm: string): RFPItemWithMatches[] => {
-    if (!searchTerm) return itemsList
-    const searchLower = searchTerm.toLowerCase()
-    return itemsList.filter(item => {
-      // Check RFP side
-      const rfpMatch =
-        item.artigo_pedido?.toLowerCase().includes(searchLower) ||
-        item.descricao_pedido?.toLowerCase().includes(searchLower)
-      if (rfpMatch) return true
-
-      // Check matched product side (accepted suggestions)
-      const acceptedMatch = item.rfp_match_suggestions.find(m => m.status === 'accepted')
-      if (acceptedMatch) {
-        return (
-          acceptedMatch.artigo?.toLowerCase().includes(searchLower) ||
-          acceptedMatch.descricao?.toLowerCase().includes(searchLower)
-        )
-      }
-
-      return false
-    })
-  }
-
-  // Client-side status filtering function (matches server-side logic)
-  const filterByStatus = (itemsList: RFPItemWithMatches[], statusFilter: StatusFilter): RFPItemWithMatches[] => {
-    if (statusFilter === 'all') return itemsList
-    return itemsList.filter(item => {
-      const hasSuggestions = item.rfp_match_suggestions.length > 0
-      const hasPerfectMatch = item.rfp_match_suggestions.some(m => m.similarity_score >= 0.9999)
-
-      switch (statusFilter) {
-        case 'pending':
-          // Pending items with suggestions to review (no 100% match)
-          return item.review_status === 'pending' && hasSuggestions && !hasPerfectMatch
-        case 'matched':
-          // Items with accepted/manual match OR perfect match
-          return (
-            item.review_status === 'accepted' ||
-            item.review_status === 'manual' ||
-            (item.review_status === 'pending' && hasPerfectMatch)
-          )
-        case 'no_match':
-          // Rejected items OR pending items with no suggestions
-          return item.review_status === 'rejected' || (item.review_status === 'pending' && !hasSuggestions)
-        default:
-          return true
-      }
-    })
-  }
-
-  // Combined filter function
-  const applyFilters = (itemsList: RFPItemWithMatches[], searchTerm: string, statusFilter: StatusFilter): RFPItemWithMatches[] => {
-    let result = filterByStatus(itemsList, statusFilter)
-    result = filterBySearch(result, searchTerm)
-    return result
-  }
-
-  // URL state handlers with instant client-side updates
-  const handleSearchChange = (value: string) => {
+  // URL state handlers with instant client-side updates (memoized for performance)
+  const handleSearchChange = useCallback((value: string) => {
     // Instant client-side filter
     const filtered = applyFilters(originalItems, value, (status as StatusFilter) || 'all')
     const sorted = sortItems(filtered, sortBy as SortColumn, sortDir as SortDirection)
@@ -267,9 +260,9 @@ export function MatchReviewTable({ jobId, items, totalCount, initialState, onIte
     startTransition(() => {
       setParams({ search: value || null, page: 1 })
     })
-  }
+  }, [originalItems, status, sortBy, sortDir, setParams])
 
-  const handleStatusChange = (newStatus: StatusFilter) => {
+  const handleStatusChange = useCallback((newStatus: StatusFilter) => {
     // Instant client-side filter
     const filtered = applyFilters(originalItems, search, newStatus)
     const sorted = sortItems(filtered, sortBy as SortColumn, sortDir as SortDirection)
@@ -278,9 +271,9 @@ export function MatchReviewTable({ jobId, items, totalCount, initialState, onIte
     startTransition(() => {
       setParams({ status: newStatus === 'all' ? null : newStatus, page: 1 })
     })
-  }
+  }, [originalItems, search, sortBy, sortDir, setParams])
 
-  const handleSortChange = (column: SortColumn) => {
+  const handleSortChange = useCallback((column: SortColumn) => {
     const newDir = sortBy === column && sortDir === 'asc' ? 'desc' : 'asc'
     // Instant client-side sort
     setLocalItems(prev => sortItems(prev, column, newDir))
@@ -292,24 +285,24 @@ export function MatchReviewTable({ jobId, items, totalCount, initialState, onIte
         page: 1
       })
     })
-  }
+  }, [sortBy, sortDir, setParams])
 
-  const handlePageChange = (newPage: number) => {
+  const handlePageChange = useCallback((newPage: number) => {
     setParams({ page: newPage === 1 ? null : newPage })
-  }
+  }, [setParams])
 
-  const handlePageSizeChange = (newPageSize: number) => {
+  const handlePageSizeChange = useCallback((newPageSize: number) => {
     setParams({ pageSize: newPageSize === 25 ? null : newPageSize, page: 1 })
-  }
+  }, [setParams])
 
-  const handleClearFilters = () => {
+  const handleClearFilters = useCallback(() => {
     // Restore original items with current sort (no filters)
     const sorted = sortItems(originalItems, sortBy as SortColumn, sortDir as SortDirection)
     setLocalItems(sorted)
     startTransition(() => {
       setParams({ search: null, status: null, page: 1 })
     })
-  }
+  }, [originalItems, sortBy, sortDir, setParams])
 
   // Empty state for search results
   const isSearchEmpty = localItems.length === 0 && (search || status !== 'all')
@@ -513,7 +506,7 @@ interface ItemRowProps {
   columnWidths: Record<string, number>
 }
 
-function ItemRow({ jobId, item, isConfirmed, onItemUpdate, columnWidths }: ItemRowProps) {
+const ItemRow = memo(function ItemRow({ jobId, item, isConfirmed, onItemUpdate, columnWidths }: ItemRowProps) {
   const [isPopoverOpen, setIsPopoverOpen] = useState(false)
   const [showManualDialog, setShowManualDialog] = useState(false)
 
@@ -786,7 +779,7 @@ function ItemRow({ jobId, item, isConfirmed, onItemUpdate, columnWidths }: ItemR
       </TableCell>
     </TableRow>
   )
-}
+})
 
 interface SuggestionItemProps {
   jobId: string
@@ -796,7 +789,7 @@ interface SuggestionItemProps {
   onActionComplete: (updatedItem?: RFPItemWithMatches, actionType?: 'accept' | 'reject') => void
 }
 
-function SuggestionItem({ jobId, rfpItemId, match, isPerfectMatch, onActionComplete }: SuggestionItemProps) {
+const SuggestionItem = memo(function SuggestionItem({ jobId, rfpItemId, match, isPerfectMatch, onActionComplete }: SuggestionItemProps) {
   const [isAcceptPending, setIsAcceptPending] = useState(false)
   const [isRejectPending, setIsRejectPending] = useState(false)
 
@@ -952,4 +945,4 @@ function SuggestionItem({ jobId, rfpItemId, match, isPerfectMatch, onActionCompl
       </div>
     </div>
   )
-}
+})

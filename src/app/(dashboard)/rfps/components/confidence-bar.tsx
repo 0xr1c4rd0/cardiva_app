@@ -23,7 +23,7 @@ export function ConfidenceBar({ score, className }: ConfidenceBarProps) {
       <div className="h-2 flex-1 overflow-hidden rounded-sm bg-muted">
         {/* Inner bar (fill) with smooth transition */}
         <div
-          className="h-full bg-primary transition-all duration-300"
+          className="h-full bg-primary transition-[width] duration-300"
           style={{ width: `${percentage}%` }}
         />
       </div>
