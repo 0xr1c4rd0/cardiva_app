@@ -145,7 +145,7 @@ export function RFPStats({ initialKPIs }: RFPStatsProps) {
   return (
     <div className="grid gap-4 md:grid-cols-4">
       <KPIStatsCard
-        label="Total de Concursos"
+        label="Concursos Processados"
         value={isLoading ? '-' : data.totalCount}
         icon={FileText}
         iconContainerClassName="bg-slate-100 text-slate-600"
