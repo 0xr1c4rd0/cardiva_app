@@ -60,11 +60,13 @@ export function DashboardVolumeChart({ data }: DashboardVolumeChartProps) {
               dataKey="month"
               axisLine={false}
               tickLine={false}
+              tickMargin={8}
               tick={{ fontSize: 12, fill: 'hsl(var(--muted-foreground))' }}
             />
             <YAxis
               axisLine={false}
               tickLine={false}
+              tickMargin={8}
               tick={{ fontSize: 12, fill: 'hsl(var(--muted-foreground))' }}
               allowDecimals={false}
             />
