@@ -11,14 +11,24 @@ export interface DashboardStats {
   // This month
   rfpsThisMonth: number
   matchesThisMonth: number
-  // Chart data
-  monthlyData: Array<{
+  // Chart data - Volume (RFPs over time)
+  monthlyVolume: Array<{
     month: string
     rfps: number
-    matches: number
   }>
-  // Recent RFPs
-  recentRFPs: Array<{
+  // Chart data - Efficiency (acceptance rate trend)
+  monthlyEfficiency: Array<{
+    month: string
+    rate: number
+  }>
+  // Needs Attention - Por Rever jobs
+  needsAttention: Array<{
+    id: string
+    file_name: string
+    created_at: string
+  }>
+  // Recent Activity - excluding needs-attention
+  recentActivity: Array<{
     id: string
     file_name: string
     status: 'pending' | 'processing' | 'completed' | 'failed'
@@ -57,7 +67,8 @@ export async function getDashboardStats(): Promise<DashboardStats> {
     rejectedCountResult,
     matchesThisMonthResult,
     monthlyRFPsResult,
-    acceptedMatchesForChartResult,
+    monthlyAcceptedResult,
+    monthlyRejectedResult,
     recentRFPsResult,
   ] = await Promise.all([
     // Total completed RFPs
@@ -95,7 +106,7 @@ export async function getDashboardStats(): Promise<DashboardStats> {
       .eq('status', 'accepted')
       .gte('created_at', startOfMonth.toISOString()),
 
-    // Monthly RFP counts for chart (last 6 months)
+    // Monthly RFP counts for volume chart (last 6 months)
     supabase
       .from('rfp_upload_jobs')
       .select('created_at')
@@ -103,20 +114,26 @@ export async function getDashboardStats(): Promise<DashboardStats> {
       .gte('created_at', sixMonthsAgo.toISOString())
       .order('created_at', { ascending: true }),
 
-    // PERFORMANCE: Only fetch accepted matches for chart (not all matches)
-    // Limited to last 6 months for chart data
+    // Monthly accepted matches for efficiency chart
     supabase
       .from('rfp_match_suggestions')
       .select('created_at')
       .eq('status', 'accepted')
       .gte('created_at', sixMonthsAgo.toISOString()),
 
-    // Recent RFPs for activity list
+    // Monthly rejected matches for efficiency chart
+    supabase
+      .from('rfp_match_suggestions')
+      .select('created_at')
+      .eq('status', 'rejected')
+      .gte('created_at', sixMonthsAgo.toISOString()),
+
+    // Recent RFPs for activity list (fetch more to split between lists)
     supabase
       .from('rfp_upload_jobs')
       .select('id, file_name, status, confirmed_at, created_at')
       .order('created_at', { ascending: false })
-      .limit(5),
+      .limit(10),
   ])
 
   // Process match statistics using COUNT results
@@ -130,18 +147,35 @@ export async function getDashboardStats(): Promise<DashboardStats> {
   // Matches this month from COUNT
   const matchesThisMonth = matchesThisMonthResult.count ?? 0
 
-  // Process monthly data for chart
-  const monthlyData = processMonthlyData(
+  // Process monthly volume data for chart
+  const monthlyVolume = processMonthlyVolume(
     monthlyRFPsResult.data ?? [],
-    acceptedMatchesForChartResult.data ?? [],
+    sixMonthsAgo
+  )
+
+  // Process monthly efficiency data for chart
+  const monthlyEfficiency = processMonthlyEfficiency(
+    monthlyAcceptedResult.data ?? [],
+    monthlyRejectedResult.data ?? [],
     sixMonthsAgo
   )
 
   // Process recent RFPs with review status
-  const recentRFPs = await addReviewStatusToJobs(
+  const recentRFPsWithStatus = await addReviewStatusToJobs(
     supabase,
     recentRFPsResult.data ?? []
   )
+
+  // Split into needs attention and recent activity
+  const needsAttention = recentRFPsWithStatus
+    .filter(rfp => rfp.review_status === 'por_rever')
+    .slice(0, 5)
+    .map(({ id, file_name, created_at }) => ({ id, file_name, created_at }))
+
+  const needsAttentionIds = new Set(needsAttention.map(r => r.id))
+  const recentActivity = recentRFPsWithStatus
+    .filter(rfp => !needsAttentionIds.has(rfp.id))
+    .slice(0, 4)
 
   return {
     totalRFPs: totalRFPsResult.count ?? 0,
@@ -150,8 +184,10 @@ export async function getDashboardStats(): Promise<DashboardStats> {
     acceptanceRate,
     rfpsThisMonth: rfpsThisMonthResult.count ?? 0,
     matchesThisMonth,
-    monthlyData,
-    recentRFPs,
+    monthlyVolume,
+    monthlyEfficiency,
+    needsAttention,
+    recentActivity,
   }
 }
 
@@ -208,14 +244,13 @@ async function getPendingReviewCount(
 }
 
 /**
- * Process monthly data for the chart
+ * Process monthly volume data for the chart (RFPs over time)
  */
-function processMonthlyData(
+function processMonthlyVolume(
   rfps: Array<{ created_at: string }>,
-  acceptedMatches: Array<{ created_at: string }>,
   startDate: Date
-): DashboardStats['monthlyData'] {
-  const months: DashboardStats['monthlyData'] = []
+): DashboardStats['monthlyVolume'] {
+  const months: DashboardStats['monthlyVolume'] = []
   const now = new Date()
 
   // Generate last 6 months
@@ -225,12 +260,41 @@ function processMonthlyData(
     const monthLabel = date.toLocaleDateString('pt-PT', { month: 'short' })
 
     const rfpCount = rfps.filter(r => r.created_at.startsWith(monthKey)).length
-    const matchCount = acceptedMatches.filter(m => m.created_at.startsWith(monthKey)).length
 
     months.push({
       month: monthLabel.charAt(0).toUpperCase() + monthLabel.slice(1),
       rfps: rfpCount,
-      matches: matchCount,
+    })
+  }
+
+  return months
+}
+
+/**
+ * Process monthly efficiency data for the chart (acceptance rate trend)
+ */
+function processMonthlyEfficiency(
+  accepted: Array<{ created_at: string }>,
+  rejected: Array<{ created_at: string }>,
+  startDate: Date
+): DashboardStats['monthlyEfficiency'] {
+  const months: DashboardStats['monthlyEfficiency'] = []
+  const now = new Date()
+
+  // Generate last 6 months
+  for (let i = 5; i >= 0; i--) {
+    const date = new Date(now.getFullYear(), now.getMonth() - i, 1)
+    const monthKey = date.toISOString().slice(0, 7) // YYYY-MM
+    const monthLabel = date.toLocaleDateString('pt-PT', { month: 'short' })
+
+    const acceptedCount = accepted.filter(m => m.created_at.startsWith(monthKey)).length
+    const rejectedCount = rejected.filter(m => m.created_at.startsWith(monthKey)).length
+    const total = acceptedCount + rejectedCount
+    const rate = total > 0 ? Math.round((acceptedCount / total) * 100) : 0
+
+    months.push({
+      month: monthLabel.charAt(0).toUpperCase() + monthLabel.slice(1),
+      rate,
     })
   }
 
@@ -249,7 +313,7 @@ async function addReviewStatusToJobs(
     confirmed_at: string | null
     created_at: string
   }>
-): Promise<DashboardStats['recentRFPs']> {
+): Promise<DashboardStats['recentActivity']> {
   const completedUnconfirmedIds = jobs
     .filter(j => j.status === 'completed' && !j.confirmed_at)
     .map(j => j.id)
@@ -295,7 +359,7 @@ async function addReviewStatusToJobs(
   return jobs.map(job => ({
     id: job.id,
     file_name: job.file_name,
-    status: job.status as DashboardStats['recentRFPs'][0]['status'],
+    status: job.status as DashboardStats['recentActivity'][0]['status'],
     review_status: job.status === 'completed'
       ? job.confirmed_at
         ? 'confirmado'
@@ -313,7 +377,9 @@ function getEmptyStats(): DashboardStats {
     acceptanceRate: 0,
     rfpsThisMonth: 0,
     matchesThisMonth: 0,
-    monthlyData: [],
-    recentRFPs: [],
+    monthlyVolume: [],
+    monthlyEfficiency: [],
+    needsAttention: [],
+    recentActivity: [],
   }
 }
