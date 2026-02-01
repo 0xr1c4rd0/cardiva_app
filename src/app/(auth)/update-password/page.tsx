@@ -11,7 +11,6 @@ import {
   CardContent,
   CardDescription,
   CardHeader,
-  CardTitle,
 } from '@/components/ui/card'
 import { Alert, AlertDescription } from '@/components/ui/alert'
 
@@ -37,10 +36,11 @@ export default function UpdatePasswordPage() {
 
   return (
     <div className="flex min-h-screen items-center justify-center">
-      <Card className="w-full max-w-md">
-        <CardHeader>
-          <CardTitle>Atualizar Palavra-passe</CardTitle>
-          <CardDescription>
+      <Card className="w-full max-w-md py-6">
+        <CardHeader className="gap-0">
+          <h1 className="text-3xl font-bold text-emerald-600 mb-2">cardiva AI</h1>
+          <h2 className="text-2xl font-semibold">Atualizar Palavra-passe</h2>
+          <CardDescription className="mt-2">
             Introduza a sua nova palavra-passe abaixo
           </CardDescription>
         </CardHeader>

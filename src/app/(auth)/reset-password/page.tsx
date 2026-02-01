@@ -12,7 +12,6 @@ import {
   CardDescription,
   CardFooter,
   CardHeader,
-  CardTitle,
 } from '@/components/ui/card'
 import { Alert, AlertDescription } from '@/components/ui/alert'
 
@@ -24,10 +23,11 @@ export default function ResetPasswordPage() {
 
   return (
     <div className="flex min-h-screen items-center justify-center">
-      <Card className="w-full max-w-md">
-        <CardHeader>
-          <CardTitle>Recuperar Palavra-passe</CardTitle>
-          <CardDescription>
+      <Card className="w-full max-w-md py-6">
+        <CardHeader className="gap-0">
+          <h1 className="text-3xl font-bold text-emerald-600 mb-2">cardiva AI</h1>
+          <h2 className="text-2xl font-semibold">Recuperar Palavra-passe</h2>
+          <CardDescription className="mt-2">
             Introduza o seu endereço de email e enviaremos um link para
             recuperar a sua palavra-passe
           </CardDescription>
@@ -56,7 +56,7 @@ export default function ResetPasswordPage() {
               />
             </div>
           </CardContent>
-          <CardFooter className="flex flex-col space-y-4">
+          <CardFooter className="flex flex-col space-y-4 pt-2">
             <Button type="submit" className="w-full" disabled={isPending}>
               {isPending ? 'A enviar...' : 'Enviar Link de Recuperação'}
             </Button>
