@@ -22,7 +22,10 @@ const MAX_VISIBLE_PROGRESS = 3
 const FILL_TO_100_DURATION = 600 // Smooth fill to 100%
 const SHOW_100_DURATION = 400    // Brief pause at 100%
 const COLLAPSE_DURATION = 400    // Collapse out
-const PROGRESS_INTERPOLATION_DURATION = 300 // Smooth transition between progress values
+
+// Linear progress animation constants
+const LINEAR_TICK_MS = 100           // Animation tick interval
+const CHECKPOINT_GROWTH_MS = 15000   // Time to grow one checkpoint (15s per item)
 
 interface UploadProgressItemProps {
   upload: QueuedUpload
@@ -37,51 +40,111 @@ function UploadProgressItem({ upload, onRemoveComplete }: UploadProgressItemProp
   // This prevents the effect from re-triggering and cancelling the animation
   const hasStartedCompletionRef = useRef(false)
   const animationFrameRef = useRef<number | null>(null)
-  const interpolationFrameRef = useRef<number | null>(null)
+  const linearIntervalRef = useRef<NodeJS.Timeout | null>(null)
+  const confirmedProgressRef = useRef(0)
   const lastProgressRef = useRef(0)
 
-  // Sync with DB progress via smooth interpolation
+  // Checkpoint-based linear progress animation
+  // Progress grows linearly toward next checkpoint, then STOPS and WAITS for confirmation
   useEffect(() => {
     // Don't update if we're in completion animation
     if (hasStartedCompletionRef.current) return
-    if (upload.status === 'completed' || upload.status === 'failed') return
+    if (upload.status !== 'processing') return
 
-    // Get target progress from DB, ensure minimum 2% when processing to show activity
-    const dbProgress = upload.progressPercent ?? 0
-    const targetProgress = upload.status === 'processing' ? Math.max(2, dbProgress) : dbProgress
+    const confirmed = upload.progressPercent ?? 0
+    const itemsTotal = upload.itemsTotal
+    confirmedProgressRef.current = confirmed
 
-    // Cancel any existing interpolation
-    if (interpolationFrameRef.current) {
-      cancelAnimationFrame(interpolationFrameRef.current)
+    // Clear any existing animation
+    if (linearIntervalRef.current) {
+      clearInterval(linearIntervalRef.current)
+      linearIntervalRef.current = null
     }
 
-    const startProgress = lastProgressRef.current
-    const startTime = performance.now()
+    // Phase 1: No items_total yet - grow from 0% to 5% over 15s, then wait
+    if (!itemsTotal || itemsTotal <= 0) {
+      const initialCheckpoint = 5 // First checkpoint is 5%
+      const incrementPerTick = initialCheckpoint / (CHECKPOINT_GROWTH_MS / LINEAR_TICK_MS)
 
-    const interpolate = (currentTime: number) => {
-      const elapsed = currentTime - startTime
-      const progress = Math.min(1, elapsed / PROGRESS_INTERPOLATION_DURATION)
+      // If confirmed >= 5%, just show confirmed (we're past the initial phase)
+      if (confirmed >= initialCheckpoint) {
+        setAnimatedProgress(confirmed)
+        lastProgressRef.current = confirmed
+        return
+      }
 
-      // Ease out cubic for smooth deceleration
-      const eased = 1 - Math.pow(1 - progress, 3)
-      const newProgress = startProgress + (targetProgress - startProgress) * eased
+      // Start linear growth toward 5%
+      linearIntervalRef.current = setInterval(() => {
+        setAnimatedProgress(prev => {
+          // Stop at 5% and wait for confirmation
+          if (prev >= initialCheckpoint) {
+            if (linearIntervalRef.current) {
+              clearInterval(linearIntervalRef.current)
+              linearIntervalRef.current = null
+            }
+            return initialCheckpoint
+          }
 
-      setAnimatedProgress(newProgress)
-      lastProgressRef.current = newProgress
+          const newProgress = prev + incrementPerTick
+          lastProgressRef.current = newProgress
+          return Math.min(newProgress, initialCheckpoint)
+        })
+      }, LINEAR_TICK_MS)
 
-      if (progress < 1) {
-        interpolationFrameRef.current = requestAnimationFrame(interpolate)
+      return () => {
+        if (linearIntervalRef.current) {
+          clearInterval(linearIntervalRef.current)
+          linearIntervalRef.current = null
+        }
       }
     }
 
-    interpolationFrameRef.current = requestAnimationFrame(interpolate)
+    // Phase 2: items_total available - use checkpoint-based animation
+    // Formula: percentPerItem = 85 / items_total (n8n goes from 5% to 90%)
+    const percentPerItem = 85 / itemsTotal
+    const nextCheckpoint = confirmed + percentPerItem
+    const incrementPerTick = percentPerItem / (CHECKPOINT_GROWTH_MS / LINEAR_TICK_MS)
+
+    // If display is behind confirmed, jump to confirmed
+    if (lastProgressRef.current < confirmed) {
+      setAnimatedProgress(confirmed)
+      lastProgressRef.current = confirmed
+    }
+
+    // Start linear growth toward next checkpoint
+    linearIntervalRef.current = setInterval(() => {
+      setAnimatedProgress(prev => {
+        // Stop at checkpoint and wait for next confirmation
+        if (prev >= nextCheckpoint) {
+          if (linearIntervalRef.current) {
+            clearInterval(linearIntervalRef.current)
+            linearIntervalRef.current = null
+          }
+          return nextCheckpoint
+        }
+
+        // Stop if we've grown one full checkpoint beyond confirmed (waiting for confirmation)
+        if (prev >= confirmedProgressRef.current + percentPerItem) {
+          if (linearIntervalRef.current) {
+            clearInterval(linearIntervalRef.current)
+            linearIntervalRef.current = null
+          }
+          return prev
+        }
+
+        const newProgress = prev + incrementPerTick
+        lastProgressRef.current = newProgress
+        return Math.min(newProgress, nextCheckpoint)
+      })
+    }, LINEAR_TICK_MS)
 
     return () => {
-      if (interpolationFrameRef.current) {
-        cancelAnimationFrame(interpolationFrameRef.current)
+      if (linearIntervalRef.current) {
+        clearInterval(linearIntervalRef.current)
+        linearIntervalRef.current = null
       }
     }
-  }, [upload.progressPercent, upload.status])
+  }, [upload.progressPercent, upload.itemsTotal, upload.status])
 
   // Trigger smooth fill to 100% when completed
   // Using ref to prevent re-triggering and cancellation
@@ -91,6 +154,12 @@ function UploadProgressItem({ upload, onRemoveComplete }: UploadProgressItemProp
 
     hasStartedCompletionRef.current = true
     setAnimationPhase('filling')
+
+    // Clear linear interval when entering completion animation
+    if (linearIntervalRef.current) {
+      clearInterval(linearIntervalRef.current)
+      linearIntervalRef.current = null
+    }
 
     // Capture current progress at the moment of completion
     const startProgress = animatedProgress
@@ -125,6 +194,10 @@ function UploadProgressItem({ upload, onRemoveComplete }: UploadProgressItemProp
     return () => {
       if (animationFrameRef.current) {
         cancelAnimationFrame(animationFrameRef.current)
+      }
+      if (linearIntervalRef.current) {
+        clearInterval(linearIntervalRef.current)
+        linearIntervalRef.current = null
       }
     }
   }, [upload.status]) // Only depend on upload.status, not animationPhase

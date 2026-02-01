@@ -21,6 +21,7 @@ export interface RFPUploadJob {
   last_edited_by: string | null
   review_status?: ReviewStatus
   progress_percent: number | null  // 0-90 from n8n, null when not started
+  items_total: number | null       // Total items from n8n, used for linear progress animation
 }
 
 // Multi-upload queue types
@@ -35,6 +36,7 @@ export interface QueuedUpload {
   fileName?: string       // For display when file is null (restored jobs)
   uploadingUntil?: Date   // Minimum time to show 'uploading' state (for pulsing animation)
   progressPercent?: number  // Last known progress from DB (0-90)
+  itemsTotal?: number      // Total items from n8n, cached for linear animation
 }
 
 // Split contexts for performance - components only re-render when their specific data changes
@@ -109,7 +111,7 @@ export function RFPUploadStatusProvider({ children }: RFPUploadStatusProviderPro
 
     const { data, error } = await supabase
       .from('rfp_upload_jobs')
-      .select('id, user_id, file_name, file_path, file_size, status, error_message, created_at, updated_at, completed_at, last_edited_by, progress_percent')
+      .select('id, user_id, file_name, file_path, file_size, status, error_message, created_at, updated_at, completed_at, last_edited_by, progress_percent, items_total')
       .in('status', ['pending', 'processing'])
       .order('created_at', { ascending: false })
       .limit(1)
@@ -163,17 +165,23 @@ export function RFPUploadStatusProvider({ children }: RFPUploadStatusProviderPro
                 item.jobId === newJob.id ? {
                   ...item,
                   status: 'processing' as const,
-                  progressPercent: newJob.progress_percent ?? item.progressPercent ?? 0
+                  progressPercent: newJob.progress_percent ?? item.progressPercent ?? 0,
+                  itemsTotal: newJob.items_total ?? item.itemsTotal
                 } : item
               ))
             }, remainingMs)
-            // Keep current status for now, but update progress
-            return { ...q, progressPercent: newJob.progress_percent ?? q.progressPercent ?? 0 }
+            // Keep current status for now, but update progress and itemsTotal
+            return {
+              ...q,
+              progressPercent: newJob.progress_percent ?? q.progressPercent ?? 0,
+              itemsTotal: newJob.items_total ?? q.itemsTotal
+            }
           }
           return {
             ...q,
             status: 'processing' as const,
-            progressPercent: newJob.progress_percent ?? q.progressPercent ?? 0
+            progressPercent: newJob.progress_percent ?? q.progressPercent ?? 0,
+            itemsTotal: newJob.items_total ?? q.itemsTotal
           }
         }
       }
@@ -318,7 +326,7 @@ export function RFPUploadStatusProvider({ children }: RFPUploadStatusProviderPro
     const restoreActiveJobs = async () => {
       const { data: activeJobs, error } = await supabase
         .from('rfp_upload_jobs')
-        .select('id, file_name, status, created_at, progress_percent')
+        .select('id, file_name, status, created_at, progress_percent, items_total')
         .in('status', ['pending', 'processing'])
         .order('created_at', { ascending: false })
         .limit(MAX_PARALLEL_UPLOADS)
@@ -344,8 +352,9 @@ export function RFPUploadStatusProvider({ children }: RFPUploadStatusProviderPro
               uploadingUntil: job.status === 'pending'
                 ? new Date(startTime.getTime() + MIN_UPLOADING_DURATION_MS)
                 : undefined,
-              // Restore progress from DB
+              // Restore progress and itemsTotal from DB
               progressPercent: job.progress_percent ?? 0,
+              itemsTotal: job.items_total ?? undefined,
             }
           })
 
