@@ -16,14 +16,13 @@ import { Button } from '@/components/ui/button'
 import { cn } from '@/lib/utils'
 import { useUploadQueue, type QueuedUpload } from '@/contexts/rfp-upload-status-context'
 
-// Estimated processing time: 3 minutes
-const ESTIMATED_TIME_MS = 3 * 60 * 1000
 const MAX_VISIBLE_PROGRESS = 3
 
 // Animation durations (ms)
 const FILL_TO_100_DURATION = 600 // Smooth fill to 100%
 const SHOW_100_DURATION = 400    // Brief pause at 100%
 const COLLAPSE_DURATION = 400    // Collapse out
+const PROGRESS_INTERPOLATION_DURATION = 300 // Smooth transition between progress values
 
 interface UploadProgressItemProps {
   upload: QueuedUpload
@@ -31,7 +30,6 @@ interface UploadProgressItemProps {
 }
 
 function UploadProgressItem({ upload, onRemoveComplete }: UploadProgressItemProps) {
-  const [elapsedTime, setElapsedTime] = useState(0)
   const [animatedProgress, setAnimatedProgress] = useState(0)
   const [animationPhase, setAnimationPhase] = useState<'active' | 'filling' | 'showing' | 'collapsing' | 'removed'>('active')
 
@@ -39,32 +37,51 @@ function UploadProgressItem({ upload, onRemoveComplete }: UploadProgressItemProp
   // This prevents the effect from re-triggering and cancelling the animation
   const hasStartedCompletionRef = useRef(false)
   const animationFrameRef = useRef<number | null>(null)
+  const interpolationFrameRef = useRef<number | null>(null)
+  const lastProgressRef = useRef(0)
 
-  // Calculate base progress (time-based, capped at 98%)
-  const baseProgress = Math.min(98, (elapsedTime / ESTIMATED_TIME_MS) * 100)
-
-  // Update elapsed time every second when processing
+  // Sync with DB progress via smooth interpolation
   useEffect(() => {
-    if (!upload.startedAt || upload.status === 'completed' || upload.status === 'failed') {
-      return
+    // Don't update if we're in completion animation
+    if (hasStartedCompletionRef.current) return
+    if (upload.status === 'completed' || upload.status === 'failed') return
+
+    // Get target progress from DB, ensure minimum 2% when processing to show activity
+    const dbProgress = upload.progressPercent ?? 0
+    const targetProgress = upload.status === 'processing' ? Math.max(2, dbProgress) : dbProgress
+
+    // Cancel any existing interpolation
+    if (interpolationFrameRef.current) {
+      cancelAnimationFrame(interpolationFrameRef.current)
     }
 
-    const startTime = upload.startedAt.getTime()
-    const initialElapsed = Date.now() - startTime
-    setElapsedTime(initialElapsed)
+    const startProgress = lastProgressRef.current
+    const startTime = performance.now()
 
-    const initialProgress = Math.min(98, (initialElapsed / ESTIMATED_TIME_MS) * 100)
-    setAnimatedProgress(initialProgress)
+    const interpolate = (currentTime: number) => {
+      const elapsed = currentTime - startTime
+      const progress = Math.min(1, elapsed / PROGRESS_INTERPOLATION_DURATION)
 
-    const interval = setInterval(() => {
-      const elapsed = Date.now() - startTime
-      setElapsedTime(elapsed)
-      const progress = Math.min(98, (elapsed / ESTIMATED_TIME_MS) * 100)
-      setAnimatedProgress(progress)
-    }, 1000)
+      // Ease out cubic for smooth deceleration
+      const eased = 1 - Math.pow(1 - progress, 3)
+      const newProgress = startProgress + (targetProgress - startProgress) * eased
 
-    return () => clearInterval(interval)
-  }, [upload.startedAt, upload.status])
+      setAnimatedProgress(newProgress)
+      lastProgressRef.current = newProgress
+
+      if (progress < 1) {
+        interpolationFrameRef.current = requestAnimationFrame(interpolate)
+      }
+    }
+
+    interpolationFrameRef.current = requestAnimationFrame(interpolate)
+
+    return () => {
+      if (interpolationFrameRef.current) {
+        cancelAnimationFrame(interpolationFrameRef.current)
+      }
+    }
+  }, [upload.progressPercent, upload.status])
 
   // Trigger smooth fill to 100% when completed
   // Using ref to prevent re-triggering and cancellation
@@ -132,10 +149,8 @@ function UploadProgressItem({ upload, onRemoveComplete }: UploadProgressItemProp
   // Don't render if removed
   if (animationPhase === 'removed') return null
 
-  // Display progress: use animated value when completing, otherwise base progress
-  const displayProgress = (upload.status === 'completed')
-    ? animatedProgress
-    : baseProgress
+  // Display progress: always use animatedProgress (interpolated from DB or completion animation)
+  const displayProgress = animatedProgress
 
   return (
     <div
