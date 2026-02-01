@@ -25,6 +25,7 @@ const COLLAPSE_DURATION = 400    // Collapse out
 
 // Linear progress animation constants
 const LINEAR_TICK_MS = 100           // Animation tick interval
+const INITIAL_PHASE_MS = 20000       // Time to grow from 0% to 5% (20s)
 const CHECKPOINT_GROWTH_MS = 15000   // Time to grow one checkpoint (15s per item)
 
 interface UploadProgressItemProps {
@@ -61,10 +62,10 @@ function UploadProgressItem({ upload, onRemoveComplete }: UploadProgressItemProp
       linearIntervalRef.current = null
     }
 
-    // Phase 1: No items_total yet - grow from 0% to 5% over 15s, then wait
+    // Phase 1: No items_total yet - grow from 0% to 5% over 20s, then wait
     if (!itemsTotal || itemsTotal <= 0) {
       const initialCheckpoint = 5 // First checkpoint is 5%
-      const incrementPerTick = initialCheckpoint / (CHECKPOINT_GROWTH_MS / LINEAR_TICK_MS)
+      const incrementPerTick = initialCheckpoint / (INITIAL_PHASE_MS / LINEAR_TICK_MS)
 
       // If confirmed >= 5%, just show confirmed (we're past the initial phase)
       if (confirmed >= initialCheckpoint) {
