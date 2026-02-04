@@ -287,7 +287,7 @@ function UploadProgressItem({ upload, onRemoveComplete }: UploadProgressItemProp
           />
           <div className="flex justify-between text-xs text-muted-foreground">
             <span>{Math.round(displayProgress)}%</span>
-            {!isAnimatingCompletion && !isCollapsing && <span>~2-3 min</span>}
+            {!isAnimatingCompletion && !isCollapsing && <span>~2-6 min</span>}
           </div>
         </div>
       )}
