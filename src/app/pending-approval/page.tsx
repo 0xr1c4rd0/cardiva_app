@@ -40,12 +40,13 @@ export default async function PendingApprovalPage() {
 
   return (
     <div className="flex min-h-screen items-center justify-center p-4">
-      <Card className="w-full max-w-md">
-        <CardHeader className="text-center">
+      <Card className="w-full max-w-md py-6">
+        <CardHeader className="text-center gap-0">
+          <h1 className="text-3xl font-bold text-emerald-600 mb-2">cardiva AI</h1>
           <div className="mx-auto mb-4 flex h-16 w-16 items-center justify-center rounded-sm bg-amber-100 dark:bg-amber-900">
             <Clock className="h-8 w-8 text-amber-600 dark:text-amber-400" />
           </div>
-          <CardTitle className="text-2xl">Conta Pendente de Aprovação</CardTitle>
+          <h2 className="text-2xl font-semibold">Conta Pendente de Aprovação</h2>
           <CardDescription className="mt-2">
             A sua conta foi criada mas requer aprovação de um administrador
             antes de poder aceder à aplicação.
@@ -66,7 +67,7 @@ export default async function PendingApprovalPage() {
             iniciar sessão assim que a sua conta for aprovada.
           </p>
         </CardContent>
-        <CardFooter className="flex flex-col gap-4">
+        <CardFooter className="flex flex-col gap-4 pt-2">
           <form action={logout} className="w-full">
             <Button type="submit" variant="outline" className="w-full">
               <LogOut className="mr-2 h-4 w-4" />

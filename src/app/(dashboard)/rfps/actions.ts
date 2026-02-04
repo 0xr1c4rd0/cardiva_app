@@ -33,6 +33,17 @@ export interface RFPUploadResult {
   jobId?: string
 }
 
+export interface QueueRFPResult {
+  success: boolean
+  error?: string
+  jobId?: string
+}
+
+export interface ProcessQueuedJobResult {
+  success: boolean
+  error?: string
+}
+
 /**
  * Check if a file with the given name already exists
  * Returns true if duplicate exists
@@ -474,4 +485,200 @@ export async function getRFPFileUrl(
   }
 
   return { success: true, url: urlData.signedUrl }
+}
+
+/**
+ * Queue an RFP file for upload - stores file in DB and storage immediately
+ * Returns jobId that can be used later to trigger processing
+ * This allows queued files to survive page refresh
+ */
+export async function queueRFPFile(
+  formData: FormData
+): Promise<QueueRFPResult> {
+  const supabase = await createClient()
+
+  // Verify user is authenticated
+  const {
+    data: { user },
+  } = await supabase.auth.getUser()
+  if (!user) {
+    return { success: false, error: 'Not authenticated' }
+  }
+
+  // Extract file from form data
+  const file = formData.get('file') as File | null
+
+  if (!file) {
+    return { success: false, error: 'No file provided' }
+  }
+
+  if (!file.name.toLowerCase().endsWith('.pdf')) {
+    return { success: false, error: 'Only PDF files are accepted' }
+  }
+
+  // Check for duplicate file name
+  const duplicateCheck = await checkDuplicateFileName(file.name)
+  if (duplicateCheck.isDuplicate) {
+    return {
+      success: false,
+      error: `O ficheiro "${file.name}" já foi carregado anteriormente.`,
+    }
+  }
+
+  // Create upload job record with status='queued'
+  const { data: job, error: jobError } = await supabase
+    .from('rfp_upload_jobs')
+    .insert({
+      user_id: user.id,
+      file_name: file.name,
+      file_size: file.size,
+      status: 'queued',
+    })
+    .select()
+    .single()
+
+  if (jobError) {
+    console.error('Failed to create queued RFP job:', jobError)
+    return {
+      success: false,
+      error: `Failed to create upload job: ${jobError.message}`,
+    }
+  }
+
+  // Read file buffer and upload to storage
+  const fileBuffer = await file.arrayBuffer()
+  const sanitizedFilename = sanitizeFilename(file.name)
+  const filePath = `${user.id}/${job.id}/${sanitizedFilename}`
+
+  const { error: storageError } = await supabase.storage
+    .from('rfp-uploads')
+    .upload(filePath, fileBuffer, {
+      contentType: 'application/pdf',
+      upsert: false,
+    })
+
+  if (storageError) {
+    console.error('Failed to upload queued file to storage:', storageError)
+    // Update job status to failed
+    await supabase
+      .from('rfp_upload_jobs')
+      .update({
+        status: 'failed',
+        error_message: `Storage upload failed: ${storageError.message}`,
+      })
+      .eq('id', job.id)
+
+    return {
+      success: false,
+      error: `Failed to store file: ${storageError.message}`,
+    }
+  }
+
+  // Update job with file path
+  await supabase
+    .from('rfp_upload_jobs')
+    .update({ file_path: filePath })
+    .eq('id', job.id)
+
+  // Revalidate RFPs page
+  revalidatePath('/rfps')
+
+  return {
+    success: true,
+    jobId: job.id,
+  }
+}
+
+/**
+ * Process a queued job - triggers n8n webhook for a job that's already in storage
+ * Updates status from 'queued' to 'pending'
+ */
+export async function processQueuedJob(
+  jobId: string
+): Promise<ProcessQueuedJobResult> {
+  const supabase = await createClient()
+
+  // Verify user is authenticated
+  const {
+    data: { user },
+  } = await supabase.auth.getUser()
+  if (!user) {
+    return { success: false, error: 'Not authenticated' }
+  }
+
+  // Fetch the queued job
+  const { data: job, error: fetchError } = await supabase
+    .from('rfp_upload_jobs')
+    .select('id, user_id, file_name, file_path, status')
+    .eq('id', jobId)
+    .single()
+
+  if (fetchError || !job) {
+    return { success: false, error: 'Job not found' }
+  }
+
+  // Verify job is in queued status
+  if (job.status !== 'queued') {
+    return { success: false, error: `Job is not queued (status: ${job.status})` }
+  }
+
+  // Verify file exists in storage
+  if (!job.file_path) {
+    return { success: false, error: 'Job has no file path' }
+  }
+
+  // Get signed URL for the file
+  const { data: urlData, error: urlError } = await supabase.storage
+    .from('rfp-uploads')
+    .createSignedUrl(job.file_path, 3600)
+
+  if (urlError || !urlData?.signedUrl) {
+    console.error('Failed to create signed URL for queued job:', urlError)
+    return { success: false, error: 'Failed to get file URL' }
+  }
+
+  // Download the file from storage to send to n8n
+  const response = await fetch(urlData.signedUrl)
+  if (!response.ok) {
+    return { success: false, error: 'Failed to download file from storage' }
+  }
+
+  const fileBuffer = await response.arrayBuffer()
+  const fileForWebhook = new File([fileBuffer], job.file_name, { type: 'application/pdf' })
+
+  // Update status to 'pending' before triggering webhook
+  const { error: updateError } = await supabase
+    .from('rfp_upload_jobs')
+    .update({ status: 'pending' })
+    .eq('id', jobId)
+
+  if (updateError) {
+    console.error('Failed to update job status to pending:', updateError)
+    return { success: false, error: 'Failed to update job status' }
+  }
+
+  // Trigger n8n webhook
+  try {
+    await triggerRFPWebhook({
+      jobId: job.id,
+      attachment_0: fileForWebhook,
+      fileName: job.file_name,
+      userId: job.user_id,
+      filePath: job.file_path,
+    })
+  } catch (error) {
+    console.error('Failed to trigger n8n webhook for queued job:', error)
+    // Keep status as pending - webhook can retry
+    await supabase
+      .from('rfp_upload_jobs')
+      .update({
+        error_message: 'Webhook trigger failed - will retry',
+      })
+      .eq('id', jobId)
+  }
+
+  // Revalidate RFPs page
+  revalidatePath('/rfps')
+
+  return { success: true }
 }

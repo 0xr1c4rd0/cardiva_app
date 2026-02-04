@@ -2,6 +2,7 @@
 
 import { useState, useEffect, useTransition, useCallback, useRef, memo } from 'react'
 import Link from 'next/link'
+import { useRouter } from 'next/navigation'
 import { formatDistanceToNow } from 'date-fns'
 import { pt } from 'date-fns/locale'
 import { useQueryStates, parseAsInteger, parseAsString } from 'nuqs'
@@ -41,7 +42,7 @@ interface RFPJob {
   id: string
   file_name: string
   file_size: number | null
-  status: 'pending' | 'processing' | 'completed' | 'failed'
+  status: 'queued' | 'pending' | 'processing' | 'completed' | 'failed'
   error_message: string | null
   created_at: string
   updated_at: string
@@ -127,8 +128,16 @@ async function fetchProfilesForUserIds(userIds: string[]): Promise<Map<string, P
   return profilesMap
 }
 
-// Processing status config (for pending/processing/failed jobs)
+// Processing status config (for queued/pending/processing/failed jobs)
 const statusConfig = {
+  queued: {
+    label: 'Na fila',
+    icon: Clock,
+    variant: 'secondary' as const,
+    className: 'text-muted-foreground',
+    badgeClassName: '',
+    dotVariant: 'pending' as const,
+  },
   pending: {
     label: 'Pendente',
     icon: Clock,
@@ -325,6 +334,7 @@ export function RFPJobsList({ initialJobs, totalCount, initialState }: RFPJobsLi
   const [jobToDelete, setJobToDelete] = useState<{ id: string; name: string } | null>(null)
   const [deletingIds, setDeletingIds] = useState<Set<string>>(new Set())
   const [isPending, startTransition] = useTransition()
+  const router = useRouter()
 
   // URL state management
   // shallow: false means setParams updates URL via Next.js router and triggers server re-render
@@ -345,6 +355,26 @@ export function RFPJobsList({ initialJobs, totalCount, initialState }: RFPJobsLi
     setJobs(initialJobs)
     setCurrentTotalCount(totalCount)
   }, [initialJobs, totalCount, initialState.search, initialState.sortBy, initialState.sortOrder, initialState.page])
+
+  // Refresh data when page becomes visible again (handles browser back/forward navigation)
+  // This ensures stale cached data gets updated with current server state
+  const wasHiddenRef = useRef(false)
+  useEffect(() => {
+    const handleVisibilityChange = () => {
+      if (document.hidden) {
+        wasHiddenRef.current = true
+      } else if (wasHiddenRef.current) {
+        // Page became visible after being hidden - refresh to get latest data
+        wasHiddenRef.current = false
+        router.refresh()
+      }
+    }
+
+    document.addEventListener('visibilitychange', handleVisibilityChange)
+    return () => {
+      document.removeEventListener('visibilitychange', handleVisibilityChange)
+    }
+  }, [router])
 
   // Helper to sort jobs: processing/pending at top, then by specified field/order
   const sortJobs = (jobsList: RFPJob[], field: 'file_name' | 'created_at' = 'created_at', order: 'asc' | 'desc' = 'desc'): RFPJob[] => {

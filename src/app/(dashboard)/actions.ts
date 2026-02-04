@@ -31,7 +31,7 @@ export interface DashboardStats {
   recentActivity: Array<{
     id: string
     file_name: string
-    status: 'pending' | 'processing' | 'completed' | 'failed'
+    status: 'queued' | 'pending' | 'processing' | 'completed' | 'failed'
     review_status: 'por_rever' | 'revisto' | 'confirmado' | null
     created_at: string
   }>

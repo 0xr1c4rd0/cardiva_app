@@ -3,7 +3,7 @@
 import { createContext, useContext, useEffect, useState, useCallback, useRef, useMemo, type ReactNode } from 'react'
 import { createClient } from '@/lib/supabase/client'
 import { toast } from 'sonner'
-import { triggerRFPUpload, getJobReviewStatus, checkDuplicateFileName } from '@/app/(dashboard)/rfps/actions'
+import { getJobReviewStatus, checkDuplicateFileName, queueRFPFile, processQueuedJob } from '@/app/(dashboard)/rfps/actions'
 
 export type ReviewStatus = 'por_rever' | 'revisto' | 'confirmado' | null
 
@@ -13,13 +13,15 @@ export interface RFPUploadJob {
   file_name: string
   file_path: string | null
   file_size: number | null
-  status: 'pending' | 'processing' | 'completed' | 'failed'
+  status: 'queued' | 'pending' | 'processing' | 'completed' | 'failed'
   error_message: string | null
   created_at: string
   updated_at: string
   completed_at: string | null
   last_edited_by: string | null
   review_status?: ReviewStatus
+  progress_percent: number | null  // 0-90 from n8n, null when not started
+  items_total: number | null       // Total items from n8n, used for linear progress animation
 }
 
 // Multi-upload queue types
@@ -33,6 +35,8 @@ export interface QueuedUpload {
   isRestored?: boolean    // True when restored from DB after page refresh
   fileName?: string       // For display when file is null (restored jobs)
   uploadingUntil?: Date   // Minimum time to show 'uploading' state (for pulsing animation)
+  progressPercent?: number  // Last known progress from DB (0-90)
+  itemsTotal?: number      // Total items from n8n, cached for linear animation
 }
 
 // Split contexts for performance - components only re-render when their specific data changes
@@ -107,7 +111,7 @@ export function RFPUploadStatusProvider({ children }: RFPUploadStatusProviderPro
 
     const { data, error } = await supabase
       .from('rfp_upload_jobs')
-      .select('id, user_id, file_name, file_path, file_size, status, error_message, created_at, updated_at, completed_at, last_edited_by')
+      .select('id, user_id, file_name, file_path, file_size, status, error_message, created_at, updated_at, completed_at, last_edited_by, progress_percent, items_total')
       .in('status', ['pending', 'processing'])
       .order('created_at', { ascending: false })
       .limit(1)
@@ -158,13 +162,27 @@ export function RFPUploadStatusProvider({ children }: RFPUploadStatusProviderPro
             const remainingMs = q.uploadingUntil.getTime() - Date.now()
             setTimeout(() => {
               setUploadQueue(prevQueue => prevQueue.map(item =>
-                item.jobId === newJob.id ? { ...item, status: 'processing' as const } : item
+                item.jobId === newJob.id ? {
+                  ...item,
+                  status: 'processing' as const,
+                  progressPercent: newJob.progress_percent ?? item.progressPercent ?? 0,
+                  itemsTotal: newJob.items_total ?? item.itemsTotal
+                } : item
               ))
             }, remainingMs)
-            // Keep current status for now
-            return q
+            // Keep current status for now, but update progress and itemsTotal
+            return {
+              ...q,
+              progressPercent: newJob.progress_percent ?? q.progressPercent ?? 0,
+              itemsTotal: newJob.items_total ?? q.itemsTotal
+            }
           }
-          return { ...q, status: 'processing' as const }
+          return {
+            ...q,
+            status: 'processing' as const,
+            progressPercent: newJob.progress_percent ?? q.progressPercent ?? 0,
+            itemsTotal: newJob.items_total ?? q.itemsTotal
+          }
         }
       }
       return q
@@ -235,6 +253,7 @@ export function RFPUploadStatusProvider({ children }: RFPUploadStatusProviderPro
   }, [])
 
   // Queue files for upload (max 10 total active)
+  // Files are persisted to DB + Storage immediately so they survive page refresh
   const queueFiles = useCallback(async (files: File[]) => {
     // Check for duplicates in queue first
     const queuedFileNames = new Set(uploadQueue.map(q => q.fileName))
@@ -278,40 +297,74 @@ export function RFPUploadStatusProvider({ children }: RFPUploadStatusProviderPro
 
     if (filesToQueue.length === 0) return
 
-    setUploadQueue(prev => {
-      // Count current active uploads (queued + uploading + processing)
-      const currentCount = prev.filter(
-        q => q.status === 'queued' || q.status === 'uploading' || q.status === 'processing'
-      ).length
-      const available = MAX_CONCURRENT - currentCount
-      const finalFilesToQueue = filesToQueue.slice(0, Math.max(0, available))
+    // Check capacity
+    const currentCount = uploadQueue.filter(
+      q => q.status === 'queued' || q.status === 'uploading' || q.status === 'processing'
+    ).length
+    const available = MAX_CONCURRENT - currentCount
+    const finalFilesToQueue = filesToQueue.slice(0, Math.max(0, available))
 
-      if (finalFilesToQueue.length < filesToQueue.length) {
-        toast.warning('Limite de ficheiros', {
-          description: `Apenas ${finalFilesToQueue.length} de ${filesToQueue.length} ficheiros foram adicionados. Máximo de ${MAX_CONCURRENT} em processamento simultâneo.`,
+    if (finalFilesToQueue.length < filesToQueue.length) {
+      toast.warning('Limite de ficheiros', {
+        description: `Apenas ${finalFilesToQueue.length} de ${filesToQueue.length} ficheiros foram adicionados. Máximo de ${MAX_CONCURRENT} em processamento simultâneo.`,
+      })
+    }
+
+    if (finalFilesToQueue.length === 0) return
+
+    // Queue files to server immediately (DB + Storage)
+    // This ensures they survive page refresh
+    const queueResults = await Promise.all(
+      finalFilesToQueue.map(async (file) => {
+        const formData = new FormData()
+        formData.append('file', file)
+        const result = await queueRFPFile(formData)
+        return { file, result }
+      })
+    )
+
+    // Add successfully queued items to local state
+    const successfulItems: QueuedUpload[] = []
+    const failedItems: string[] = []
+
+    for (const { file, result } of queueResults) {
+      if (result.success && result.jobId) {
+        successfulItems.push({
+          id: result.jobId,
+          file: null, // File is now in storage, no need to keep in memory
+          fileName: file.name,
+          status: 'queued' as const,
+          jobId: result.jobId,
         })
+      } else {
+        failedItems.push(file.name)
+        console.error(`Failed to queue ${file.name}:`, result.error)
       }
+    }
 
-      const newItems: QueuedUpload[] = finalFilesToQueue.map(file => ({
-        id: crypto.randomUUID(),
-        file,
-        fileName: file.name,
-        status: 'queued' as const
-      }))
+    if (failedItems.length > 0) {
+      toast.error('Erro ao adicionar ficheiros', {
+        description: failedItems.length === 1
+          ? `Falha ao adicionar "${failedItems[0]}"`
+          : `Falha ao adicionar ${failedItems.length} ficheiros`,
+      })
+    }
 
-      return [...prev, ...newItems]
-    })
+    if (successfulItems.length > 0) {
+      setUploadQueue(prev => [...prev, ...successfulItems])
+    }
   }, [uploadQueue])
 
-  // Restore processing jobs from DB on mount (for page refresh persistence)
+  // Restore queued/pending/processing jobs from DB on mount (for page refresh persistence)
+  // Shows all active jobs from all users
   useEffect(() => {
     const restoreActiveJobs = async () => {
       const { data: activeJobs, error } = await supabase
         .from('rfp_upload_jobs')
-        .select('id, file_name, status, created_at')
-        .in('status', ['pending', 'processing'])
-        .order('created_at', { ascending: false })
-        .limit(MAX_PARALLEL_UPLOADS)
+        .select('id, file_name, status, created_at, progress_percent, items_total')
+        .in('status', ['queued', 'pending', 'processing'])
+        .order('created_at', { ascending: true }) // Oldest first for queue order
+        .limit(MAX_CONCURRENT)
 
       if (error || !activeJobs || activeJobs.length === 0) return
 
@@ -322,18 +375,29 @@ export function RFPUploadStatusProvider({ children }: RFPUploadStatusProviderPro
           .filter(job => !existingJobIds.has(job.id))
           .map(job => {
             const startTime = new Date(job.created_at)
+            // Map DB status to UI status
+            let uiStatus: QueuedUpload['status']
+            if (job.status === 'queued') {
+              uiStatus = 'queued'
+            } else if (job.status === 'pending') {
+              uiStatus = 'uploading'
+            } else {
+              uiStatus = 'processing'
+            }
+
             return {
               id: job.id,
               file: null,
-              status: job.status === 'pending' ? 'uploading' as const : 'processing' as const,
+              status: uiStatus,
               jobId: job.id,
               startedAt: startTime,
               isRestored: true,
               fileName: job.file_name,
-              // Set minimum duration for 'uploading' state (for pulsing animation visibility)
               uploadingUntil: job.status === 'pending'
                 ? new Date(startTime.getTime() + MIN_UPLOADING_DURATION_MS)
                 : undefined,
+              progressPercent: job.progress_percent ?? 0,
+              itemsTotal: job.items_total ?? undefined,
             }
           })
 
@@ -345,14 +409,15 @@ export function RFPUploadStatusProvider({ children }: RFPUploadStatusProviderPro
   }, [supabase])
 
   // Process queue - triggered when queue changes
-  // Allows up to MAX_PARALLEL_UPLOADS concurrent uploads with staggered start times
+  // Allows up to MAX_PARALLEL_UPLOADS concurrent n8n triggers with staggered start times
+  // Files are already in storage, just need to trigger n8n webhook
   useEffect(() => {
     const processNext = async () => {
       // Prevent concurrent processing of the same queue iteration
       if (isProcessingQueueRef.current) return
 
-      const nextQueued = uploadQueue.find(q => q.status === 'queued')
-      if (!nextQueued) return
+      const nextQueued = uploadQueue.find(q => q.status === 'queued' && q.jobId)
+      if (!nextQueued || !nextQueued.jobId) return
 
       // Count active uploads (uploading or processing)
       const activeCount = uploadQueue.filter(q =>
@@ -375,33 +440,28 @@ export function RFPUploadStatusProvider({ children }: RFPUploadStatusProviderPro
         } : q
       ))
 
-      // Stagger uploads - wait if there are other active uploads
+      // Stagger n8n triggers - wait if there are other active uploads
       if (activeCount > 0) {
-        await new Promise(resolve => setTimeout(resolve, UPLOAD_STAGGER_MS))
+        await new Promise(resolve => setTimeout(resolve, WEBHOOK_DELAY_MS))
       }
 
-      // RELEASE LOCK before the actual upload call
-      // This allows next queued item to start processing while this one uploads
+      // RELEASE LOCK before the actual webhook call
+      // This allows next queued item to start processing while this one triggers
       // The item is already marked 'uploading' so it won't be picked up again
       isProcessingQueueRef.current = false
 
-      // Now do the actual upload (without holding the lock)
-      // Skip if no file (restored jobs don't have files, but they also won't be 'queued')
-      if (!nextQueued.file) return
-
+      // Trigger n8n webhook for the queued job (file is already in storage)
       try {
-        const formData = new FormData()
-        formData.append('file', nextQueued.file)
-        const result = await triggerRFPUpload(formData)
+        const result = await processQueuedJob(nextQueued.jobId)
 
-        if (result.success && result.jobId) {
-          // Update queue with job ID and mark as processing
+        if (result.success) {
+          // Mark as processing - n8n is now working on it
           setUploadQueue(prev => prev.map(q =>
-            q.id === nextQueued.id ? { ...q, jobId: result.jobId, status: 'processing' as const } : q
+            q.id === nextQueued.id ? { ...q, status: 'processing' as const } : q
           ))
         } else {
           setUploadQueue(prev => prev.map(q =>
-            q.id === nextQueued.id ? { ...q, status: 'failed' as const, error: result.error || 'Upload failed' } : q
+            q.id === nextQueued.id ? { ...q, status: 'failed' as const, error: result.error || 'Processing failed' } : q
           ))
           // Schedule cleanup of failed item
           setTimeout(() => {
@@ -410,7 +470,7 @@ export function RFPUploadStatusProvider({ children }: RFPUploadStatusProviderPro
         }
       } catch (error) {
         setUploadQueue(prev => prev.map(q =>
-          q.id === nextQueued.id ? { ...q, status: 'failed' as const, error: 'Upload failed' } : q
+          q.id === nextQueued.id ? { ...q, status: 'failed' as const, error: 'Processing failed' } : q
         ))
         // Schedule cleanup of failed item
         setTimeout(() => {

@@ -17,7 +17,7 @@ interface RFPJob {
   id: string
   file_name: string
   file_size: number | null
-  status: 'pending' | 'processing' | 'completed' | 'failed'
+  status: 'queued' | 'pending' | 'processing' | 'completed' | 'failed'
   error_message: string | null
   created_at: string
   updated_at: string

@@ -92,6 +92,7 @@ interface SortableHeaderProps {
 }
 
 // Pure sort/filter functions moved outside component for performance
+// All sort cases include secondary sort by lote/posicao for consistent ordering
 const sortItems = (itemsList: RFPItemWithMatches[], column: SortColumn, direction: SortDirection): RFPItemWithMatches[] => {
   return [...itemsList].sort((a, b) => {
     const isAsc = direction === 'asc'
@@ -106,6 +107,9 @@ const sortItems = (itemsList: RFPItemWithMatches[], column: SortColumn, directio
         break
       case 'pos':
         comparison = (a.posicao_pedido ?? 0) - (b.posicao_pedido ?? 0)
+        if (comparison === 0) {
+          comparison = String(a.lote_pedido ?? '').localeCompare(String(b.lote_pedido ?? ''), 'pt')
+        }
         break
       case 'artigo':
         comparison = String(a.artigo_pedido ?? '').localeCompare(String(b.artigo_pedido ?? ''), 'pt')
@@ -120,7 +124,17 @@ const sortItems = (itemsList: RFPItemWithMatches[], column: SortColumn, directio
         comparison = 0
     }
 
-    return isAsc ? comparison : -comparison
+    // Apply primary sort direction
+    const primaryResult = isAsc ? comparison : -comparison
+
+    // If primary comparison is equal (for non-lote columns), apply secondary sort by lote/posicao
+    if (primaryResult === 0 && column !== 'lote' && column !== 'pos') {
+      const loteComparison = String(a.lote_pedido ?? '').localeCompare(String(b.lote_pedido ?? ''), 'pt')
+      if (loteComparison !== 0) return loteComparison
+      return (a.posicao_pedido ?? 0) - (b.posicao_pedido ?? 0)
+    }
+
+    return primaryResult
   })
 }
 
@@ -696,7 +710,7 @@ const ItemRow = memo(function ItemRow({ jobId, item, isConfirmed, onItemUpdate, 
                     <p className="text-sm font-medium">
                       {showAsMatched ? 'Alterar seleção' : showAsRejected ? 'Rever sugestões' : 'Selecionar correspondência'}
                     </p>
-                    <p className="text-xs text-muted-foreground mt-0.5 whitespace-nowrap">
+                    <p className="text-xs text-muted-foreground mt-0.5 break-words max-w-[700px]">
                       {item.descricao_pedido}
                     </p>
                   </div>
@@ -888,7 +902,7 @@ const SuggestionItem = memo(function SuggestionItem({ jobId, rfpItemId, match, i
         {match.descricao_comercial && match.descricao_comercial !== match.descricao ? (
           <Tooltip>
             <TooltipTrigger asChild>
-              <p className="text-xs text-muted-foreground whitespace-nowrap mt-0.5 uppercase">
+              <p className="text-xs text-muted-foreground mt-0.5 uppercase break-words max-w-[400px]">
                 {match.descricao ?? '—'}
               </p>
             </TooltipTrigger>
@@ -900,7 +914,7 @@ const SuggestionItem = memo(function SuggestionItem({ jobId, rfpItemId, match, i
             </TooltipContent>
           </Tooltip>
         ) : (
-          <p className="text-xs text-muted-foreground whitespace-nowrap mt-0.5 uppercase">
+          <p className="text-xs text-muted-foreground mt-0.5 uppercase break-words max-w-[400px]">
             {match.descricao ?? '—'}
           </p>
         )}

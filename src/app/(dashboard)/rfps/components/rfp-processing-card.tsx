@@ -16,8 +16,6 @@ import { Button } from '@/components/ui/button'
 import { cn } from '@/lib/utils'
 import { useUploadQueue, type QueuedUpload } from '@/contexts/rfp-upload-status-context'
 
-// Estimated processing time: 3 minutes
-const ESTIMATED_TIME_MS = 3 * 60 * 1000
 const MAX_VISIBLE_PROGRESS = 3
 
 // Animation durations (ms)
@@ -25,13 +23,17 @@ const FILL_TO_100_DURATION = 600 // Smooth fill to 100%
 const SHOW_100_DURATION = 400    // Brief pause at 100%
 const COLLAPSE_DURATION = 400    // Collapse out
 
+// Linear progress animation constants
+const LINEAR_TICK_MS = 100           // Animation tick interval
+const INITIAL_PHASE_MS = 20000       // Time to grow from 0% to 5% (20s)
+const CHECKPOINT_GROWTH_MS = 15000   // Time to grow one checkpoint (15s per item)
+
 interface UploadProgressItemProps {
   upload: QueuedUpload
   onRemoveComplete?: (id: string) => void
 }
 
 function UploadProgressItem({ upload, onRemoveComplete }: UploadProgressItemProps) {
-  const [elapsedTime, setElapsedTime] = useState(0)
   const [animatedProgress, setAnimatedProgress] = useState(0)
   const [animationPhase, setAnimationPhase] = useState<'active' | 'filling' | 'showing' | 'collapsing' | 'removed'>('active')
 
@@ -39,32 +41,111 @@ function UploadProgressItem({ upload, onRemoveComplete }: UploadProgressItemProp
   // This prevents the effect from re-triggering and cancelling the animation
   const hasStartedCompletionRef = useRef(false)
   const animationFrameRef = useRef<number | null>(null)
+  const linearIntervalRef = useRef<NodeJS.Timeout | null>(null)
+  const confirmedProgressRef = useRef(0)
+  const lastProgressRef = useRef(0)
 
-  // Calculate base progress (time-based, capped at 98%)
-  const baseProgress = Math.min(98, (elapsedTime / ESTIMATED_TIME_MS) * 100)
-
-  // Update elapsed time every second when processing
+  // Checkpoint-based linear progress animation
+  // Progress grows linearly toward next checkpoint, then STOPS and WAITS for confirmation
   useEffect(() => {
-    if (!upload.startedAt || upload.status === 'completed' || upload.status === 'failed') {
-      return
+    // Don't update if we're in completion animation
+    if (hasStartedCompletionRef.current) return
+    if (upload.status !== 'processing') return
+
+    const confirmed = upload.progressPercent ?? 0
+    const itemsTotal = upload.itemsTotal
+    confirmedProgressRef.current = confirmed
+
+    // Clear any existing animation
+    if (linearIntervalRef.current) {
+      clearInterval(linearIntervalRef.current)
+      linearIntervalRef.current = null
     }
 
-    const startTime = upload.startedAt.getTime()
-    const initialElapsed = Date.now() - startTime
-    setElapsedTime(initialElapsed)
+    // Phase 1: No items_total yet - grow from 0% to 5% over 20s, then wait
+    if (!itemsTotal || itemsTotal <= 0) {
+      const initialCheckpoint = 5 // First checkpoint is 5%
+      const incrementPerTick = initialCheckpoint / (INITIAL_PHASE_MS / LINEAR_TICK_MS)
 
-    const initialProgress = Math.min(98, (initialElapsed / ESTIMATED_TIME_MS) * 100)
-    setAnimatedProgress(initialProgress)
+      // If confirmed >= 5%, just show confirmed (we're past the initial phase)
+      if (confirmed >= initialCheckpoint) {
+        setAnimatedProgress(confirmed)
+        lastProgressRef.current = confirmed
+        return
+      }
 
-    const interval = setInterval(() => {
-      const elapsed = Date.now() - startTime
-      setElapsedTime(elapsed)
-      const progress = Math.min(98, (elapsed / ESTIMATED_TIME_MS) * 100)
-      setAnimatedProgress(progress)
-    }, 1000)
+      // Start linear growth toward 5%
+      linearIntervalRef.current = setInterval(() => {
+        setAnimatedProgress(prev => {
+          // Stop at 5% and wait for confirmation
+          if (prev >= initialCheckpoint) {
+            if (linearIntervalRef.current) {
+              clearInterval(linearIntervalRef.current)
+              linearIntervalRef.current = null
+            }
+            return initialCheckpoint
+          }
 
-    return () => clearInterval(interval)
-  }, [upload.startedAt, upload.status])
+          const newProgress = prev + incrementPerTick
+          lastProgressRef.current = newProgress
+          return Math.min(newProgress, initialCheckpoint)
+        })
+      }, LINEAR_TICK_MS)
+
+      return () => {
+        if (linearIntervalRef.current) {
+          clearInterval(linearIntervalRef.current)
+          linearIntervalRef.current = null
+        }
+      }
+    }
+
+    // Phase 2: items_total available - use checkpoint-based animation
+    // Formula: percentPerItem = 85 / items_total (n8n goes from 5% to 90%)
+    const percentPerItem = 85 / itemsTotal
+    const nextCheckpoint = confirmed + percentPerItem
+    const incrementPerTick = percentPerItem / (CHECKPOINT_GROWTH_MS / LINEAR_TICK_MS)
+
+    // If display is behind confirmed, jump to confirmed
+    if (lastProgressRef.current < confirmed) {
+      setAnimatedProgress(confirmed)
+      lastProgressRef.current = confirmed
+    }
+
+    // Start linear growth toward next checkpoint
+    linearIntervalRef.current = setInterval(() => {
+      setAnimatedProgress(prev => {
+        // Stop at checkpoint and wait for next confirmation
+        if (prev >= nextCheckpoint) {
+          if (linearIntervalRef.current) {
+            clearInterval(linearIntervalRef.current)
+            linearIntervalRef.current = null
+          }
+          return nextCheckpoint
+        }
+
+        // Stop if we've grown one full checkpoint beyond confirmed (waiting for confirmation)
+        if (prev >= confirmedProgressRef.current + percentPerItem) {
+          if (linearIntervalRef.current) {
+            clearInterval(linearIntervalRef.current)
+            linearIntervalRef.current = null
+          }
+          return prev
+        }
+
+        const newProgress = prev + incrementPerTick
+        lastProgressRef.current = newProgress
+        return Math.min(newProgress, nextCheckpoint)
+      })
+    }, LINEAR_TICK_MS)
+
+    return () => {
+      if (linearIntervalRef.current) {
+        clearInterval(linearIntervalRef.current)
+        linearIntervalRef.current = null
+      }
+    }
+  }, [upload.progressPercent, upload.itemsTotal, upload.status])
 
   // Trigger smooth fill to 100% when completed
   // Using ref to prevent re-triggering and cancellation
@@ -74,6 +155,12 @@ function UploadProgressItem({ upload, onRemoveComplete }: UploadProgressItemProp
 
     hasStartedCompletionRef.current = true
     setAnimationPhase('filling')
+
+    // Clear linear interval when entering completion animation
+    if (linearIntervalRef.current) {
+      clearInterval(linearIntervalRef.current)
+      linearIntervalRef.current = null
+    }
 
     // Capture current progress at the moment of completion
     const startProgress = animatedProgress
@@ -109,6 +196,10 @@ function UploadProgressItem({ upload, onRemoveComplete }: UploadProgressItemProp
       if (animationFrameRef.current) {
         cancelAnimationFrame(animationFrameRef.current)
       }
+      if (linearIntervalRef.current) {
+        clearInterval(linearIntervalRef.current)
+        linearIntervalRef.current = null
+      }
     }
   }, [upload.status]) // Only depend on upload.status, not animationPhase
 
@@ -132,10 +223,8 @@ function UploadProgressItem({ upload, onRemoveComplete }: UploadProgressItemProp
   // Don't render if removed
   if (animationPhase === 'removed') return null
 
-  // Display progress: use animated value when completing, otherwise base progress
-  const displayProgress = (upload.status === 'completed')
-    ? animatedProgress
-    : baseProgress
+  // Display progress: always use animatedProgress (interpolated from DB or completion animation)
+  const displayProgress = animatedProgress
 
   return (
     <div
@@ -198,7 +287,7 @@ function UploadProgressItem({ upload, onRemoveComplete }: UploadProgressItemProp
           />
           <div className="flex justify-between text-xs text-muted-foreground">
             <span>{Math.round(displayProgress)}%</span>
-            {!isAnimatingCompletion && !isCollapsing && <span>~2-3 min</span>}
+            {!isAnimatingCompletion && !isCollapsing && <span>~2-6 min</span>}
           </div>
         </div>
       )}
