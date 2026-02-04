@@ -9,7 +9,7 @@ import { cn } from '@/lib/utils'
 interface RecentActivityItem {
   id: string
   file_name: string
-  status: 'pending' | 'processing' | 'completed' | 'failed'
+  status: 'queued' | 'pending' | 'processing' | 'completed' | 'failed'
   review_status: 'por_rever' | 'revisto' | 'confirmado' | null
   created_at: string
 }
@@ -19,6 +19,12 @@ interface DashboardRecentActivityProps {
 }
 
 const statusConfig = {
+  queued: {
+    label: 'Na fila',
+    icon: Clock,
+    variant: 'secondary' as const,
+    className: 'text-muted-foreground',
+  },
   pending: {
     label: 'Pendente',
     icon: Clock,

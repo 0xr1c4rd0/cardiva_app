@@ -710,7 +710,7 @@ const ItemRow = memo(function ItemRow({ jobId, item, isConfirmed, onItemUpdate, 
                     <p className="text-sm font-medium">
                       {showAsMatched ? 'Alterar seleção' : showAsRejected ? 'Rever sugestões' : 'Selecionar correspondência'}
                     </p>
-                    <p className="text-xs text-muted-foreground mt-0.5 whitespace-nowrap">
+                    <p className="text-xs text-muted-foreground mt-0.5 break-words max-w-[700px]">
                       {item.descricao_pedido}
                     </p>
                   </div>
@@ -902,7 +902,7 @@ const SuggestionItem = memo(function SuggestionItem({ jobId, rfpItemId, match, i
         {match.descricao_comercial && match.descricao_comercial !== match.descricao ? (
           <Tooltip>
             <TooltipTrigger asChild>
-              <p className="text-xs text-muted-foreground whitespace-nowrap mt-0.5 uppercase">
+              <p className="text-xs text-muted-foreground mt-0.5 uppercase break-words max-w-[400px]">
                 {match.descricao ?? '—'}
               </p>
             </TooltipTrigger>
@@ -914,7 +914,7 @@ const SuggestionItem = memo(function SuggestionItem({ jobId, rfpItemId, match, i
             </TooltipContent>
           </Tooltip>
         ) : (
-          <p className="text-xs text-muted-foreground whitespace-nowrap mt-0.5 uppercase">
+          <p className="text-xs text-muted-foreground mt-0.5 uppercase break-words max-w-[400px]">
             {match.descricao ?? '—'}
           </p>
         )}
