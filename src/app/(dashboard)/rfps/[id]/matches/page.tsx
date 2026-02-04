@@ -93,6 +93,7 @@ export default async function MatchReviewPage({ params, searchParams }: PageProp
   }
 
   // Apply sorting based on column and direction
+  // All sort cases include secondary sort by lote/posicao for consistent ordering
   const isAsc = sortDir === 'asc'
   switch (sortBy) {
     case 'lote':
@@ -101,13 +102,21 @@ export default async function MatchReviewPage({ params, searchParams }: PageProp
         .order('posicao_pedido', { ascending: isAsc })
       break
     case 'pos':
-      query = query.order('posicao_pedido', { ascending: isAsc })
+      query = query
+        .order('posicao_pedido', { ascending: isAsc })
+        .order('lote_pedido', { ascending: true })
       break
     case 'artigo':
-      query = query.order('artigo_pedido', { ascending: isAsc })
+      query = query
+        .order('artigo_pedido', { ascending: isAsc })
+        .order('lote_pedido', { ascending: true })
+        .order('posicao_pedido', { ascending: true })
       break
     case 'descricao':
-      query = query.order('descricao_pedido', { ascending: isAsc })
+      query = query
+        .order('descricao_pedido', { ascending: isAsc })
+        .order('lote_pedido', { ascending: true })
+        .order('posicao_pedido', { ascending: true })
       break
     case 'status':
       query = query
@@ -204,6 +213,7 @@ export default async function MatchReviewPage({ params, searchParams }: PageProp
   }
 
   // Get total count for stats (unfiltered)
+  // Must include same sorting as main query for consistent ordering
   const { data: allItems } = await supabase
     .from('rfp_items')
     .select(
@@ -213,6 +223,8 @@ export default async function MatchReviewPage({ params, searchParams }: PageProp
     `
     )
     .eq('job_id', jobId)
+    .order('lote_pedido', { ascending: true })
+    .order('posicao_pedido', { ascending: true })
 
   const allItemsWithSortedMatches: RFPItemWithMatches[] = (allItems ?? []).map((item) => ({
     ...item,
