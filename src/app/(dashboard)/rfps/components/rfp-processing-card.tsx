@@ -212,6 +212,7 @@ function UploadProgressItem({ upload, onRemoveComplete }: UploadProgressItemProp
   }, [animationPhase, upload.id, onRemoveComplete])
 
   // Determine base status (ignoring animation phases)
+  const isPendingUpload = upload.status === 'pending-upload'
   const isUploading = upload.status === 'uploading'
   const isQueued = upload.status === 'queued'
   const isFailed = upload.status === 'failed'
@@ -242,7 +243,7 @@ function UploadProgressItem({ upload, onRemoveComplete }: UploadProgressItemProp
       <div className="flex items-center gap-2">
         {isQueued ? (
           <Clock className="h-4 w-4 text-muted-foreground" />
-        ) : isUploading ? (
+        ) : isPendingUpload || isUploading ? (
           <Upload className="h-4 w-4 text-green-600 animate-pulse" />
         ) : isFailed ? (
           <XCircle className="h-4 w-4 text-destructive" />
@@ -265,7 +266,7 @@ function UploadProgressItem({ upload, onRemoveComplete }: UploadProgressItemProp
         <div className="flex items-center gap-2 text-xs text-muted-foreground">
           <span>Em fila...</span>
         </div>
-      ) : isUploading ? (
+      ) : isPendingUpload || isUploading ? (
         <div className="relative h-1.5 w-full overflow-hidden rounded-md bg-primary/20">
           <div
             className="bg-primary h-full w-1/3"
@@ -305,11 +306,11 @@ export function RFPProcessingCard() {
     setRemovedIds(prev => new Set(prev).add(id))
   }, [])
 
-  // Filter to active uploads (uploading, processing, failed, or recently completed for animation)
+  // Filter to active uploads (pending-upload, uploading, processing, failed, or recently completed for animation)
   // Exclude items that have completed their removal animation
   const activeUploads = useMemo(() =>
     uploadQueue.filter(q =>
-      (q.status === 'uploading' || q.status === 'processing' || q.status === 'failed' || q.status === 'completed') &&
+      (q.status === 'pending-upload' || q.status === 'uploading' || q.status === 'processing' || q.status === 'failed' || q.status === 'completed') &&
       !removedIds.has(q.id)
     ),
     [uploadQueue, removedIds]
@@ -325,7 +326,7 @@ export function RFPProcessingCard() {
     [activeUploads]
   )
   const someActive = useMemo(() =>
-    activeUploads.some(u => u.status === 'uploading' || u.status === 'processing'),
+    activeUploads.some(u => u.status === 'pending-upload' || u.status === 'uploading' || u.status === 'processing'),
     [activeUploads]
   )
 
@@ -409,6 +410,8 @@ export function RFPProcessingCard() {
                   )}>
                     {upload.status === 'failed' ? (
                       <XCircle className="h-3 w-3 text-destructive" />
+                    ) : upload.status === 'pending-upload' || upload.status === 'uploading' ? (
+                      <Upload className="h-3 w-3 text-green-600 animate-pulse" />
                     ) : (
                       <Loader2 className="h-3 w-3 text-green-600 animate-spin" />
                     )}

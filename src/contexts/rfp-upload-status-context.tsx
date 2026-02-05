@@ -27,8 +27,8 @@ export interface RFPUploadJob {
 // Multi-upload queue types
 export interface QueuedUpload {
   id: string              // Temporary ID until job created
-  file: File | null       // Null for restored jobs (after page refresh)
-  status: 'queued' | 'uploading' | 'processing' | 'completed' | 'failed'
+  file: File | null       // Null for restored jobs (after page refresh), kept in memory for pending-upload
+  status: 'pending-upload' | 'queued' | 'uploading' | 'processing' | 'completed' | 'failed'
   jobId?: string          // Set after job created in DB
   startedAt?: Date
   error?: string
@@ -101,6 +101,7 @@ export function RFPUploadStatusProvider({ children }: RFPUploadStatusProviderPro
   const userIdRef = useRef<string | null>(null)
   const completionTimeoutRef = useRef<NodeJS.Timeout | null>(null)
   const isProcessingQueueRef = useRef(false)
+  const isUploadingPendingRef = useRef(false)
 
   // Fetch any pending/processing jobs (all users can see all jobs)
   const fetchActiveJob = useCallback(async () => {
@@ -253,9 +254,10 @@ export function RFPUploadStatusProvider({ children }: RFPUploadStatusProviderPro
   }, [])
 
   // Queue files for upload (max 10 total active)
-  // Files are persisted to DB + Storage immediately so they survive page refresh
-  const queueFiles = useCallback(async (files: File[]) => {
-    // Check for duplicates in queue first
+  // Files are added to state immediately with 'pending-upload' status
+  // Background upload processor will handle DB + Storage upload
+  const queueFiles = useCallback((files: File[]) => {
+    // Check for duplicates in queue first (sync check)
     const queuedFileNames = new Set(uploadQueue.map(q => q.fileName))
     const duplicatesInQueue = files.filter(f => queuedFileNames.has(f.name))
 
@@ -270,89 +272,32 @@ export function RFPUploadStatusProvider({ children }: RFPUploadStatusProviderPro
 
     if (uniqueFiles.length === 0) return
 
-    // Check for duplicates in database
-    const duplicateChecks = await Promise.all(
-      uniqueFiles.map(file => checkDuplicateFileName(file.name))
-    )
-
-    const duplicatesInDB: string[] = []
-    const filesToQueue: File[] = []
-
-    uniqueFiles.forEach((file, index) => {
-      if (duplicateChecks[index].isDuplicate) {
-        duplicatesInDB.push(file.name)
-      } else {
-        filesToQueue.push(file)
-      }
-    })
-
-    // Show error for database duplicates
-    if (duplicatesInDB.length > 0) {
-      toast.error('Ficheiros já carregados', {
-        description: duplicatesInDB.length === 1
-          ? `O ficheiro "${duplicatesInDB[0]}" já foi carregado anteriormente.`
-          : `${duplicatesInDB.length} ficheiros já foram carregados: ${duplicatesInDB.slice(0, 3).join(', ')}${duplicatesInDB.length > 3 ? '...' : ''}`,
-      })
-    }
-
-    if (filesToQueue.length === 0) return
-
-    // Check capacity
+    // Check capacity (sync check)
     const currentCount = uploadQueue.filter(
-      q => q.status === 'queued' || q.status === 'uploading' || q.status === 'processing'
+      q => q.status === 'pending-upload' || q.status === 'queued' || q.status === 'uploading' || q.status === 'processing'
     ).length
     const available = MAX_CONCURRENT - currentCount
-    const finalFilesToQueue = filesToQueue.slice(0, Math.max(0, available))
+    const finalFilesToQueue = uniqueFiles.slice(0, Math.max(0, available))
 
-    if (finalFilesToQueue.length < filesToQueue.length) {
+    if (finalFilesToQueue.length < uniqueFiles.length) {
       toast.warning('Limite de ficheiros', {
-        description: `Apenas ${finalFilesToQueue.length} de ${filesToQueue.length} ficheiros foram adicionados. Máximo de ${MAX_CONCURRENT} em processamento simultâneo.`,
+        description: `Apenas ${finalFilesToQueue.length} de ${uniqueFiles.length} ficheiros foram adicionados. Máximo de ${MAX_CONCURRENT} em processamento simultâneo.`,
       })
     }
 
     if (finalFilesToQueue.length === 0) return
 
-    // Queue files to server immediately (DB + Storage)
-    // This ensures they survive page refresh
-    const queueResults = await Promise.all(
-      finalFilesToQueue.map(async (file) => {
-        const formData = new FormData()
-        formData.append('file', file)
-        const result = await queueRFPFile(formData)
-        return { file, result }
-      })
-    )
+    // Add files to state immediately with 'pending-upload' status
+    // File object kept in memory for background upload
+    const pendingItems: QueuedUpload[] = finalFilesToQueue.map(file => ({
+      id: crypto.randomUUID(),
+      file, // Keep file in memory for background upload
+      fileName: file.name,
+      status: 'pending-upload' as const,
+      startedAt: new Date(),
+    }))
 
-    // Add successfully queued items to local state
-    const successfulItems: QueuedUpload[] = []
-    const failedItems: string[] = []
-
-    for (const { file, result } of queueResults) {
-      if (result.success && result.jobId) {
-        successfulItems.push({
-          id: result.jobId,
-          file: null, // File is now in storage, no need to keep in memory
-          fileName: file.name,
-          status: 'queued' as const,
-          jobId: result.jobId,
-        })
-      } else {
-        failedItems.push(file.name)
-        console.error(`Failed to queue ${file.name}:`, result.error)
-      }
-    }
-
-    if (failedItems.length > 0) {
-      toast.error('Erro ao adicionar ficheiros', {
-        description: failedItems.length === 1
-          ? `Falha ao adicionar "${failedItems[0]}"`
-          : `Falha ao adicionar ${failedItems.length} ficheiros`,
-      })
-    }
-
-    if (successfulItems.length > 0) {
-      setUploadQueue(prev => [...prev, ...successfulItems])
-    }
+    setUploadQueue(prev => [...prev, ...pendingItems])
   }, [uploadQueue])
 
   // Restore queued/pending/processing jobs from DB on mount (for page refresh persistence)
@@ -407,6 +352,95 @@ export function RFPUploadStatusProvider({ children }: RFPUploadStatusProviderPro
 
     restoreActiveJobs()
   }, [supabase])
+
+  // Background upload processor - uploads pending files to Storage and DB
+  // Watches for 'pending-upload' items and processes them one at a time
+  useEffect(() => {
+    const uploadNextPending = async () => {
+      // Prevent concurrent uploads
+      if (isUploadingPendingRef.current) return
+
+      const nextPending = uploadQueue.find(q => q.status === 'pending-upload' && q.file)
+      if (!nextPending || !nextPending.file) return
+
+      isUploadingPendingRef.current = true
+
+      const file = nextPending.file
+      const itemId = nextPending.id
+
+      try {
+        // Check for duplicates in database (async check)
+        const duplicateCheck = await checkDuplicateFileName(file.name)
+
+        if (duplicateCheck.isDuplicate) {
+          // Show error and mark as failed
+          toast.error('Ficheiro já carregado', {
+            description: `O ficheiro "${file.name}" já foi carregado anteriormente.`,
+          })
+          setUploadQueue(prev => prev.map(q =>
+            q.id === itemId ? { ...q, status: 'failed' as const, error: 'Ficheiro duplicado', file: null } : q
+          ))
+          // Schedule cleanup
+          setTimeout(() => {
+            setUploadQueue(prev => prev.filter(q => q.id !== itemId))
+          }, COMPLETED_CLEANUP_DELAY_MS)
+          isUploadingPendingRef.current = false
+          return
+        }
+
+        // Upload to Storage and create DB record
+        const formData = new FormData()
+        formData.append('file', file)
+        const result = await queueRFPFile(formData)
+
+        if (result.success && result.jobId) {
+          // Success - update to 'queued' status with jobId, clear file from memory
+          setUploadQueue(prev => prev.map(q =>
+            q.id === itemId ? {
+              ...q,
+              status: 'queued' as const,
+              jobId: result.jobId,
+              file: null, // Clear file from memory
+            } : q
+          ))
+        } else {
+          // Failed - mark as failed
+          setUploadQueue(prev => prev.map(q =>
+            q.id === itemId ? {
+              ...q,
+              status: 'failed' as const,
+              error: result.error || 'Upload failed',
+              file: null,
+            } : q
+          ))
+          console.error(`Failed to upload ${file.name}:`, result.error)
+          // Schedule cleanup
+          setTimeout(() => {
+            setUploadQueue(prev => prev.filter(q => q.id !== itemId))
+          }, COMPLETED_CLEANUP_DELAY_MS)
+        }
+      } catch (error) {
+        // Error - mark as failed
+        setUploadQueue(prev => prev.map(q =>
+          q.id === itemId ? {
+            ...q,
+            status: 'failed' as const,
+            error: 'Upload failed',
+            file: null,
+          } : q
+        ))
+        console.error(`Error uploading ${file.name}:`, error)
+        // Schedule cleanup
+        setTimeout(() => {
+          setUploadQueue(prev => prev.filter(q => q.id !== itemId))
+        }, COMPLETED_CLEANUP_DELAY_MS)
+      }
+
+      isUploadingPendingRef.current = false
+    }
+
+    uploadNextPending()
+  }, [uploadQueue])
 
   // Process queue - triggered when queue changes
   // Allows up to MAX_PARALLEL_UPLOADS concurrent n8n triggers with staggered start times
@@ -553,8 +587,9 @@ export function RFPUploadStatusProvider({ children }: RFPUploadStatusProviderPro
   }, [supabase, fetchActiveJob, handleJobUpdate, handleJobInsert])
 
   // Compute derived values with useMemo to prevent unnecessary re-renders
+  // Include 'pending-upload' in processingCount since it shows as actively uploading in UI
   const processingCount = useMemo(
-    () => uploadQueue.filter(q => q.status === 'uploading' || q.status === 'processing').length,
+    () => uploadQueue.filter(q => q.status === 'pending-upload' || q.status === 'uploading' || q.status === 'processing').length,
     [uploadQueue]
   )
 
